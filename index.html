@@ -1505,18 +1505,36 @@ function validarTelefono(input) {
 // Cargar toda la hoja Rapel y Verfrut al iniciar sesión
 async function cargarCacheHojas() {
   if(!gsConfig.habilitado || !gsConfig.webhookUrl) return;
+
+  // 1. Intentar cargar cache guardado en localStorage (válido 12 horas)
   try {
-    const [r, v] = await Promise.all([
-      cargarHoja('Rapel'),
-      cargarHoja('Verfrut')
-    ]);
-    cacheRapel   = r || [];
-    cacheVerfrut = v || [];
-    cacheLoaded  = true;
-    showToast('✅ Base de datos cargada (' + (cacheRapel.length + cacheVerfrut.length) + ' registros)', 'success');
-  } catch(e) {
-    cacheLoaded = false;
-  }
+    const guardado = JSON.parse(localStorage.getItem('cache_hojas') || 'null');
+    if(guardado && guardado.fecha && (Date.now() - guardado.fecha < 12*60*60*1000)) {
+      cacheRapel   = guardado.rapel || [];
+      cacheVerfrut = guardado.verfrut || [];
+      cacheLoaded  = true;
+      // Refrescar en segundo plano sin bloquear
+      refrescarCacheSilencioso();
+      return;
+    }
+  } catch(e) {}
+
+  // 2. Si no hay cache válido, descargar
+  try {
+    const [r, v] = await Promise.all([ cargarHoja('Rapel'), cargarHoja('Verfrut') ]);
+    cacheRapel = r || []; cacheVerfrut = v || []; cacheLoaded = true;
+    localStorage.setItem('cache_hojas', JSON.stringify({rapel:cacheRapel, verfrut:cacheVerfrut, fecha:Date.now()}));
+    showToast('✅ Base cargada (' + (cacheRapel.length + cacheVerfrut.length) + ' registros)', 'success');
+  } catch(e) { cacheLoaded = false; }
+}
+
+async function refrescarCacheSilencioso() {
+  try {
+    const [r, v] = await Promise.all([ cargarHoja('Rapel'), cargarHoja('Verfrut') ]);
+    if(r && r.length) cacheRapel = r;
+    if(v && v.length) cacheVerfrut = v;
+    localStorage.setItem('cache_hojas', JSON.stringify({rapel:cacheRapel, verfrut:cacheVerfrut, fecha:Date.now()}));
+  } catch(e) {}
 }
 
 async function cargarHoja(empresa) {
@@ -2058,7 +2076,17 @@ async function qrBuscar() {
   qrCargarDepartamentos();
 
   let encontrado = null;
-  if(gsConfig.habilitado && gsConfig.webhookUrl) {
+  // Buscar primero en cache local (instantáneo)
+  if(cacheLoaded && (cacheRapel.length || cacheVerfrut.length)) {
+    const r1 = cacheRapel.find(t => String(t.dni).trim() === dni || String(parseInt(t.dni)) === dni);
+    if(r1) encontrado = {...r1, encontrado:true};
+    else {
+      const r2 = cacheVerfrut.find(t => String(t.dni).trim() === dni || String(parseInt(t.dni)) === dni);
+      if(r2) encontrado = {...r2, encontrado:true};
+    }
+  }
+  // Si no está en cache, buscar en Google Sheets
+  if(!encontrado && gsConfig.habilitado && gsConfig.webhookUrl) {
     try {
       const [r1, r2] = await Promise.all([
         buscarEnEmpresa(dni, 'Rapel'),
@@ -2209,6 +2237,8 @@ const urlParams = new URLSearchParams(window.location.search);
 if(urlParams.get('qr') === '1') {
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('qrScreen').style.display = 'flex';
+  // Cargar cache para búsqueda rápida en el QR
+  cargarCacheHojas();
 }
 
 // Si ya tiene GS config, mostrarlo en login
@@ -2231,3 +2261,4 @@ document.addEventListener('input', function(e) {
 </script>
 </body>
 </html>
+
