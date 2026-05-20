@@ -719,10 +719,27 @@ tr:hover td { background: #f8faff; }
 <div id="page-excel" class="page">
   <div style="margin-top:14px;">
     <div class="card">
-      <div class="card-header"><div class="card-icon green">📊</div><div><div class="card-title">Exportar datos</div><div class="card-sub">Descarga los registros locales</div></div></div>
+      <div class="card-header"><div class="card-icon green">☁️</div><div><div class="card-title">Exportar registros (BB.REGISTRO)</div><div class="card-sub">Descarga desde Google Sheets por rango de fechas</div></div></div>
+      <div class="card-body">
+        <div class="form-row-2" style="margin-bottom:12px;">
+          <div class="input-group">
+            <label class="input-label">Desde</label>
+            <input type="date" id="exp-desde" class="input-field">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Hasta</label>
+            <input type="date" id="exp-hasta" class="input-field">
+          </div>
+        </div>
+        <button class="btn btn-success btn-full" onclick="exportarBBRegistro()">⬇️ Descargar por rango de fechas (Excel)</button>
+        <button class="btn btn-outline btn-full" style="margin-top:8px;" onclick="exportarBBRegistroTodo()">⬇️ Descargar TODO (sin filtro)</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-icon blue">📊</div><div><div class="card-title">Exportar registros locales</div><div class="card-sub">Solo los de este navegador</div></div></div>
       <div class="card-body">
         <div class="actions-row">
-          <button class="btn btn-success" onclick="exportarExcel()">⬇️ Excel (.xlsx)</button>
+          <button class="btn btn-outline" onclick="exportarExcel()">⬇️ Excel (.xlsx)</button>
           <button class="btn btn-outline" onclick="exportarCSV()">⬇️ CSV</button>
         </div>
       </div>
@@ -1753,6 +1770,72 @@ function cerrarModal() { document.getElementById('modalOverlay').classList.remov
 // ════════════════════════════════
 //  EXCEL
 // ════════════════════════════════
+async function exportarBBRegistro() {
+  const desde = document.getElementById('exp-desde').value;
+  const hasta = document.getElementById('exp-hasta').value;
+  if(!desde || !hasta) { showToast('Selecciona ambas fechas','error'); return; }
+  _descargarBBRegistro(desde, hasta);
+}
+
+async function exportarBBRegistroTodo() {
+  _descargarBBRegistro(null, null);
+}
+
+async function _descargarBBRegistro(desde, hasta) {
+  if(typeof XLSX === 'undefined') { showToast('⚠️ Librería Excel no cargó','error'); return; }
+  if(!gsConfig.habilitado || !gsConfig.webhookUrl) { showToast('Sin conexión Google Sheets','error'); return; }
+  showToast('⏳ Descargando registros...','');
+  try {
+    const url = gsConfig.webhookUrl + '?accion=exportarBBRegistro';
+    const resp = await fetch(url);
+    const txt = await resp.text();
+    const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
+    const data = JSON.parse(m ? m[1] : txt);
+    let filas = data.filas || [];
+    if(!filas.length) { showToast('No hay registros en BB.REGISTRO','error'); return; }
+
+    // Filtrar por rango de fechas si se especificó
+    if(desde && hasta) {
+      const header = filas[0];
+      // Buscar columna FechaRegistro
+      let idxFecha = header.indexOf('FechaRegistro');
+      if(idxFecha === -1) idxFecha = 22; // posición por defecto
+      const dDesde = new Date(desde + 'T00:00:00');
+      const dHasta = new Date(hasta + 'T23:59:59');
+      const filtradas = filas.slice(1).filter(row => {
+        const f = parseFechaPE(row[idxFecha]);
+        return f && f >= dDesde && f <= dHasta;
+      });
+      filas = [header, ...filtradas];
+      if(filas.length === 1) { showToast('Sin registros en ese rango','error'); return; }
+    }
+
+    const ws = XLSX.utils.aoa_to_sheet(filas);
+    ws['!cols'] = filas[0].map(()=>({wch:16}));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'BB.REGISTRO');
+    const sufijo = (desde && hasta) ? desde + '_a_' + hasta : 'completo';
+    XLSX.writeFile(wb, `BB-REGISTRO_${sufijo}.xlsx`);
+    showToast('✅ ' + (filas.length-1) + ' registros exportados','success');
+  } catch(e) {
+    showToast('Error al exportar: ' + e.message,'error');
+  }
+}
+
+// Convierte fecha formato es-PE (DD/MM/YYYY) a objeto Date
+function parseFechaPE(str) {
+  if(!str) return null;
+  const s = String(str).trim();
+  // Si ya es una fecha ISO o Date
+  if(s.includes('-') && s.length >= 10) { const d = new Date(s); return isNaN(d) ? null : d; }
+  const partes = s.split('/');
+  if(partes.length === 3) {
+    return new Date(parseInt(partes[2]), parseInt(partes[1])-1, parseInt(partes[0]));
+  }
+  const d = new Date(s);
+  return isNaN(d) ? null : d;
+}
+
 function exportarExcel() {
   if(typeof XLSX === 'undefined') { showToast('⚠️ Librería Excel no cargó. Usa CSV.','error'); return; }
   if(!trabajadores.length) { showToast('Sin datos para exportar','error'); return; }
