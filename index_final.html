@@ -6,6 +6,7 @@
 <title>RRHH — Verfrut</title>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 :root {
   --bg: #f4f6fa; --white: #fff; --border: #e2e6f0;
@@ -288,6 +289,45 @@ tr:hover td { background: #f8faff; }
 </head>
 <body>
 
+<!-- ══════════ PANTALLA QR (registro trabajador) ══════════ -->
+<div id="qrScreen" style="display:none;min-height:100vh;align-items:center;justify-content:center;background:linear-gradient(145deg,#0d1f3c 0%,#1a3c6e 40%,#c8102e 100%);padding:20px;">
+  <div class="login-box">
+    <div class="login-logo" style="text-align:center;margin-bottom:20px;">
+      <div style="font-size:24px;font-weight:900;letter-spacing:-1px;">
+        <span style="color:#c8102e;">uni</span><span style="color:#1a3c6e;">frutti</span>
+      </div>
+      <div style="font-size:10px;color:#6b7280;margin-top:3px;letter-spacing:1px;text-transform:uppercase;">Pre-registro de Personal</div>
+    </div>
+    <div class="login-title" style="text-align:center;">📝 Registra tus datos</div>
+    <div id="qrError" class="login-error"></div>
+    <div id="qrSuccess" style="display:none;background:#e8eef7;border:1px solid #b8cce4;color:#1a3c6e;border-radius:10px;padding:14px;font-size:13px;margin-bottom:14px;text-align:center;line-height:1.5;">
+      ✅ <strong>¡Registro exitoso!</strong><br>Gracias. Tus datos fueron enviados. Recuerda que debes completar los demás campos con el personal de RR.HH.
+    </div>
+    <div id="qrForm">
+      <div class="login-field">
+        <label class="login-label">DNI (8 dígitos)</label>
+        <input type="tel" id="qr-dni" class="login-input" placeholder="00000000" maxlength="8" inputmode="numeric" style="font-family:'JetBrains Mono',monospace;letter-spacing:1px;">
+      </div>
+      <div class="login-field">
+        <label class="login-label">Apellido Paterno</label>
+        <input type="text" id="qr-ap" class="login-input" placeholder="Apellido paterno" style="text-transform:uppercase;">
+      </div>
+      <div class="login-field">
+        <label class="login-label">Apellido Materno</label>
+        <input type="text" id="qr-am" class="login-input" placeholder="Apellido materno" style="text-transform:uppercase;">
+      </div>
+      <div class="login-field">
+        <label class="login-label">Nombres</label>
+        <input type="text" id="qr-nom" class="login-input" placeholder="Nombres completos" style="text-transform:uppercase;">
+      </div>
+      <button class="login-btn" onclick="registrarQR()" id="qrBtn">Enviar mis datos</button>
+      <div style="font-size:11px;color:#6b7280;margin-top:14px;text-align:center;line-height:1.5;">
+        ℹ️ Solo registra tu DNI, nombres y apellidos. Los demás campos los completarás con el personal de RR.HH.
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ══════════ LOGIN SCREEN ══════════ -->
 <div id="loginScreen">
   <div class="login-box">
@@ -329,7 +369,17 @@ tr:hover td { background: #f8faff; }
       <div class="form-row-2">
         <div class="input-group">
           <label class="input-label">Número de Grupo</label>
-          <input type="text" id="s-sector" class="input-field" placeholder="Ej: G-01">
+          <select id="s-sector" class="input-field">
+            <option value="">— Grupo —</option>
+            <option value="01">01</option><option value="02">02</option>
+            <option value="03">03</option><option value="04">04</option>
+            <option value="05">05</option><option value="06">06</option>
+            <option value="07">07</option><option value="08">08</option>
+            <option value="09">09</option><option value="10">10</option>
+            <option value="11">11</option><option value="12">12</option>
+            <option value="13">13</option><option value="14">14</option>
+            <option value="15">15</option>
+          </select>
         </div>
         <div class="input-group">
           <label class="input-label">Tipo</label>
@@ -376,14 +426,15 @@ tr:hover td { background: #f8faff; }
 </div>
 
 <!-- SESIÓN BAR -->
-<div class="sesion-bar" id="sesionBar" style="display:none;">
-  <span style="font-size:11px;font-weight:700;color:var(--muted);margin-right:4px;">SESIÓN ACTIVA:</span>
-  <div class="sesion-chip">🛣️ <span id="sb-ruta">—</span></div>
-  <div class="sesion-chip">🔑 <span id="sb-codigo">—</span></div>
-  <div class="sesion-chip green">👥 <span id="sb-sector">—</span></div>
-  <div class="sesion-chip" style="background:#fff0f2;color:#c8102e;border-color:#f5a0ad;">🚌 <span id="sb-tipo">—</span></div>
-  <div class="sesion-chip yellow">👥 <span id="sb-contador">0</span> / <span id="sb-cantidad">0</span></div>
-  <button class="btn btn-sm btn-outline" style="margin-left:auto;font-size:11px;" onclick="abrirSesionModal()">➕ Nuevo registro</button>
+<div class="sesion-bar" id="sesionBar">
+  <span style="font-size:11px;font-weight:700;color:var(--muted);margin-right:4px;">SESIÓN:</span>
+  <div class="sesion-chip" id="sb-wrap-ruta" style="display:none;">🛣️ <span id="sb-ruta">—</span></div>
+  <div class="sesion-chip" id="sb-wrap-codigo" style="display:none;">🔑 <span id="sb-codigo">—</span></div>
+  <div class="sesion-chip green" id="sb-wrap-sector" style="display:none;">👥 Grupo <span id="sb-sector">—</span></div>
+  <div class="sesion-chip" id="sb-wrap-tipo" style="display:none;background:#fff0f2;color:#c8102e;border-color:#f5a0ad;">🚌 <span id="sb-tipo">—</span></div>
+  <div class="sesion-chip yellow" id="sb-wrap-cont" style="display:none;">👥 <span id="sb-contador">0</span> / <span id="sb-cantidad">0</span></div>
+  <span id="sb-sinsesion" style="font-size:11px;color:var(--muted2);">Sin registro activo</span>
+  <button class="btn btn-sm btn-primary" style="margin-left:auto;font-size:11px;" onclick="abrirSesionModal()">➕ Nuevo registro</button>
 </div>
 
 <!-- TABS -->
@@ -464,14 +515,6 @@ tr:hover td { background: #f8faff; }
           <label class="input-label">Nombres *</label>
           <input type="text" id="f-nom" class="input-field" placeholder="Nombres completos">
         </div>
-        <div class="input-group">
-          <label class="input-label">Género *</label>
-          <select id="f-genero" class="input-field">
-            <option value="">— Seleccionar —</option>
-            <option value="Hombre">Hombre</option>
-            <option value="Mujer">Mujer</option>
-          </select>
-        </div>
         <div class="form-row-2">
           <div class="input-group">
             <label class="input-label">Estado Civil</label>
@@ -483,17 +526,14 @@ tr:hover td { background: #f8faff; }
           </div>
           <div class="input-group">
             <label class="input-label">Tiene Hijos</label>
-            <select id="f-hijos" class="input-field" onchange="toggleHijos()">
+            <select id="f-hijos" class="input-field">
               <option value="">— Seleccionar —</option>
               <option value="SI">SI</option>
               <option value="NO">NO</option>
             </select>
           </div>
         </div>
-        <div class="input-group" id="g-nhijos" style="display:none;">
-          <label class="input-label">Cantidad de Hijos</label>
-          <input type="number" id="f-nhijos" class="input-field" placeholder="0" min="0">
-        </div>
+
       </div>
     </div>
     <!-- UBICACIÓN -->
@@ -504,6 +544,15 @@ tr:hover td { background: #f8faff; }
         <span class="section-chev" id="chev-ubicacion">▼</span>
       </div>
       <div class="section-body hidden" id="sec-ubicacion">
+        <div class="input-group">
+          <label class="input-label">¿Sigue viviendo en la misma dirección?</label>
+          <select id="f-mismadir" class="input-field" onchange="toggleDireccion()">
+            <option value="">— Seleccionar —</option>
+            <option value="SI">SI</option>
+            <option value="NO">NO</option>
+          </select>
+        </div>
+        <div id="g-direccion" style="display:none;gap:12px;">
         <div class="input-group">
           <label class="input-label">Dirección</label>
           <input type="text" id="f-dir" class="input-field" placeholder="Av. / Jr. / Calle...">
@@ -521,6 +570,7 @@ tr:hover td { background: #f8faff; }
         <div class="input-group">
           <label class="input-label">Distrito</label>
           <input type="text" id="f-dist" class="input-field" placeholder="Miraflores">
+        </div>
         </div>
         <div class="form-row-2">
           <div class="input-group">
@@ -640,8 +690,22 @@ tr:hover td { background: #f8faff; }
         <div class="stat-label">Registrados hoy</div>
       </div>
     </div>
+    <div class="card" id="adminAllCard" style="display:none;">
+      <div class="card-header">
+        <div class="card-icon blue">🌐</div>
+        <div><div class="card-title">Todos los registros (BB.REGISTRO)</div><div class="card-sub">Vista global de todos los usuarios</div></div>
+        <button class="btn btn-primary btn-sm" style="margin-left:auto;" onclick="cargarTodosRegistros()">🔄 Cargar todos</button>
+      </div>
+      <div class="card-body" style="padding-bottom:10px;">
+        <input type="text" class="input-field" id="filterAdminInput" placeholder="Buscar en todos los registros..." oninput="renderTodosRegistros()">
+      </div>
+      <div id="adminTableContainer">
+        <div class="empty-state"><div class="empty-icon">🌐</div><h3>Presiona "Cargar todos"</h3><p>Verás todos los registros de BB.REGISTRO</p></div>
+      </div>
+    </div>
     <div class="card">
       <div class="card-body" style="padding-bottom:10px;">
+        <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px;">📋 Mis registros locales</div>
         <input type="text" class="input-field" id="filterInput" placeholder="Buscar por nombre o DNI..." oninput="filtrarLista()">
       </div>
       <div id="tableContainer">
@@ -689,12 +753,6 @@ tr:hover td { background: #f8faff; }
     <div class="stats-grid" id="statsTop">
       <div class="stat-box"><div class="stat-num" id="st-total">0</div><div class="stat-label">Total registrados</div></div>
       <div class="stat-box"><div class="stat-num" id="st-hoy">0</div><div class="stat-label">Registrados hoy</div></div>
-    </div>
-    <div class="card">
-      <div class="card-body" style="padding-bottom:6px;">
-        <div class="stat-card-title">👤 Por Género</div>
-        <div id="stats-genero"></div>
-      </div>
     </div>
     <div class="card">
       <div class="card-body" style="padding-bottom:6px;">
@@ -862,6 +920,44 @@ function handleRequest(d) {
     return JSON.stringify({ok:true});
   }
 
+  // LISTAR TODOS LOS REGISTROS DE BB.REGISTRO (admin)
+  if (accion === 'listarBBRegistro') {
+    var rsh = ss.getSheetByName('BB.REGISTRO');
+    if (!rsh) return JSON.stringify({registros:[]});
+    var rd = rsh.getDataRange().getValues();
+    var rl = [];
+    for (var i = 1; i < rd.length; i++) {
+      if (!rd[i][0]) continue;
+      rl.push({dni:rd[i][0], ap:rd[i][1], am:rd[i][2], nombres:rd[i][3],
+        sector:rd[i][25], tipo:rd[i][28], registradoPor:rd[i][29], fecha:rd[i][23]});
+    }
+    return JSON.stringify({registros:rl});
+  }
+
+  // CONTAR REGISTROS POR GRUPO (contador compartido)
+  if (accion === 'contarGrupo') {
+    var rsh = ss.getSheetByName('BB.REGISTRO');
+    if (!rsh) return JSON.stringify({count:0});
+    var rd = rsh.getDataRange().getValues();
+    var count = 0;
+    for (var i = 1; i < rd.length; i++) {
+      if (String(rd[i][25]).trim() === String(d.grupo).trim()
+          && String(rd[i][24]).trim() === String(d.codigo).trim()) count++;
+    }
+    return JSON.stringify({count:count});
+  }
+
+  // REGISTRO VIA QR (hoja PRE-REGISTRO-QR)
+  if (accion === 'registrarQR') {
+    var qsh = ss.getSheetByName('PRE-REGISTRO-QR');
+    if (!qsh) {
+      qsh = ss.insertSheet('PRE-REGISTRO-QR');
+      qsh.appendRow(['DNI','ApellidoPaterno','ApellidoMaterno','Nombres','FechaRegistro']);
+    }
+    qsh.appendRow([d.dni, d.ap, d.am, d.nombres, d.fecha]);
+    return JSON.stringify({ok:true});
+  }
+
   // LISTAR USUARIOS
   if (accion === 'listarUsuarios') {
     var sh = ss.getSheetByName('Usuarios');
@@ -902,9 +998,18 @@ function handleRequest(d) {
       </div>
     </div>
     <div class="card">
+      <div class="card-header"><div class="card-icon green">📱</div><div><div class="card-title">Código QR para trabajadores</div><div class="card-sub">Comparte este QR para que registren su DNI y nombres</div></div></div>
+      <div class="card-body" style="text-align:center;">
+        <div id="qrCodeBox" style="display:inline-block;padding:14px;background:white;border-radius:12px;border:1px solid var(--border);margin-bottom:12px;"></div>
+        <div style="font-size:11px;color:var(--muted);word-break:break-all;margin-bottom:10px;" id="qrUrlText"></div>
+        <button class="btn btn-outline btn-full" onclick="generarQR()">🔄 Generar / Actualizar QR</button>
+        <button class="btn btn-success btn-full" style="margin-top:8px;" onclick="descargarQR()">⬇️ Descargar QR (imagen)</button>
+      </div>
+    </div>
+    <div class="card">
       <div class="card-header"><div class="card-icon" style="background:#f3f4f6;">ℹ️</div><div><div class="card-title">Acerca del sistema</div></div></div>
       <div class="card-body" style="font-size:12px;color:var(--muted);line-height:2;">
-        <div>Versión: <strong style="color:var(--text)">3.0.0</strong></div>
+        <div>Versión: <strong style="color:var(--text)">4.0.0</strong></div>
         <div>Búsqueda: <strong style="color:var(--text)">Rapel + Verfrut (automático)</strong></div>
         <div>Registro: <strong style="color:var(--text)">BB.REGISTRO</strong></div>
         <div>Usuarios: <strong style="color:var(--text)">Hoja Usuarios (Google Sheets)</strong></div>
@@ -1031,14 +1136,19 @@ function _setSesion(data) {
       t.style.display = isCreador ? '' : 'none';
     }
   });
+  // Card de todos los registros solo para administradores
+  const adminCard = document.getElementById('adminAllCard');
+  if(adminCard) adminCard.style.display = isAdmin ? '' : 'none';
 
   actualizarEstadoConexion();
   actualizarStats();
   if(isAdmin) cargarUsuarios();
   // Cargar cache de Rapel y Verfrut en segundo plano
   cargarCacheHojas();
-  // Abrir modal de sesión al entrar
-  setTimeout(() => abrirSesionModal(), 400);
+  // Los administradores entran directo; usuarios normales ven el modal de sesión
+  if(!isAdmin) {
+    setTimeout(() => abrirSesionModal(), 400);
+  }
   document.getElementById('loginBtn').disabled = false;
   document.getElementById('loginLoading').style.display = 'none';
 }
@@ -1084,12 +1194,17 @@ function confirmarSesion() {
   document.getElementById('sesionModal').style.display = 'none';
   actualizarSesionBar();
   actualizarContador();
-  showToast('✅ Sesión iniciada: ' + sector, 'success');
+  showToast('✅ Sesión iniciada: Grupo ' + sector, 'success');
+  // Consultar cuántos ya hay registrados en este grupo (contador compartido)
+  sincronizarContadorGrupo();
 }
 
 function actualizarSesionBar() {
   if(!sesionActiva) return;
-  document.getElementById('sesionBar').style.display = 'flex';
+  ['ruta','codigo','sector','tipo','cont'].forEach(x => {
+    const el = document.getElementById('sb-wrap-'+x); if(el) el.style.display = 'flex';
+  });
+  document.getElementById('sb-sinsesion').style.display = 'none';
   document.getElementById('sb-ruta').textContent    = sesionActiva.ruta;
   document.getElementById('sb-codigo').textContent  = sesionActiva.codigo;
   document.getElementById('sb-sector').textContent  = sesionActiva.sector;
@@ -1111,6 +1226,22 @@ function actualizarContador() {
   document.getElementById('sb-contador').textContent = sesionActiva.registrados;
 }
 
+// CAMBIO 01: Contador compartido — consulta cuántos hay en el grupo en Google Sheets
+async function sincronizarContadorGrupo() {
+  if(!sesionActiva || !gsConfig.habilitado || !gsConfig.webhookUrl) return;
+  try {
+    const url = gsConfig.webhookUrl + '?accion=contarGrupo&grupo=' + encodeURIComponent(sesionActiva.sector) + '&codigo=' + encodeURIComponent(sesionActiva.codigo);
+    const resp = await fetch(url);
+    const txt = await resp.text();
+    const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
+    const r = JSON.parse(m ? m[1] : txt);
+    if(typeof r.count === 'number') {
+      sesionActiva.registrados = r.count;
+      actualizarContador();
+    }
+  } catch(e) {}
+}
+
 // ════════════════════════════════
 //  ESTADÍSTICAS
 // ════════════════════════════════
@@ -1119,11 +1250,6 @@ function renderEstadisticas() {
   document.getElementById('st-hoy').textContent   = hoyCount;
 
   const total = trabajadores.length || 1;
-
-  // Por Género
-  const generos = {};
-  trabajadores.forEach(t => { const g = t.genero||'Sin datos'; generos[g]=(generos[g]||0)+1; });
-  document.getElementById('stats-genero').innerHTML = renderBars(generos, total, ['#c8102e','#1a3c6e','#9ca3af']);
 
   // Por Grupo
   const sectores = {};
@@ -1184,8 +1310,16 @@ function toggleSection(id) {
   document.getElementById('sec-'+id).classList.toggle('hidden');
   document.getElementById('chev-'+id).classList.toggle('open');
 }
-function toggleHijos() {
-  document.getElementById('g-nhijos').style.display = document.getElementById('f-hijos').value==='SI' ? '' : 'none';
+function toggleDireccion() {
+  const v = document.getElementById('f-mismadir').value;
+  const g = document.getElementById('g-direccion');
+  g.style.display = v === 'SI' ? 'grid' : 'none';
+  if(v === 'NO') {
+    document.getElementById('f-dir').value = '';
+    document.getElementById('f-dep').value = '';
+    document.getElementById('f-prov').value = '';
+    document.getElementById('f-dist').value = '';
+  }
 }
 
 function toggleEducacion() {
@@ -1337,10 +1471,10 @@ function mostrarWorkerCard(t, empresa) {
 //  FORM
 // ════════════════════════════════
 function cargarDatos(t) {
-  const m = {dni:'dni',nac:'nac',ap:'ap',am:'am',nombres:'nom',ec:'ec',dir:'dir',dep:'dep',prov:'prov',dist:'dist',tel1:'tel1',tel2:'tel2',hijos:'hijos',nhijos:'nhijos',edu:'edu',inst:'inst',carrera:'carrera',egreso:'egreso',incap:'incap',cem:'cem',celcem:'celcem'};
+  const m = {dni:'dni',nac:'nac',ap:'ap',am:'am',nombres:'nom',ec:'ec',dir:'dir',dep:'dep',prov:'prov',dist:'dist',tel1:'tel1',tel2:'tel2',hijos:'hijos',edu:'edu',inst:'inst',carrera:'carrera',egreso:'egreso',incap:'incap',cem:'cem',celcem:'celcem'};
   Object.entries(m).forEach(([k,id]) => { const el=document.getElementById('f-'+id); if(el) el.value=t[k]||''; });
   const hv = (t.hijos||'').toUpperCase();
-  if(hv==='SI'||hv==='SÍ') { document.getElementById('g-nhijos').style.display=''; document.getElementById('f-hijos').value='SI'; }
+  if(hv==='SI'||hv==='SÍ') { document.getElementById('f-hijos').value='SI'; }
   // Activar campos educación si corresponde
   toggleEducacion();
   // Cargar parentesco si existe
@@ -1349,8 +1483,7 @@ function cargarDatos(t) {
 }
 
 function limpiarFormularioInterno() {
-  ['dni','nac','ap','am','nom','genero','ec','dir','dep','prov','dist','tel1','tel2','hijos','nhijos','edu','inst','carrera','egreso','incap','cem','celcem','parentesco','parentesco-otro'].forEach(c => { const el=document.getElementById('f-'+c); if(el) el.value=''; });
-  document.getElementById('g-nhijos').style.display='none';
+  ['dni','nac','ap','am','nom','ec','dir','dep','prov','dist','tel1','tel2','hijos','edu','inst','carrera','egreso','incap','cem','celcem','parentesco','parentesco-otro'].forEach(c => { const el=document.getElementById('f-'+c); if(el) el.value=''; });
   document.getElementById('g-edu-superior').style.display='none';
   document.getElementById('g-parentesco-otro').style.display='none';
   const hint=document.getElementById('tel-hint'); if(hint){ hint.style.color='var(--muted2)'; hint.textContent='Ingresa 7 dígitos (fijo) o 9 dígitos (celular)'; }
@@ -1376,6 +1509,7 @@ function obtenerDatosFormulario() {
     am:  document.getElementById('f-am').value.trim(),
     nombres: document.getElementById('f-nom').value.trim(),
     ec:  document.getElementById('f-ec').value,
+    mismadir: (document.getElementById('f-mismadir')||{}).value || '',
     dir: document.getElementById('f-dir').value.trim(),
     dep: document.getElementById('f-dep').value.trim(),
     prov: document.getElementById('f-prov').value.trim(),
@@ -1383,7 +1517,6 @@ function obtenerDatosFormulario() {
     tel1: document.getElementById('f-tel1').value.trim(),
     tel2: document.getElementById('f-tel2').value.trim(),
     hijos: document.getElementById('f-hijos').value,
-    nhijos: document.getElementById('f-nhijos').value,
     edu: document.getElementById('f-edu').value,
     inst: document.getElementById('f-inst').value.trim(),
     carrera: document.getElementById('f-carrera').value.trim(),
@@ -1391,7 +1524,6 @@ function obtenerDatosFormulario() {
     incap: document.getElementById('f-incap').value,
     cem: document.getElementById('f-cem').value.trim(),
     celcem: document.getElementById('f-celcem').value.trim(),
-    genero: (document.getElementById('f-genero')||{}).value || '',
     parentesco: (document.getElementById('f-parentesco')||{}).value || '',
     parentescoOtro: (document.getElementById('f-parentesco-otro')||{}).value || '',
     fecha: new Date().toLocaleDateString('es-PE'),
@@ -1415,14 +1547,19 @@ function validarDatos(d) {
 }
 
 function guardarRegistro() {
+  if(!sesionActiva) { showToast('⚠️ Primero inicia un registro con el botón "Nuevo registro"','error'); abrirSesionModal(); return; }
   const datos = obtenerDatosFormulario();
   if(!validarDatos(datos)) return;
   const idx = trabajadores.findIndex(t => t.dni===datos.dni);
   if(idx!==-1) trabajadores[idx]=datos; else { trabajadores.push(datos); hoyCount++; localStorage.setItem('hoy_count',hoyCount); }
   localStorage.setItem('pd_local', JSON.stringify(trabajadores));
   registrarEnBBRegistro(datos);
-  // Incrementar contador de sesión
-  if(sesionActiva) { sesionActiva.registrados++; actualizarContador(); }
+  // Incrementar contador de sesión y re-sincronizar con el grupo compartido
+  if(sesionActiva) {
+    sesionActiva.registrados++;
+    actualizarContador();
+    setTimeout(() => sincronizarContadorGrupo(), 1500);
+  }
   limpiarFormulario();
   mostrarStatus('success','✅ Registrado en BB.REGISTRO correctamente');
 }
@@ -1465,6 +1602,47 @@ function renderLista() {
   cont.innerHTML=html;
 }
 function filtrarLista() { renderLista(); }
+
+// ── CAMBIO 08: Admin ve TODOS los registros de BB.REGISTRO ──
+let todosRegistros = [];
+async function cargarTodosRegistros() {
+  if(!gsConfig.habilitado || !gsConfig.webhookUrl) { showToast('Sin conexión Google Sheets','error'); return; }
+  const cont = document.getElementById('adminTableContainer');
+  cont.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><h3>Cargando todos los registros...</h3></div>';
+  try {
+    const url = gsConfig.webhookUrl + '?accion=listarBBRegistro';
+    const resp = await fetch(url);
+    const txt = await resp.text();
+    const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
+    const data = JSON.parse(m ? m[1] : txt);
+    todosRegistros = data.registros || [];
+    renderTodosRegistros();
+    showToast('✅ ' + todosRegistros.length + ' registros cargados','success');
+  } catch(e) {
+    cont.innerHTML = '<div class="empty-state"><div class="empty-icon">❌</div><h3>Error al cargar</h3></div>';
+  }
+}
+
+function renderTodosRegistros() {
+  const q = (document.getElementById('filterAdminInput').value||'').toLowerCase();
+  const f = todosRegistros.filter(t =>
+    (String(t.dni)||'').includes(q) || (t.nombres||'').toLowerCase().includes(q) ||
+    (t.ap||'').toLowerCase().includes(q) || (t.registradoPor||'').toLowerCase().includes(q) ||
+    (t.sector||'').toLowerCase().includes(q));
+  const cont = document.getElementById('adminTableContainer');
+  if(!f.length) { cont.innerHTML = '<div class="empty-state"><div class="empty-icon">🌐</div><h3>Sin registros</h3></div>'; return; }
+  let html = '<div class="table-wrap"><table><thead><tr><th>DNI</th><th>Nombre</th><th>Grupo</th><th>Tipo</th><th>Usuario</th><th>Fecha</th></tr></thead><tbody>';
+  f.forEach(t => {
+    html += '<tr><td><strong style="font-family:JetBrains Mono,monospace;font-size:12px;">'+t.dni+'</strong></td>'+
+      '<td>'+(t.nombres||'')+' '+(t.ap||'')+' '+(t.am||'')+'</td>'+
+      '<td>'+(t.sector||'-')+'</td>'+
+      '<td><span class="badge badge-blue">'+(t.tipo||'-')+'</span></td>'+
+      '<td>'+(t.registradoPor||'-')+'</td>'+
+      '<td style="font-size:11px;">'+(t.fecha||'-')+'</td></tr>';
+  });
+  html += '</tbody></table></div>';
+  cont.innerHTML = html;
+}
 function actualizarStats() { document.getElementById('statTotal').textContent=trabajadores.length; document.getElementById('statHoy').textContent=hoyCount; }
 function editarDesdeTabla(dni) {
   document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));
@@ -1576,18 +1754,21 @@ function cerrarModal() { document.getElementById('modalOverlay').classList.remov
 //  EXCEL
 // ════════════════════════════════
 function exportarExcel() {
-  if(!trabajadores.length) { showToast('Sin datos','error'); return; }
-  const h=['DNI','ApellidoPaterno','ApellidoMaterno','Nombres','Nacionalidad','EstadoCivil','Direccion','Departamento','Provincia','Distrito','Telefono1','Telefono2','TieneHijos','CantHijos','NivelEducativo','Institucion','Carrera','AnoEgreso','Incapacitado','ContactoEmergencia','CelularEmergencia','FechaRegistro'];
-  const r=trabajadores.map(t=>[t.dni,t.ap,t.am,t.nombres,t.nac,t.ec,t.dir,t.dep,t.prov,t.dist,t.tel1,t.tel2,t.hijos,t.nhijos,t.edu,t.inst,t.carrera,t.egreso,t.incap,t.cem,t.celcem,t.fecha]);
-  const ws=XLSX.utils.aoa_to_sheet([h,...r]); ws['!cols']=h.map(()=>({wch:18}));
-  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Personal');
-  XLSX.writeFile(wb,`Personal_${new Date().toLocaleDateString('es-PE').replace(/\//g,'-')}.xlsx`);
-  showToast('✅ Excel exportado','success');
+  if(typeof XLSX === 'undefined') { showToast('⚠️ Librería Excel no cargó. Usa CSV.','error'); return; }
+  if(!trabajadores.length) { showToast('Sin datos para exportar','error'); return; }
+  try {
+    const h=['DNI','ApellidoPaterno','ApellidoMaterno','Nombres','Nacionalidad','EstadoCivil','SigueMismaDir','Direccion','Departamento','Provincia','Distrito','Telefono1','Telefono2','TieneHijos','NivelEducativo','Institucion','Carrera','AnoEgreso','Discapacidad','Parentesco','ContactoReferencia','TelefonoReferencia','FechaRegistro','Ruta','Codigo','Grupo','Tipo','RegistradoPor'];
+    const r=trabajadores.map(t=>[t.dni,t.ap,t.am,t.nombres,t.nac,t.ec,t.mismadir||'',t.dir,t.dep,t.prov,t.dist,t.tel1,t.tel2,t.hijos,t.edu,t.inst,t.carrera,t.egreso,t.incap,t.parentesco||'',t.cem,t.celcem,t.fecha,t.ruta||'',t.codigo||'',t.sector||'',t.tipo||'',t.registradoPor||'']);
+    const ws=XLSX.utils.aoa_to_sheet([h,...r]); ws['!cols']=h.map(()=>({wch:16}));
+    const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Personal');
+    XLSX.writeFile(wb,`Personal_${new Date().toLocaleDateString('es-PE').replace(/\//g,'-')}.xlsx`);
+    showToast('✅ Excel exportado','success');
+  } catch(err) { showToast('Error al exportar: '+err.message,'error'); }
 }
 function exportarCSV() {
-  if(!trabajadores.length) { showToast('Sin datos','error'); return; }
-  const h=['DNI','ApellidoPaterno','ApellidoMaterno','Nombres','Nacionalidad','EstadoCivil','Direccion','Departamento','Provincia','Distrito','Telefono1','Telefono2','TieneHijos','CantHijos','NivelEducativo','Institucion','Carrera','AnoEgreso','Incapacitado','ContactoEmergencia','CelularEmergencia','FechaRegistro'];
-  const r=trabajadores.map(t=>[t.dni,t.ap,t.am,t.nombres,t.nac,t.ec,t.dir,t.dep,t.prov,t.dist,t.tel1,t.tel2,t.hijos,t.nhijos,t.edu,t.inst,t.carrera,t.egreso,t.incap,t.cem,t.celcem,t.fecha]);
+  if(!trabajadores.length) { showToast('Sin datos para exportar','error'); return; }
+  const h=['DNI','ApellidoPaterno','ApellidoMaterno','Nombres','Nacionalidad','EstadoCivil','SigueMismaDir','Direccion','Departamento','Provincia','Distrito','Telefono1','Telefono2','TieneHijos','NivelEducativo','Institucion','Carrera','AnoEgreso','Discapacidad','Parentesco','ContactoReferencia','TelefonoReferencia','FechaRegistro','Ruta','Codigo','Grupo','Tipo','RegistradoPor'];
+  const r=trabajadores.map(t=>[t.dni,t.ap,t.am,t.nombres,t.nac,t.ec,t.mismadir||'',t.dir,t.dep,t.prov,t.dist,t.tel1,t.tel2,t.hijos,t.edu,t.inst,t.carrera,t.egreso,t.incap,t.parentesco||'',t.cem,t.celcem,t.fecha,t.ruta||'',t.codigo||'',t.sector||'',t.tipo||'',t.registradoPor||'']);
   const csv='\uFEFF'+[h,...r].map(row=>row.map(v=>`"${(v||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
   const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
   a.download=`Personal_${new Date().toLocaleDateString('es-PE').replace(/\//g,'-')}.csv`; a.click();
@@ -1650,6 +1831,65 @@ function copiarCodigo() {
 }
 
 // ════════════════════════════════
+//  QR — Registro de trabajadores
+// ════════════════════════════════
+async function registrarQR() {
+  const dni = document.getElementById('qr-dni').value.trim();
+  const ap  = document.getElementById('qr-ap').value.trim().toUpperCase();
+  const am  = document.getElementById('qr-am').value.trim().toUpperCase();
+  const nom = document.getElementById('qr-nom').value.trim().toUpperCase();
+  const err = document.getElementById('qrError');
+  const btn = document.getElementById('qrBtn');
+
+  if(!dni || !/^\d{8}$/.test(dni)) { err.textContent='⚠️ DNI inválido (8 dígitos)'; err.style.display='block'; return; }
+  if(!ap || !nom) { err.textContent='⚠️ Completa apellido paterno y nombres'; err.style.display='block'; return; }
+
+  err.style.display='none';
+  btn.disabled=true; btn.textContent='Enviando...';
+
+  try {
+    const payload = { accion:'registrarQR', dni, ap, am, nombres:nom, fecha:new Date().toLocaleDateString('es-PE') };
+    const url = gsConfig.webhookUrl + '?data=' + encodeURIComponent(JSON.stringify(payload));
+    const resp = await fetch(url);
+    const txt = await resp.text();
+    const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
+    const r = JSON.parse(m ? m[1] : txt);
+    if(r.ok) {
+      document.getElementById('qrForm').style.display='none';
+      document.getElementById('qrSuccess').style.display='block';
+    } else {
+      err.textContent='Error al enviar. Intenta de nuevo.'; err.style.display='block';
+      btn.disabled=false; btn.textContent='Enviar mis datos';
+    }
+  } catch(e) {
+    err.textContent='Error de conexión. Intenta de nuevo.'; err.style.display='block';
+    btn.disabled=false; btn.textContent='Enviar mis datos';
+  }
+}
+
+function generarQR() {
+  const baseUrl = window.location.origin + window.location.pathname;
+  const qrUrl = baseUrl + '?qr=1';
+  document.getElementById('qrUrlText').textContent = qrUrl;
+  const box = document.getElementById('qrCodeBox');
+  box.innerHTML = '';
+  if(typeof QRCode === 'undefined') { showToast('Librería QR no cargó','error'); return; }
+  new QRCode(box, { text: qrUrl, width: 200, height: 200, colorDark:'#1a3c6e', colorLight:'#ffffff' });
+  showToast('✅ QR generado','success');
+}
+
+function descargarQR() {
+  const img = document.querySelector('#qrCodeBox img') || document.querySelector('#qrCodeBox canvas');
+  if(!img) { showToast('Primero genera el QR','error'); return; }
+  let dataUrl;
+  if(img.tagName === 'CANVAS') dataUrl = img.toDataURL('image/png');
+  else dataUrl = img.src;
+  const a = document.createElement('a');
+  a.href = dataUrl; a.download = 'QR_Registro_Unifrutti.png'; a.click();
+  showToast('✅ QR descargado','success');
+}
+
+// ════════════════════════════════
 //  TOAST
 // ════════════════════════════════
 let toastTimer;
@@ -1662,6 +1902,13 @@ function showToast(msg, type='success') {
 // ════════════════════════════════
 //  INIT
 // ════════════════════════════════
+// Detectar si es acceso vía QR (trabajador)
+const urlParams = new URLSearchParams(window.location.search);
+if(urlParams.get('qr') === '1') {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('qrScreen').style.display = 'flex';
+}
+
 // Si ya tiene GS config, mostrarlo en login
 actualizarEstadoConexion();
 
@@ -1669,6 +1916,16 @@ document.getElementById('modalOverlay').addEventListener('click',function(e){ if
 document.getElementById('loginPass').addEventListener('keypress',function(e){ if(e.key==='Enter') iniciarSesion(); });
 document.getElementById('loginUser').addEventListener('keypress',function(e){ if(e.key==='Enter') document.getElementById('loginPass').focus(); });
 document.getElementById('dniSearch').addEventListener('keypress',function(e){ if(e.key==='Enter') buscarDNI(); });
+
+// CAMBIO 05: Convertir a MAYÚSCULAS todo lo que escribe el usuario en campos de texto
+document.addEventListener('input', function(e) {
+  const el = e.target;
+  if(el.tagName === 'INPUT' && el.type === 'text' && el.id && el.id.startsWith('f-')) {
+    const start = el.selectionStart, end = el.selectionEnd;
+    el.value = el.value.toUpperCase();
+    el.setSelectionRange(start, end);
+  }
+});
 </script>
 </body>
 </html>
