@@ -290,39 +290,120 @@ tr:hover td { background: #f8faff; }
 <body>
 
 <!-- ══════════ PANTALLA QR (registro trabajador) ══════════ -->
-<div id="qrScreen" style="display:none;min-height:100vh;align-items:center;justify-content:center;background:linear-gradient(145deg,#0d1f3c 0%,#1a3c6e 40%,#c8102e 100%);padding:20px;">
-  <div class="login-box">
-    <div class="login-logo" style="text-align:center;margin-bottom:20px;">
+<div id="qrScreen" style="display:none;min-height:100vh;align-items:flex-start;justify-content:center;background:linear-gradient(145deg,#0d1f3c 0%,#1a3c6e 40%,#c8102e 100%);padding:20px;">
+  <div class="login-box" style="max-width:440px;">
+    <div class="login-logo" style="text-align:center;margin-bottom:16px;">
       <div style="font-size:24px;font-weight:900;letter-spacing:-1px;">
         <span style="color:#c8102e;">uni</span><span style="color:#1a3c6e;">frutti</span>
       </div>
-      <div style="font-size:10px;color:#6b7280;margin-top:3px;letter-spacing:1px;text-transform:uppercase;">Pre-registro de Personal</div>
+      <div style="font-size:10px;color:#6b7280;margin-top:3px;letter-spacing:1px;text-transform:uppercase;">Registro de Personal</div>
     </div>
     <div class="login-title" style="text-align:center;">📝 Registra tus datos</div>
     <div id="qrError" class="login-error"></div>
     <div id="qrSuccess" style="display:none;background:#e8eef7;border:1px solid #b8cce4;color:#1a3c6e;border-radius:10px;padding:14px;font-size:13px;margin-bottom:14px;text-align:center;line-height:1.5;">
-      ✅ <strong>¡Registro exitoso!</strong><br>Gracias. Tus datos fueron enviados. Recuerda que debes completar los demás campos con el personal de RR.HH.
+      ✅ <strong>¡Registro exitoso!</strong><br>Gracias, tus datos fueron enviados correctamente.
     </div>
     <div id="qrForm">
+      <!-- BÚSQUEDA DNI -->
       <div class="login-field">
-        <label class="login-label">DNI (8 dígitos)</label>
-        <input type="tel" id="qr-dni" class="login-input" placeholder="00000000" maxlength="8" inputmode="numeric" style="font-family:'JetBrains Mono',monospace;letter-spacing:1px;">
+        <label class="login-label">Ingresa tu DNI (8 dígitos)</label>
+        <div style="display:flex;gap:8px;">
+          <input type="tel" id="qr-dni" class="login-input" placeholder="00000000" maxlength="8" inputmode="numeric" style="font-family:'JetBrains Mono',monospace;letter-spacing:1px;flex:1;">
+          <button class="login-btn" style="width:auto;margin-top:0;padding:12px 18px;" onclick="qrBuscar()">🔍</button>
+        </div>
       </div>
-      <div class="login-field">
-        <label class="login-label">Apellido Paterno</label>
-        <input type="text" id="qr-ap" class="login-input" placeholder="Apellido paterno" style="text-transform:uppercase;">
-      </div>
-      <div class="login-field">
-        <label class="login-label">Apellido Materno</label>
-        <input type="text" id="qr-am" class="login-input" placeholder="Apellido materno" style="text-transform:uppercase;">
-      </div>
-      <div class="login-field">
-        <label class="login-label">Nombres</label>
-        <input type="text" id="qr-nom" class="login-input" placeholder="Nombres completos" style="text-transform:uppercase;">
-      </div>
-      <button class="login-btn" onclick="registrarQR()" id="qrBtn">Enviar mis datos</button>
-      <div style="font-size:11px;color:#6b7280;margin-top:14px;text-align:center;line-height:1.5;">
-        ℹ️ Solo registra tu DNI, nombres y apellidos. Los demás campos los completarás con el personal de RR.HH.
+      <div id="qrBuscarStatus" style="font-size:12px;margin-bottom:10px;"></div>
+
+      <div id="qrCampos" style="display:none;">
+        <div class="login-field">
+          <label class="login-label">Apellido Paterno *</label>
+          <input type="text" id="qr-ap" class="login-input" style="text-transform:uppercase;">
+        </div>
+        <div class="login-field">
+          <label class="login-label">Apellido Materno</label>
+          <input type="text" id="qr-am" class="login-input" style="text-transform:uppercase;">
+        </div>
+        <div class="login-field">
+          <label class="login-label">Nombres *</label>
+          <input type="text" id="qr-nom" class="login-input" style="text-transform:uppercase;">
+        </div>
+        <div class="login-field">
+          <label class="login-label">Nacionalidad</label>
+          <input type="text" id="qr-nac" class="login-input" style="text-transform:uppercase;" placeholder="PERUANA">
+        </div>
+        <div class="login-field">
+          <label class="login-label">Estado Civil</label>
+          <select id="qr-ec" class="login-input">
+            <option value="">— Seleccionar —</option>
+            <option>SOLTERO</option><option>CASADO</option><option>CONVIVIENTE</option><option>DIVORCIADO</option><option>VIUDO</option>
+          </select>
+        </div>
+        <div class="login-field">
+          <label class="login-label">¿Tiene Hijos?</label>
+          <select id="qr-hijos" class="login-input"><option value="">— Seleccionar —</option><option>SI</option><option>NO</option></select>
+        </div>
+        <div class="login-field">
+          <label class="login-label">Dirección</label>
+          <input type="text" id="qr-dir" class="login-input" style="text-transform:uppercase;">
+        </div>
+        <div class="login-field">
+          <label class="login-label">Departamento</label>
+          <select id="qr-dep" class="login-input" onchange="qrCargarProvincias()"><option value="">— Seleccionar —</option></select>
+        </div>
+        <div class="login-field">
+          <label class="login-label">Provincia</label>
+          <select id="qr-prov" class="login-input"><option value="">— Seleccionar —</option></select>
+        </div>
+        <div class="login-field">
+          <label class="login-label">Distrito</label>
+          <div id="qr-dist-wrap"><input type="text" id="qr-dist" class="login-input" style="text-transform:uppercase;"></div>
+        </div>
+        <div class="login-field">
+          <label class="login-label">Teléfono</label>
+          <input type="tel" id="qr-tel1" class="login-input" inputmode="numeric" placeholder="999000000">
+        </div>
+        <div class="login-field">
+          <label class="login-label">Nivel Educativo</label>
+          <select id="qr-edu" class="login-input" onchange="qrToggleEdu()">
+            <option value="">— Seleccionar —</option>
+            <option value="Educación técnica completa">Educación técnica completa</option>
+            <option value="Educación Universitaria completa">Educación Universitaria completa</option>
+            <option value="Primaria Completa">Primaria Completa</option>
+            <option value="Primaria incompleta">Primaria incompleta</option>
+            <option value="Secundaria Completa">Secundaria Completa</option>
+            <option value="Secundaria incompleta">Secundaria incompleta</option>
+            <option value="Sin educación formal">Sin educación formal</option>
+          </select>
+        </div>
+        <div id="qr-edu-sup" style="display:none;">
+          <div class="login-field"><label class="login-label">Institución</label><input type="text" id="qr-inst" class="login-input" style="text-transform:uppercase;"></div>
+          <div class="login-field"><label class="login-label">Carrera</label><input type="text" id="qr-carrera" class="login-input" style="text-transform:uppercase;"></div>
+          <div class="login-field"><label class="login-label">Año de Egreso</label><input type="tel" id="qr-egreso" class="login-input" maxlength="4" inputmode="numeric"></div>
+        </div>
+        <div class="login-field">
+          <label class="login-label">¿Tiene Discapacidad?</label>
+          <select id="qr-incap" class="login-input"><option value="">— Seleccionar —</option><option>SI</option><option>NO</option></select>
+        </div>
+        <div class="login-field">
+          <label class="login-label">Parentesco contacto de referencia</label>
+          <select id="qr-parentesco" class="login-input">
+            <option value="">— Seleccionar —</option>
+            <option>Esposo(a)</option><option>Hijo(a)</option><option>Papa</option><option>Mamá</option>
+            <option>Tío(a)</option><option>Sobrino(a)</option><option>Primo(a)</option><option>Otros</option>
+          </select>
+        </div>
+        <div class="login-field">
+          <label class="login-label">Nombre del contacto de referencia</label>
+          <input type="text" id="qr-cem" class="login-input" style="text-transform:uppercase;">
+        </div>
+        <div class="login-field">
+          <label class="login-label">Teléfono de referencia</label>
+          <input type="tel" id="qr-celcem" class="login-input" inputmode="numeric" maxlength="9" placeholder="999000000">
+        </div>
+        <button class="login-btn" onclick="registrarQR()" id="qrBtn">Enviar mis datos</button>
+        <div style="font-size:11px;color:#6b7280;margin-top:14px;text-align:center;line-height:1.5;">
+          ℹ️ Completa todos los campos con tus datos personales.
+        </div>
       </div>
     </div>
   </div>
@@ -545,7 +626,7 @@ tr:hover td { background: #f8faff; }
       </div>
       <div class="section-body hidden" id="sec-ubicacion">
         <div class="input-group">
-          <label class="input-label">¿Sigue viviendo en la misma dirección?</label>
+          <label class="input-label">¿El colaborador sigue viviendo en su misma dirección?</label>
           <select id="f-mismadir" class="input-field" onchange="toggleDireccion()">
             <option value="">— Seleccionar —</option>
             <option value="SI">SI</option>
@@ -560,27 +641,25 @@ tr:hover td { background: #f8faff; }
         <div class="form-row-2">
           <div class="input-group">
             <label class="input-label">Departamento</label>
-            <input type="text" id="f-dep" class="input-field" placeholder="Lima">
+            <select id="f-dep" class="input-field" onchange="cargarProvincias()">
+              <option value="">— Seleccionar —</option>
+            </select>
           </div>
           <div class="input-group">
             <label class="input-label">Provincia</label>
-            <input type="text" id="f-prov" class="input-field" placeholder="Lima">
+            <select id="f-prov" class="input-field">
+              <option value="">— Seleccionar —</option>
+            </select>
           </div>
         </div>
         <div class="input-group">
           <label class="input-label">Distrito</label>
-          <input type="text" id="f-dist" class="input-field" placeholder="Miraflores">
+          <div id="f-dist-wrap"><input type="text" id="f-dist" class="input-field" placeholder="Distrito"></div>
         </div>
         </div>
-        <div class="form-row-2">
-          <div class="input-group">
-            <label class="input-label">Teléfono 1</label>
-            <input type="tel" id="f-tel1" class="input-field" placeholder="999000000" inputmode="numeric">
-          </div>
-          <div class="input-group">
-            <label class="input-label">Teléfono 2</label>
-            <input type="tel" id="f-tel2" class="input-field" placeholder="999000000" inputmode="numeric">
-          </div>
+        <div class="input-group">
+          <label class="input-label">Teléfono 1</label>
+          <input type="tel" id="f-tel1" class="input-field" placeholder="999000000" inputmode="numeric">
         </div>
       </div>
     </div>
@@ -969,9 +1048,15 @@ function handleRequest(d) {
     var qsh = ss.getSheetByName('PRE-REGISTRO-QR');
     if (!qsh) {
       qsh = ss.insertSheet('PRE-REGISTRO-QR');
-      qsh.appendRow(['DNI','ApellidoPaterno','ApellidoMaterno','Nombres','FechaRegistro']);
+      qsh.appendRow(['DNI','ApellidoPaterno','ApellidoMaterno','Nombres','Nacionalidad',
+        'EstadoCivil','TieneHijos','Direccion','Departamento','Provincia','Distrito',
+        'Telefono','NivelEducativo','Institucion','Carrera','AnoEgreso','Discapacidad',
+        'Parentesco','ContactoReferencia','TelefonoReferencia','FechaRegistro']);
     }
-    qsh.appendRow([d.dni, d.ap, d.am, d.nombres, d.fecha]);
+    qsh.appendRow([d.dni, d.ap, d.am, d.nombres, d.nac||'', d.ec||'', d.hijos||'',
+      d.dir||'', d.dep||'', d.prov||'', d.dist||'', d.tel1||'', d.edu||'',
+      d.inst||'', d.carrera||'', d.egreso||'', d.incap||'', d.parentesco||'',
+      d.cem||'', d.celcem||'', d.fecha]);
     return JSON.stringify({ok:true});
   }
 
@@ -1062,6 +1147,10 @@ function handleRequest(d) {
 // ════════════════════════════════
 //  DATA & SESSION
 // ════════════════════════════════
+const PERU_UBIGEO = {"AMAZONAS": ["Chachapoyas", "Bagua", "Bongará", "Condorcanqui", "Luya", "Rodríguez de Mendoza", "Utcubamba"], "ÁNCASH": ["Huaraz", "Aija", "Antonio Raymondi", "Asunción", "Bolognesi", "Carhuaz", "Carlos Fermín Fitzcarrald", "Casma", "Corongo", "Huari", "Huarmey", "Huaylas", "Mariscal Luzuriaga", "Ocros", "Pallasca", "Pomabamba", "Recuay", "Santa", "Sihuas", "Yungay"], "APURÍMAC": ["Abancay", "Andahuaylas", "Antabamba", "Aymaraes", "Cotabambas", "Chincheros", "Grau"], "AREQUIPA": ["Arequipa", "Camaná", "Caravelí", "Castilla", "Caylloma", "Condesuyos", "Islay", "La Unión"], "AYACUCHO": ["Huamanga", "Cangallo", "Huanca Sancos", "Huanta", "La Mar", "Lucanas", "Parinacochas", "Páucar del Sara Sara", "Sucre", "Víctor Fajardo", "Vilcas Huamán"], "CAJAMARCA": ["Cajamarca", "Cajabamba", "Celendín", "Chota", "Contumazá", "Cutervo", "Hualgayoc", "Jaén", "San Ignacio", "San Marcos", "San Miguel", "San Pablo", "Santa Cruz"], "CALLAO": ["Callao"], "CUSCO": ["Cusco", "Acomayo", "Anta", "Calca", "Canas", "Canchis", "Chumbivilcas", "Espinar", "La Convención", "Paruro", "Paucartambo", "Quispicanchi", "Urubamba"], "HUANCAVELICA": ["Huancavelica", "Acobamba", "Angaraes", "Castrovirreyna", "Churcampa", "Huaytará", "Tayacaja"], "HUÁNUCO": ["Huánuco", "Ambo", "Dos de Mayo", "Huacaybamba", "Huamalíes", "Leoncio Prado", "Marañón", "Pachitea", "Puerto Inca", "Lauricocha", "Yarowilca"], "ICA": ["Ica", "Chincha", "Nasca", "Palpa", "Pisco"], "JUNÍN": ["Huancayo", "Concepción", "Chanchamayo", "Jauja", "Junín", "Satipo", "Tarma", "Yauli", "Chupaca"], "LA LIBERTAD": ["Trujillo", "Ascope", "Bolívar", "Chepén", "Julcán", "Otuzco", "Pacasmayo", "Pataz", "Sánchez Carrión", "Santiago de Chuco", "Gran Chimú", "Virú"], "LAMBAYEQUE": ["Chiclayo", "Ferreñafe", "Lambayeque"], "LIMA": ["Lima", "Barranca", "Cajatambo", "Canta", "Cañete", "Huaral", "Huarochirí", "Huaura", "Oyón", "Yauyos"], "LORETO": ["Maynas", "Alto Amazonas", "Loreto", "Mariscal Ramón Castilla", "Requena", "Ucayali", "Datem del Marañón", "Putumayo"], "MADRE DE DIOS": ["Tambopata", "Manu", "Tahuamanu"], "MOQUEGUA": ["Mariscal Nieto", "General Sánchez Cerro", "Ilo"], "PASCO": ["Pasco", "Daniel Alcides Carrión", "Oxapampa"], "PIURA": ["Piura", "Ayabaca", "Huancabamba", "Morropón", "Paita", "Sullana", "Talara", "Sechura"], "PUNO": ["Puno", "Azángaro", "Carabaya", "Chucuito", "El Collao", "Huancané", "Lampa", "Melgar", "Moho", "San Antonio de Putina", "San Román", "Sandia", "Yunguyo"], "SAN MARTÍN": ["Moyobamba", "Bellavista", "El Dorado", "Huallaga", "Lamas", "Mariscal Cáceres", "Picota", "Rioja", "San Martín", "Tocache"], "TACNA": ["Tacna", "Candarave", "Jorge Basadre", "Tarata"], "TUMBES": ["Tumbes", "Contralmirante Villar", "Zarumilla"], "UCAYALI": ["Coronel Portillo", "Atalaya", "Padre Abad", "Purús"]};
+const DISTRITOS = {
+  "PIURA|Piura": ["PIURA","CASTILLA","CATACAOS","CURA MORI","EL TALLÁN","LA ARENA","LA UNIÓN","LAS LOMAS","TAMBOGRANDE","VEINTISÉIS DE OCTUBRE"]
+};
 let trabajadores = JSON.parse(localStorage.getItem('pd_local') || '[]');
 let gsConfig     = JSON.parse(localStorage.getItem('gs_config') || JSON.stringify({
   webhookUrl: 'https://script.google.com/macros/s/AKfycbzLXByoch3vA4SG4p9h2gkHlV5khEfnB-U9SrAH5gcwG2agVWCtfvOnG3zsuXXUr-TH/exec',
@@ -1330,12 +1419,54 @@ function toggleSection(id) {
 function toggleDireccion() {
   const v = document.getElementById('f-mismadir').value;
   const g = document.getElementById('g-direccion');
-  g.style.display = v === 'SI' ? 'grid' : 'none';
-  if(v === 'NO') {
+  // Si NO sigue viviendo en la misma dirección => abrir campos para nueva dirección
+  g.style.display = v === 'NO' ? 'grid' : 'none';
+  if(v === 'SI') {
     document.getElementById('f-dir').value = '';
     document.getElementById('f-dep').value = '';
     document.getElementById('f-prov').value = '';
     document.getElementById('f-dist').value = '';
+  }
+  if(v === 'NO') cargarDepartamentos();
+}
+
+function cargarDepartamentos() {
+  const sel = document.getElementById('f-dep');
+  if(sel.options.length > 1) return; // ya cargado
+  Object.keys(PERU_UBIGEO).forEach(dep => {
+    const o = document.createElement('option');
+    o.value = dep; o.textContent = dep;
+    sel.appendChild(o);
+  });
+}
+
+function cargarProvincias() {
+  const dep = document.getElementById('f-dep').value;
+  const selProv = document.getElementById('f-prov');
+  selProv.innerHTML = '<option value="">— Seleccionar —</option>';
+  if(dep && PERU_UBIGEO[dep]) {
+    PERU_UBIGEO[dep].forEach(prov => {
+      const o = document.createElement('option');
+      o.value = prov; o.textContent = prov;
+      selProv.appendChild(o);
+    });
+  }
+  selProv.onchange = actualizarDistrito;
+  actualizarDistrito();
+}
+
+function actualizarDistrito() {
+  const dep = document.getElementById('f-dep').value;
+  const prov = document.getElementById('f-prov').value;
+  const cont = document.getElementById('f-dist-wrap');
+  const key = dep + '|' + prov;
+  if(DISTRITOS[key]) {
+    let html = '<select id="f-dist" class="input-field"><option value="">— Seleccionar —</option>';
+    DISTRITOS[key].forEach(d => { html += '<option value="'+d+'">'+d+'</option>'; });
+    html += '</select>';
+    cont.innerHTML = html;
+  } else {
+    cont.innerHTML = '<input type="text" id="f-dist" class="input-field" placeholder="Distrito">';
   }
 }
 
@@ -1488,7 +1619,7 @@ function mostrarWorkerCard(t, empresa) {
 //  FORM
 // ════════════════════════════════
 function cargarDatos(t) {
-  const m = {dni:'dni',nac:'nac',ap:'ap',am:'am',nombres:'nom',ec:'ec',dir:'dir',dep:'dep',prov:'prov',dist:'dist',tel1:'tel1',tel2:'tel2',hijos:'hijos',edu:'edu',inst:'inst',carrera:'carrera',egreso:'egreso',incap:'incap',cem:'cem',celcem:'celcem'};
+  const m = {dni:'dni',nac:'nac',ap:'ap',am:'am',nombres:'nom',ec:'ec',dir:'dir',dep:'dep',prov:'prov',dist:'dist',tel1:'tel1',hijos:'hijos',edu:'edu',inst:'inst',carrera:'carrera',egreso:'egreso',incap:'incap',cem:'cem',celcem:'celcem'};
   Object.entries(m).forEach(([k,id]) => { const el=document.getElementById('f-'+id); if(el) el.value=t[k]||''; });
   const hv = (t.hijos||'').toUpperCase();
   if(hv==='SI'||hv==='SÍ') { document.getElementById('f-hijos').value='SI'; }
@@ -1500,7 +1631,7 @@ function cargarDatos(t) {
 }
 
 function limpiarFormularioInterno() {
-  ['dni','nac','ap','am','nom','ec','dir','dep','prov','dist','tel1','tel2','hijos','edu','inst','carrera','egreso','incap','cem','celcem','parentesco','parentesco-otro'].forEach(c => { const el=document.getElementById('f-'+c); if(el) el.value=''; });
+  ['dni','nac','ap','am','nom','ec','dir','dep','prov','dist','tel1','hijos','edu','inst','carrera','egreso','incap','cem','celcem','parentesco','parentesco-otro'].forEach(c => { const el=document.getElementById('f-'+c); if(el) el.value=''; });
   document.getElementById('g-edu-superior').style.display='none';
   document.getElementById('g-parentesco-otro').style.display='none';
   const hint=document.getElementById('tel-hint'); if(hint){ hint.style.color='var(--muted2)'; hint.textContent='Ingresa 7 dígitos (fijo) o 9 dígitos (celular)'; }
@@ -1532,7 +1663,6 @@ function obtenerDatosFormulario() {
     prov: document.getElementById('f-prov').value.trim(),
     dist: document.getElementById('f-dist').value.trim(),
     tel1: document.getElementById('f-tel1').value.trim(),
-    tel2: document.getElementById('f-tel2').value.trim(),
     hijos: document.getElementById('f-hijos').value,
     edu: document.getElementById('f-edu').value,
     inst: document.getElementById('f-inst').value.trim(),
@@ -1914,13 +2044,92 @@ function copiarCodigo() {
 }
 
 // ════════════════════════════════
-//  QR — Registro de trabajadores
+//  QR — Registro de trabajadores (formulario completo)
 // ════════════════════════════════
-async function registrarQR() {
+async function qrBuscar() {
   const dni = document.getElementById('qr-dni').value.trim();
-  const ap  = document.getElementById('qr-ap').value.trim().toUpperCase();
-  const am  = document.getElementById('qr-am').value.trim().toUpperCase();
-  const nom = document.getElementById('qr-nom').value.trim().toUpperCase();
+  const status = document.getElementById('qrBuscarStatus');
+  if(!dni || !/^\d{8}$/.test(dni)) { status.style.color='#c8102e'; status.textContent='⚠️ DNI inválido (8 dígitos)'; return; }
+
+  status.style.color='#1a3c6e'; status.textContent='🔍 Buscando tus datos...';
+  document.getElementById('qrCampos').style.display='none';
+
+  // Cargar departamentos en el select QR
+  qrCargarDepartamentos();
+
+  let encontrado = null;
+  if(gsConfig.habilitado && gsConfig.webhookUrl) {
+    try {
+      const [r1, r2] = await Promise.all([
+        buscarEnEmpresa(dni, 'Rapel'),
+        buscarEnEmpresa(dni, 'Verfrut')
+      ]);
+      if(r1 && r1.encontrado) encontrado = r1;
+      else if(r2 && r2.encontrado) encontrado = r2;
+    } catch(e) {}
+  }
+
+  document.getElementById('qrCampos').style.display='block';
+
+  if(encontrado) {
+    status.style.color='#059669';
+    status.textContent='✅ ' + (encontrado.nombres||'') + ' ' + (encontrado.ap||'') + ' ' + (encontrado.am||'') + ' — completa los demás campos';
+    document.getElementById('qr-ap').value  = (encontrado.ap||'').toUpperCase();
+    document.getElementById('qr-am').value  = (encontrado.am||'').toUpperCase();
+    document.getElementById('qr-nom').value = (encontrado.nombres||'').toUpperCase();
+  } else {
+    status.style.color='#d97706';
+    status.textContent='📝 No se encontraron datos previos. Llena todos los campos.';
+  }
+}
+
+function qrCargarDepartamentos() {
+  const sel = document.getElementById('qr-dep');
+  if(sel.options.length > 1) return;
+  Object.keys(PERU_UBIGEO).forEach(dep => {
+    const o = document.createElement('option'); o.value=dep; o.textContent=dep; sel.appendChild(o);
+  });
+}
+
+function qrCargarProvincias() {
+  const dep = document.getElementById('qr-dep').value;
+  const selProv = document.getElementById('qr-prov');
+  selProv.innerHTML = '<option value="">— Seleccionar —</option>';
+  if(dep && PERU_UBIGEO[dep]) {
+    PERU_UBIGEO[dep].forEach(prov => {
+      const o = document.createElement('option'); o.value=prov; o.textContent=prov; selProv.appendChild(o);
+    });
+  }
+  selProv.onchange = qrActualizarDistrito;
+  qrActualizarDistrito();
+}
+
+function qrActualizarDistrito() {
+  const dep = document.getElementById('qr-dep').value;
+  const prov = document.getElementById('qr-prov').value;
+  const cont = document.getElementById('qr-dist-wrap');
+  const key = dep + '|' + prov;
+  if(DISTRITOS[key]) {
+    let html = '<select id="qr-dist" class="login-input"><option value="">— Seleccionar —</option>';
+    DISTRITOS[key].forEach(d => { html += '<option value="'+d+'">'+d+'</option>'; });
+    html += '</select>';
+    cont.innerHTML = html;
+  } else {
+    cont.innerHTML = '<input type="text" id="qr-dist" class="login-input" style="text-transform:uppercase;">';
+  }
+}
+
+function qrToggleEdu() {
+  const v = document.getElementById('qr-edu').value;
+  const sup = v === 'Educación técnica completa' || v === 'Educación Universitaria completa';
+  document.getElementById('qr-edu-sup').style.display = sup ? 'block' : 'none';
+}
+
+async function registrarQR() {
+  const g = id => (document.getElementById(id)||{}).value || '';
+  const dni = g('qr-dni').trim();
+  const ap  = g('qr-ap').trim().toUpperCase();
+  const nom = g('qr-nom').trim().toUpperCase();
   const err = document.getElementById('qrError');
   const btn = document.getElementById('qrBtn');
 
@@ -1931,7 +2140,17 @@ async function registrarQR() {
   btn.disabled=true; btn.textContent='Enviando...';
 
   try {
-    const payload = { accion:'registrarQR', dni, ap, am, nombres:nom, fecha:new Date().toLocaleDateString('es-PE') };
+    const payload = {
+      accion:'registrarQR',
+      dni, ap, am:g('qr-am').toUpperCase(), nombres:nom,
+      nac:g('qr-nac').toUpperCase(), ec:g('qr-ec'), hijos:g('qr-hijos'),
+      dir:g('qr-dir').toUpperCase(), dep:g('qr-dep'), prov:g('qr-prov'), dist:g('qr-dist').toUpperCase(),
+      tel1:g('qr-tel1'), edu:g('qr-edu'), inst:g('qr-inst').toUpperCase(),
+      carrera:g('qr-carrera').toUpperCase(), egreso:g('qr-egreso'),
+      incap:g('qr-incap'), parentesco:g('qr-parentesco'),
+      cem:g('qr-cem').toUpperCase(), celcem:g('qr-celcem'),
+      fecha:new Date().toLocaleDateString('es-PE')
+    };
     const url = gsConfig.webhookUrl + '?data=' + encodeURIComponent(JSON.stringify(payload));
     const resp = await fetch(url);
     const txt = await resp.text();
