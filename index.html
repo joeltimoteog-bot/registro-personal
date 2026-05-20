@@ -981,20 +981,24 @@ function handleRequest(d) {
   if (accion === 'buscar') {
     var sheet = ss.getSheetByName(d.empresa);
     if (!sheet) return JSON.stringify({encontrado:false});
-    var data = sheet.getDataRange().getValues();
-    for (var i = 1; i < data.length; i++) {
-      if (String(data[i][0]).trim()===String(d.dni).trim()
-          || String(parseInt(data[i][0]))===String(d.dni).trim()) {
-        return JSON.stringify({encontrado:true,
-          dni:data[i][0], ap:data[i][1], am:data[i][2], nombres:data[i][3],
-          nac:data[i][4], ec:data[i][5], dir:data[i][6], dep:data[i][7],
-          prov:data[i][8], dist:data[i][9], tel1:data[i][10], tel2:data[i][11],
-          hijos:data[i][12], nhijos:data[i][13], edu:data[i][14], inst:data[i][15],
-          carrera:data[i][16], egreso:data[i][17], incap:data[i][18],
-          cem:data[i][19], celcem:data[i][20]});
-      }
+    // TextFinder: busca rápido el DNI en la columna A sin recorrer todo
+    var dniBuscar = String(d.dni).trim();
+    var col = sheet.getRange(1, 1, sheet.getLastRow(), 1);
+    var encontrado = col.createTextFinder(dniBuscar).matchEntireCell(true).findNext();
+    if (!encontrado) {
+      // Intentar como número (por si el DNI está sin ceros)
+      encontrado = col.createTextFinder(String(parseInt(dniBuscar))).matchEntireCell(true).findNext();
     }
-    return JSON.stringify({encontrado:false});
+    if (!encontrado) return JSON.stringify({encontrado:false});
+    var fila = encontrado.getRow();
+    var v = sheet.getRange(fila, 1, 1, 21).getValues()[0];
+    return JSON.stringify({encontrado:true,
+      dni:v[0], ap:v[1], am:v[2], nombres:v[3],
+      nac:v[4], ec:v[5], dir:v[6], dep:v[7],
+      prov:v[8], dist:v[9], tel1:v[10], tel2:v[11],
+      hijos:v[12], nhijos:v[13], edu:v[14], inst:v[15],
+      carrera:v[16], egreso:v[17], incap:v[18],
+      cem:v[19], celcem:v[20]});
   }
 
   // REGISTRAR PERSONAL
@@ -1249,8 +1253,7 @@ function _setSesion(data) {
   actualizarEstadoConexion();
   actualizarStats();
   if(isAdmin) cargarUsuarios();
-  // Cargar cache de Rapel y Verfrut en segundo plano
-  cargarCacheHojas();
+  // Cache desactivado: con +2000 registros es mejor buscar puntualmente
   // Los administradores entran directo; usuarios normales ven el modal de sesión
   if(!isAdmin) {
     setTimeout(() => abrirSesionModal(), 400);
@@ -1554,21 +1557,10 @@ function buscarDNI() {
 
   document.getElementById('formCard').style.display = 'none';
   document.getElementById('workerCardWrap').innerHTML = '';
-
-  // BÚSQUEDA INSTANTÁNEA en cache local
-  if(cacheLoaded && (cacheRapel.length > 0 || cacheVerfrut.length > 0)) {
-    mostrarStatus('searching','⚡ Buscando...');
-    const r1 = cacheRapel.find(t => String(t.dni).trim() === dni || String(parseInt(t.dni)) === dni);
-    if(r1) { _procesarResultado({...r1, encontrado:true, _empresa:'Rapel'}, dni); return; }
-    const r2 = cacheVerfrut.find(t => String(t.dni).trim() === dni || String(parseInt(t.dni)) === dni);
-    if(r2) { _procesarResultado({...r2, encontrado:true, _empresa:'Verfrut'}, dni); return; }
-    _procesarResultado({encontrado:false}, dni);
-    return;
-  }
-
-  // Fallback: buscar en Google Sheets directo si no hay cache
   mostrarStatus('searching','<span class="searching-dots">🔍 Buscando</span>');
+
   if(gsConfig.habilitado && gsConfig.webhookUrl) {
+    // Buscar ambas hojas en paralelo (rápido: busca solo 1 DNI)
     Promise.all([
       buscarEnEmpresa(dni, 'Rapel'),
       buscarEnEmpresa(dni, 'Verfrut')
@@ -2076,17 +2068,7 @@ async function qrBuscar() {
   qrCargarDepartamentos();
 
   let encontrado = null;
-  // Buscar primero en cache local (instantáneo)
-  if(cacheLoaded && (cacheRapel.length || cacheVerfrut.length)) {
-    const r1 = cacheRapel.find(t => String(t.dni).trim() === dni || String(parseInt(t.dni)) === dni);
-    if(r1) encontrado = {...r1, encontrado:true};
-    else {
-      const r2 = cacheVerfrut.find(t => String(t.dni).trim() === dni || String(parseInt(t.dni)) === dni);
-      if(r2) encontrado = {...r2, encontrado:true};
-    }
-  }
-  // Si no está en cache, buscar en Google Sheets
-  if(!encontrado && gsConfig.habilitado && gsConfig.webhookUrl) {
+  if(gsConfig.habilitado && gsConfig.webhookUrl) {
     try {
       const [r1, r2] = await Promise.all([
         buscarEnEmpresa(dni, 'Rapel'),
@@ -2237,8 +2219,6 @@ const urlParams = new URLSearchParams(window.location.search);
 if(urlParams.get('qr') === '1') {
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('qrScreen').style.display = 'flex';
-  // Cargar cache para búsqueda rápida en el QR
-  cargarCacheHojas();
 }
 
 // Si ya tiene GS config, mostrarlo en login
@@ -2261,4 +2241,5 @@ document.addEventListener('input', function(e) {
 </script>
 </body>
 </html>
+
 
