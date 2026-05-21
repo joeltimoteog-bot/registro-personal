@@ -968,10 +968,15 @@ function handleRequest(d) {
     var sh = ss.getSheetByName('Usuarios');
     if (!sh) return JSON.stringify({ok:false,msg:'Hoja Usuarios no encontrada'});
     var rows = sh.getDataRange().getValues();
+    var passHash = hashPassword(String(d.password).trim());
     for (var i = 1; i < rows.length; i++) {
-      if (String(rows[i][0]).trim().toLowerCase() === String(d.usuario).trim().toLowerCase()
-          && String(rows[i][3]).trim() === String(d.password).trim()) {
-        return JSON.stringify({ok:true, usuario:rows[i][0], cargo:rows[i][1], estado:rows[i][2]});
+      if (String(rows[i][0]).trim().toLowerCase() === String(d.usuario).trim().toLowerCase()) {
+        var almacenada = String(rows[i][3]).trim();
+        // Acepta hash o (por compatibilidad) texto plano la primera vez
+        if (almacenada === passHash || almacenada === String(d.password).trim()) {
+          return JSON.stringify({ok:true, usuario:rows[i][0], cargo:rows[i][1], estado:rows[i][2]});
+        }
+        return JSON.stringify({ok:false, msg:'Usuario o contraseña incorrectos'});
       }
     }
     return JSON.stringify({ok:false, msg:'Usuario o contraseña incorrectos'});
@@ -1080,7 +1085,7 @@ function handleRequest(d) {
   if (accion === 'agregarUsuario') {
     var sh = ss.getSheetByName('Usuarios');
     if (!sh) return JSON.stringify({ok:false, msg:'Hoja Usuarios no encontrada'});
-    sh.appendRow([d.usuario, d.cargo, d.estado, d.password]);
+    sh.appendRow([d.usuario, d.cargo, d.estado, hashPassword(String(d.password).trim())]);
     return JSON.stringify({ok:true});
   }
 
@@ -1099,6 +1104,34 @@ function handleRequest(d) {
   }
 
   return JSON.stringify({error:'accion no reconocida'});
+}
+
+// Convierte una contraseña a hash SHA-256 (irreversible)
+function hashPassword(texto) {
+  var raw = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, texto, Utilities.Charset.UTF_8);
+  var hash = '';
+  for (var i = 0; i < raw.length; i++) {
+    var b = raw[i]; if (b < 0) b += 256;
+    var h = b.toString(16); if (h.length === 1) h = '0' + h;
+    hash += h;
+  }
+  return hash;
+}
+
+// EJECUTA ESTA FUNCIÓN UNA SOLA VEZ para convertir las contraseñas existentes a hash.
+// En el editor de Apps Script: selecciona "migrarPasswords" arriba y presiona Ejecutar.
+function migrarPasswords() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName('Usuarios');
+  var rows = sh.getDataRange().getValues();
+  for (var i = 1; i < rows.length; i++) {
+    var pass = String(rows[i][3]).trim();
+    // Si ya es hash (64 caracteres hex) no la toca
+    if (pass.length === 64 && /^[0-9a-f]+$/.test(pass)) continue;
+    if (pass) {
+      sh.getRange(i + 1, 4).setValue(hashPassword(pass));
+    }
+  }
 }</div>
         <button class="btn btn-outline btn-full" style="margin-top:8px;" onclick="copiarCodigo()">📋 Copiar código</button>
       </div>
@@ -1189,14 +1222,8 @@ async function iniciarSesion() {
   btn.disabled = true;
   load.style.display = 'block';
 
-  // Fallback admin siempre disponible
-  if(user === 'admin' && pass === 'admin2026') {
-    _setSesion({usuario:'admin', cargo:'Administrador', estado:'Administrador'});
-    return;
-  }
-
   if(!gsConfig.habilitado || !gsConfig.webhookUrl) {
-    errEl.textContent = 'Sin conexión a Google Sheets. Usa admin/admin2026 o configura la URL.';
+    errEl.textContent = 'Sin conexión a Google Sheets. Verifica la URL en Config.';
     errEl.style.display = 'block';
     btn.disabled = false; load.style.display = 'none';
     return;
