@@ -599,7 +599,7 @@ tr:hover td { background: #f8faff; }
         <div class="form-row-2">
           <div class="input-group">
             <label class="input-label">Estado Civil</label>
-            <select id="f-ec" class="input-field">
+            <select id="f-ec" class="input-field" onchange="avanzarSiguiente('f-ec')">
               <option value="">— Seleccionar —</option>
               <option>Soltero</option><option>Casado</option>
               <option>Conviviente</option><option>Divorciado</option><option>Viudo</option>
@@ -607,7 +607,7 @@ tr:hover td { background: #f8faff; }
           </div>
           <div class="input-group">
             <label class="input-label">Tiene Hijos</label>
-            <select id="f-hijos" class="input-field">
+            <select id="f-hijos" class="input-field" onchange="avanzarSiguiente('f-hijos')">
               <option value="">— Seleccionar —</option>
               <option value="SI">SI</option>
               <option value="NO">NO</option>
@@ -627,7 +627,7 @@ tr:hover td { background: #f8faff; }
       <div class="section-body hidden" id="sec-ubicacion">
         <div class="input-group">
           <label class="input-label">¿El colaborador sigue viviendo en su misma dirección?</label>
-          <select id="f-mismadir" class="input-field" onchange="toggleDireccion()">
+          <select id="f-mismadir" class="input-field" onchange="toggleDireccion();">
             <option value="">— Seleccionar —</option>
             <option value="SI">SI</option>
             <option value="NO">NO</option>
@@ -710,7 +710,7 @@ tr:hover td { background: #f8faff; }
       <div class="section-body hidden" id="sec-emergencia">
         <div class="input-group">
           <label class="input-label">¿Tiene Discapacidad?</label>
-          <select id="f-incap" class="input-field">
+          <select id="f-incap" class="input-field" onchange="avanzarSiguiente('f-incap')">
             <option value="">— Seleccionar —</option>
             <option value="SI">SI</option>
             <option value="NO">NO</option>
@@ -1011,17 +1011,17 @@ function handleRequest(d) {
     var reg = ss.getSheetByName('BB.REGISTRO');
     if (!reg) {
       reg = ss.insertSheet('BB.REGISTRO');
-      reg.appendRow(['DNI','ApellidoPaterno','ApellidoMaterno','Nombres',
-        'Nacionalidad','Genero','EstadoCivil','Direccion','Departamento','Provincia',
-        'Distrito','Telefono1','Telefono2','TieneHijos','CantHijos',
-        'NivelEducativo','Institucion','Carrera','AnoEgreso','Incapacitado',
-        'Parentesco','ContactoEmergencia','CelularEmergencia',
+      reg.appendRow(['DNI','ApellidoPaterno','ApellidoMaterno','Nombres','Nacionalidad',
+        'EstadoCivil','SigueMismaDir','Direccion','Departamento','Provincia','Distrito',
+        'Telefono1','TieneHijos','NivelEducativo','Institucion','Carrera','AnoEgreso',
+        'Discapacidad','Parentesco','ContactoReferencia','TelefonoReferencia',
         'FechaRegistro','Empresa','Ruta','Codigo','Grupo','Tipo','RegistradoPor']);
     }
-    reg.appendRow([d.dni,d.ap,d.am,d.nombres,d.nac,d.genero||'',d.ec,d.dir,d.dep,d.prov,
-      d.dist,d.tel1,d.tel2,d.hijos,d.nhijos,d.edu,d.inst,d.carrera,d.egreso,
-      d.incap,d.parentesco||'',d.cem,d.celcem,d.fecha,d.empresa,
-      d.ruta||'',d.codigo||'',d.sector||'',d.tipo||'',d.registradoPor||'']);
+    var parentescoFinal = (d.parentesco === 'Otros' && d.parentescoOtro) ? d.parentescoOtro : (d.parentesco||'');
+    reg.appendRow([d.dni,d.ap,d.am,d.nombres,d.nac,d.ec,d.mismadir||'',d.dir,d.dep,d.prov,
+      d.dist,d.tel1,d.hijos,d.edu,d.inst,d.carrera,d.egreso,d.incap,parentescoFinal,
+      d.cem,d.celcem,d.fecha,d.empresaOrigen||'',d.ruta||'',d.codigo||'',d.sector||'',
+      d.tipo||'',d.registradoPor||'']);
     return JSON.stringify({ok:true});
   }
 
@@ -1200,6 +1200,7 @@ let sesionActiva = null; // {ruta, codigo, sector, cantidad, registrados}
 let cacheRapel   = []; // Cache local de hoja Rapel
 let cacheVerfrut = []; // Cache local de hoja Verfrut
 let cacheLoaded  = false;
+let empresaEncontrada = ''; // Rapel o Verfrut, donde se halló al trabajador
 let editDNI      = null;
 let sesion       = null; // { usuario, cargo, estado }
 
@@ -1472,8 +1473,9 @@ function toggleDireccion() {
     document.getElementById('f-dep').value = '';
     document.getElementById('f-prov').value = '';
     document.getElementById('f-dist').value = '';
+    avanzarSiguiente('f-dist'); // saltar a teléfono
   }
-  if(v === 'NO') cargarDepartamentos();
+  if(v === 'NO') { cargarDepartamentos(); setTimeout(() => document.getElementById('f-dir').focus(), 100); }
 }
 
 function cargarDepartamentos() {
@@ -1489,6 +1491,7 @@ function cargarDepartamentos() {
 function cargarProvincias() {
   const dep = document.getElementById('f-dep').value;
   const selProv = document.getElementById('f-prov');
+  if(dep) setTimeout(() => selProv.focus(), 100);
   selProv.innerHTML = '<option value="">— Seleccionar —</option>';
   if(dep && PERU_UBIGEO[dep]) {
     PERU_UBIGEO[dep].forEach(prov => {
@@ -1504,6 +1507,7 @@ function cargarProvincias() {
 function actualizarDistrito() {
   const dep = document.getElementById('f-dep').value;
   const prov = document.getElementById('f-prov').value;
+  if(prov) setTimeout(() => { const d=document.getElementById('f-dist'); if(d) d.focus(); }, 100);
   const cont = document.getElementById('f-dist-wrap');
   const key = dep + '|' + prov;
   if(DISTRITOS[key]) {
@@ -1635,11 +1639,13 @@ function _procesarResultado(res, dni) {
   if(res && res.encontrado) {
     modoEdicion=true; editDNI=dni;
     const emp = res._empresa || res.empresa || '';
+    empresaEncontrada = emp;
     mostrarStatus('found',`✅ Encontrado en <strong>${emp}</strong>: ${res.nombres} ${res.ap} ${res.am}`);
     mostrarWorkerCard(res, emp);
     cargarDatos(res);
   } else {
     modoEdicion=false; editDNI=null;
+    empresaEncontrada = '';
     mostrarStatus('notfound','📝 No encontrado en Rapel ni Verfrut. Completa los datos para registrarlo.');
     limpiarFormularioInterno();
     document.getElementById('f-dni').value = dni;
@@ -1648,6 +1654,30 @@ function _procesarResultado(res, dni) {
   }
   document.getElementById('btnGuardarText').textContent = 'Registrar en BB.REGISTRO';
   document.getElementById('btnGuardarIcon').textContent = '💾';
+  // Auto-avance: enfocar el primer campo vacío después de buscar
+  setTimeout(() => enfocarPrimerCampoVacio(), 300);
+}
+
+// Orden de campos del formulario para el auto-avance
+const ORDEN_CAMPOS = ['f-dni','f-nac','f-ap','f-am','f-nom','f-ec','f-hijos','f-mismadir',
+  'f-dir','f-dep','f-prov','f-dist','f-tel1','f-edu','f-inst','f-carrera','f-egreso',
+  'f-incap','f-parentesco','f-cem','f-celcem'];
+
+function enfocarPrimerCampoVacio() {
+  for(let i=0; i<ORDEN_CAMPOS.length; i++) {
+    const el = document.getElementById(ORDEN_CAMPOS[i]);
+    if(el && el.offsetParent !== null && !el.value) { el.focus(); return; }
+  }
+}
+
+// Avanza al siguiente campo visible después del actual
+function avanzarSiguiente(idActual) {
+  const idx = ORDEN_CAMPOS.indexOf(idActual);
+  if(idx === -1) return;
+  for(let i=idx+1; i<ORDEN_CAMPOS.length; i++) {
+    const el = document.getElementById(ORDEN_CAMPOS[i]);
+    if(el && el.offsetParent !== null) { el.focus(); return; }
+  }
 }
 
 function mostrarStatus(tipo, msg) {
@@ -1728,6 +1758,7 @@ function obtenerDatosFormulario() {
     parentescoOtro: (document.getElementById('f-parentesco-otro')||{}).value || '',
     fecha: new Date().toLocaleDateString('es-PE'),
     empresa: 'BB.REGISTRO',
+    empresaOrigen: empresaEncontrada || '',
     ruta: sesionActiva ? sesionActiva.ruta : '',
     codigo: sesionActiva ? sesionActiva.codigo : '',
     sector: sesionActiva ? sesionActiva.sector : '',
@@ -2279,6 +2310,16 @@ document.addEventListener('input', function(e) {
     const start = el.selectionStart, end = el.selectionEnd;
     el.value = el.value.toUpperCase();
     el.setSelectionRange(start, end);
+  }
+});
+
+// AUTO-AVANCE: presionar Enter en un campo del formulario salta al siguiente
+document.addEventListener('keypress', function(e) {
+  if(e.key !== 'Enter') return;
+  const el = e.target;
+  if(el.id && (el.id.startsWith('f-')) && typeof ORDEN_CAMPOS !== 'undefined' && ORDEN_CAMPOS.includes(el.id)) {
+    e.preventDefault();
+    avanzarSiguiente(el.id);
   }
 });
 </script>
