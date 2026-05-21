@@ -1281,8 +1281,11 @@ function _setSesion(data) {
   actualizarStats();
   if(isAdmin) cargarUsuarios();
   // Cache desactivado: con +2000 registros es mejor buscar puntualmente
-  // Los administradores entran directo; usuarios normales ven el modal de sesión
-  if(!isAdmin) {
+  // Los administradores entran directo con mensaje de bienvenida; usuarios normales ven el modal
+  if(isAdmin) {
+    const primerNombre = data.usuario.charAt(0).toUpperCase() + data.usuario.slice(1);
+    setTimeout(() => showToast('👋 Hola ' + primerNombre + ', bienvenido. ¿En qué trabajamos hoy?', 'success'), 500);
+  } else {
     setTimeout(() => abrirSesionModal(), 400);
   }
   document.getElementById('loginBtn').disabled = false;
@@ -1291,7 +1294,9 @@ function _setSesion(data) {
 
 function cerrarSesion() {
   if(!confirm('¿Cerrar sesión?')) return;
+  if(intervaloContador) { clearInterval(intervaloContador); intervaloContador = null; }
   sesion = null;
+  sesionActiva = null;
   document.getElementById('appScreen').style.display   = 'none';
   document.getElementById('loginScreen').style.display = 'flex';
   document.getElementById('loginUser').value = '';
@@ -1333,6 +1338,8 @@ function confirmarSesion() {
   showToast('✅ Sesión iniciada: Grupo ' + sector, 'success');
   // Consultar cuántos ya hay registrados en este grupo (contador compartido)
   sincronizarContadorGrupo();
+  // Activar actualización automática cada 10 segundos (sincroniza con otros usuarios)
+  iniciarAutoContador();
 }
 
 function actualizarSesionBar() {
@@ -1376,6 +1383,15 @@ async function sincronizarContadorGrupo() {
       actualizarContador();
     }
   } catch(e) {}
+}
+
+// Auto-actualiza el contador compartido cada 10 segundos
+let intervaloContador = null;
+function iniciarAutoContador() {
+  if(intervaloContador) clearInterval(intervaloContador);
+  intervaloContador = setInterval(() => {
+    if(sesionActiva) sincronizarContadorGrupo();
+  }, 10000);
 }
 
 // ════════════════════════════════
