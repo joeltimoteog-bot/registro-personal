@@ -435,46 +435,56 @@ tr:hover td { background: #f8faff; }
 <div class="sesion-modal-overlay" id="sesionModal" style="display:none;">
   <div class="sesion-modal">
     <div class="sesion-modal-title">📋 Configurar nuevo registro</div>
-    <div class="sesion-modal-sub">Completa estos datos antes de iniciar los registros</div>
+    <div class="sesion-modal-sub">¿Qué tipo de registro vas a realizar?</div>
     <div style="display:grid;gap:12px;">
-      <div class="form-row-2">
-        <div class="input-group">
-          <label class="input-label">Ruta</label>
-          <input type="text" id="s-ruta" class="input-field" placeholder="Ej: R-01">
-        </div>
-        <div class="input-group">
-          <label class="input-label">Código</label>
-          <input type="text" id="s-codigo" class="input-field" placeholder="Ej: C-001">
-        </div>
-      </div>
-      <div class="form-row-2">
-        <div class="input-group">
-          <label class="input-label">Número de Grupo</label>
-          <select id="s-sector" class="input-field">
-            <option value="">— Grupo —</option>
-            <option value="01">01</option><option value="02">02</option>
-            <option value="03">03</option><option value="04">04</option>
-            <option value="05">05</option><option value="06">06</option>
-            <option value="07">07</option><option value="08">08</option>
-            <option value="09">09</option><option value="10">10</option>
-            <option value="11">11</option><option value="12">12</option>
-            <option value="13">13</option><option value="14">14</option>
-            <option value="15">15</option>
-          </select>
-        </div>
-        <div class="input-group">
-          <label class="input-label">Tipo</label>
-          <select id="s-tipo" class="input-field">
-            <option value="">— Seleccionar —</option>
-            <option value="Bus Nuevo">Bus Nuevo</option>
-            <option value="Complemento">Complemento</option>
-          </select>
-        </div>
-      </div>
       <div class="input-group">
-        <label class="input-label">Cantidad de personal a contratar</label>
-        <input type="number" id="s-cantidad" class="input-field" placeholder="Ej: 20" min="1" max="500">
+        <label class="input-label">Tipo de registro *</label>
+        <select id="s-tipo" class="input-field" onchange="toggleTipoRegistro()">
+          <option value="">— Seleccionar —</option>
+          <option value="Bus Completo">🚌 Bus Completo</option>
+          <option value="Complemento">➕ Complemento</option>
+        </select>
       </div>
+
+      <!-- Campos solo para Bus Completo -->
+      <div id="campos-bus-completo" style="display:none;gap:12px;">
+        <div class="form-row-2">
+          <div class="input-group">
+            <label class="input-label">Ruta</label>
+            <input type="text" id="s-ruta" class="input-field" placeholder="Ej: LA RITA" style="text-transform:uppercase;">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Código</label>
+            <input type="text" id="s-codigo" class="input-field" placeholder="Ej: 20001" style="text-transform:uppercase;">
+          </div>
+        </div>
+        <div class="form-row-2">
+          <div class="input-group">
+            <label class="input-label">Número de Grupo</label>
+            <select id="s-sector" class="input-field">
+              <option value="">— Grupo —</option>
+              <option value="01">01</option><option value="02">02</option>
+              <option value="03">03</option><option value="04">04</option>
+              <option value="05">05</option><option value="06">06</option>
+              <option value="07">07</option><option value="08">08</option>
+              <option value="09">09</option><option value="10">10</option>
+              <option value="11">11</option><option value="12">12</option>
+              <option value="13">13</option><option value="14">14</option>
+              <option value="15">15</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Cantidad de personal</label>
+            <input type="number" id="s-cantidad" class="input-field" placeholder="Ej: 20" min="1" max="500">
+          </div>
+        </div>
+      </div>
+
+      <!-- Mensaje para Complemento -->
+      <div id="campos-complemento" style="display:none;background:var(--green-light);border:1px solid #b8cce4;border-radius:8px;padding:12px;font-size:13px;color:var(--green);line-height:1.5;">
+        ➕ <strong>Modo Complemento:</strong> El registro será libre, sin límite de cantidad. Puedes registrar varios complementos que irán a distintas rutas.
+      </div>
+
       <div id="sesionError" style="display:none;background:var(--red-light);border:1px solid #fecaca;color:var(--red);border-radius:8px;padding:9px 13px;font-size:12px;"></div>
       <button class="btn btn-primary btn-full btn-lg" onclick="confirmarSesion()">✅ Iniciar registro</button>
     </div>
@@ -574,15 +584,9 @@ tr:hover td { background: #f8faff; }
         <span class="section-chev open" id="chev-personal">▼</span>
       </div>
       <div class="section-body" id="sec-personal">
-        <div class="form-row-2">
-          <div class="input-group">
-            <label class="input-label">DNI *</label>
-            <input type="tel" id="f-dni" class="input-field input-mono" placeholder="00000000" maxlength="8" inputmode="numeric">
-          </div>
-          <div class="input-group">
-            <label class="input-label">Nacionalidad</label>
-            <input type="text" id="f-nac" class="input-field" placeholder="Peruana">
-          </div>
+        <div class="input-group">
+          <label class="input-label">DNI *</label>
+          <input type="tel" id="f-dni" class="input-field input-mono" placeholder="00000000" maxlength="8" inputmode="numeric">
         </div>
         <div class="input-group">
           <label class="input-label">Apellido Paterno *</label>
@@ -659,7 +663,7 @@ tr:hover td { background: #f8faff; }
         </div>
         <div class="input-group">
           <label class="input-label">Teléfono 1</label>
-          <input type="tel" id="f-tel1" class="input-field" placeholder="999000000" inputmode="numeric">
+          <input type="tel" id="f-tel1" class="input-field" placeholder="999000000" maxlength="9" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'').slice(0,9)">
         </div>
       </div>
     </div>
@@ -1006,6 +1010,29 @@ function handleRequest(d) {
       cem:v[19], celcem:v[20]});
   }
 
+  // BUSCAR EN AMBAS HOJAS (Rapel y Verfrut) en una sola llamada — más rápido
+  if (accion === 'buscarAmbas') {
+    var dniB = String(d.dni).trim();
+    var empresas = ['Rapel','Verfrut'];
+    for (var e = 0; e < empresas.length; e++) {
+      var sh = ss.getSheetByName(empresas[e]);
+      if (!sh) continue;
+      var c = sh.getRange(1, 1, sh.getLastRow(), 1);
+      var enc = c.createTextFinder(dniB).matchEntireCell(true).findNext();
+      if (!enc) enc = c.createTextFinder(String(parseInt(dniB))).matchEntireCell(true).findNext();
+      if (enc) {
+        var f = enc.getRow();
+        var vv = sh.getRange(f, 1, 1, 21).getValues()[0];
+        return JSON.stringify({encontrado:true, _empresa:empresas[e],
+          dni:vv[0], ap:vv[1], am:vv[2], nombres:vv[3], nac:vv[4], ec:vv[5],
+          dir:vv[6], dep:vv[7], prov:vv[8], dist:vv[9], tel1:vv[10], tel2:vv[11],
+          hijos:vv[12], nhijos:vv[13], edu:vv[14], inst:vv[15], carrera:vv[16],
+          egreso:vv[17], incap:vv[18], cem:vv[19], celcem:vv[20]});
+      }
+    }
+    return JSON.stringify({encontrado:false});
+  }
+
   // REGISTRAR PERSONAL
   if (accion === 'registrar') {
     var reg = ss.getSheetByName('BB.REGISTRO');
@@ -1318,47 +1345,74 @@ function abrirSesionModal() {
   document.getElementById('s-cantidad').value = '';
 }
 
-function confirmarSesion() {
-  const ruta     = document.getElementById('s-ruta').value.trim();
-  const codigo   = document.getElementById('s-codigo').value.trim();
-  const sector   = document.getElementById('s-sector').value;
-  const cantidad = parseInt(document.getElementById('s-cantidad').value);
-  const errEl    = document.getElementById('sesionError');
-
+function toggleTipoRegistro() {
   const tipo = document.getElementById('s-tipo').value;
-  if(!ruta || !codigo || !sector || !tipo || !cantidad || cantidad < 1) {
-    errEl.textContent = '⚠️ Completa todos los campos correctamente.';
+  document.getElementById('campos-bus-completo').style.display = tipo === 'Bus Completo' ? 'grid' : 'none';
+  document.getElementById('campos-complemento').style.display = tipo === 'Complemento' ? 'block' : 'none';
+}
+
+function confirmarSesion() {
+  const tipo   = document.getElementById('s-tipo').value;
+  const errEl  = document.getElementById('sesionError');
+
+  if(!tipo) {
+    errEl.textContent = '⚠️ Selecciona el tipo de registro.';
     errEl.style.display = 'block';
     return;
   }
 
-  sesionActiva = { ruta, codigo, sector, tipo, cantidad, registrados: 0 };
-  document.getElementById('sesionModal').style.display = 'none';
-  actualizarSesionBar();
-  actualizarContador();
-  showToast('✅ Sesión iniciada: Grupo ' + sector, 'success');
-  // Consultar cuántos ya hay registrados en este grupo (contador compartido)
-  sincronizarContadorGrupo();
-  // Activar actualización automática cada 10 segundos (sincroniza con otros usuarios)
-  iniciarAutoContador();
+  if(tipo === 'Bus Completo') {
+    const ruta     = document.getElementById('s-ruta').value.trim().toUpperCase();
+    const codigo   = document.getElementById('s-codigo').value.trim().toUpperCase();
+    const sector   = document.getElementById('s-sector').value;
+    const cantidad = parseInt(document.getElementById('s-cantidad').value);
+    if(!ruta || !codigo || !sector || !cantidad || cantidad < 1) {
+      errEl.textContent = '⚠️ Completa ruta, código, grupo y cantidad.';
+      errEl.style.display = 'block';
+      return;
+    }
+    sesionActiva = { ruta, codigo, sector, tipo, cantidad, registrados: 0 };
+    document.getElementById('sesionModal').style.display = 'none';
+    actualizarSesionBar();
+    actualizarContador();
+    showToast('✅ Bus Completo iniciado: Grupo ' + sector, 'success');
+    sincronizarContadorGrupo();
+    iniciarAutoContador();
+  } else {
+    // Complemento: registro libre, sin contador ni límite
+    sesionActiva = { ruta:'', codigo:'', sector:'', tipo:'Complemento', cantidad:0, registrados:0, libre:true };
+    document.getElementById('sesionModal').style.display = 'none';
+    actualizarSesionBar();
+    showToast('➕ Modo Complemento: registro libre', 'success');
+  }
 }
 
 function actualizarSesionBar() {
   if(!sesionActiva) return;
-  ['ruta','codigo','sector','tipo','cont'].forEach(x => {
-    const el = document.getElementById('sb-wrap-'+x); if(el) el.style.display = 'flex';
-  });
+  const esLibre = sesionActiva.libre === true;
+  // En Complemento ocultar ruta/codigo/grupo/contador
+  document.getElementById('sb-wrap-ruta').style.display    = esLibre ? 'none' : 'flex';
+  document.getElementById('sb-wrap-codigo').style.display  = esLibre ? 'none' : 'flex';
+  document.getElementById('sb-wrap-sector').style.display  = esLibre ? 'none' : 'flex';
+  document.getElementById('sb-wrap-tipo').style.display    = 'flex';
+  document.getElementById('sb-wrap-cont').style.display    = esLibre ? 'none' : 'flex';
   document.getElementById('sb-sinsesion').style.display = 'none';
-  document.getElementById('sb-ruta').textContent    = sesionActiva.ruta;
-  document.getElementById('sb-codigo').textContent  = sesionActiva.codigo;
-  document.getElementById('sb-sector').textContent  = sesionActiva.sector;
+  if(!esLibre) {
+    document.getElementById('sb-ruta').textContent    = sesionActiva.ruta;
+    document.getElementById('sb-codigo').textContent  = sesionActiva.codigo;
+    document.getElementById('sb-sector').textContent  = sesionActiva.sector;
+    document.getElementById('sb-contador').textContent = sesionActiva.registrados;
+    document.getElementById('sb-cantidad').textContent = sesionActiva.cantidad;
+  }
   const tipoEl = document.getElementById('sb-tipo'); if(tipoEl) tipoEl.textContent = sesionActiva.tipo||'—';
-  document.getElementById('sb-contador').textContent = sesionActiva.registrados;
-  document.getElementById('sb-cantidad').textContent = sesionActiva.cantidad;
 }
 
 function actualizarContador() {
-  if(!sesionActiva) return;
+  if(!sesionActiva || sesionActiva.libre) {
+    const card = document.getElementById('contadorCard');
+    if(card) card.style.display = 'none';
+    return;
+  }
   const card = document.getElementById('contadorCard');
   card.style.display = 'block';
   const pct = Math.min(100, Math.round((sesionActiva.registrados / sesionActiva.cantidad) * 100));
@@ -1372,7 +1426,7 @@ function actualizarContador() {
 
 // CAMBIO 01: Contador compartido — consulta cuántos hay en el grupo en Google Sheets
 async function sincronizarContadorGrupo() {
-  if(!sesionActiva || !gsConfig.habilitado || !gsConfig.webhookUrl) return;
+  if(!sesionActiva || sesionActiva.libre || !gsConfig.habilitado || !gsConfig.webhookUrl) return;
   try {
     const url = gsConfig.webhookUrl + '?accion=contarGrupo&grupo=' + encodeURIComponent(sesionActiva.sector) + '&codigo=' + encodeURIComponent(sesionActiva.codigo);
     const resp = await fetch(url);
@@ -1607,18 +1661,26 @@ function buscarDNI() {
   mostrarStatus('searching','<span class="searching-dots">🔍 Buscando</span>');
 
   if(gsConfig.habilitado && gsConfig.webhookUrl) {
-    // Buscar ambas hojas en paralelo (rápido: busca solo 1 DNI)
-    Promise.all([
-      buscarEnEmpresa(dni, 'Rapel'),
-      buscarEnEmpresa(dni, 'Verfrut')
-    ]).then(([r1, r2]) => {
-      if(r1 && r1.encontrado) { r1._empresa='Rapel'; _procesarResultado(r1, dni); }
-      else if(r2 && r2.encontrado) { r2._empresa='Verfrut'; _procesarResultado(r2, dni); }
+    // Una sola llamada que busca en Rapel Y Verfrut (más rápido que 2 llamadas)
+    buscarAmbas(dni).then(res => {
+      if(res && res.encontrado) { _procesarResultado(res, dni); }
       else _procesarResultado({encontrado:false}, dni);
     }).catch(() => _procesarResultado({encontrado:false}, dni));
   } else {
     const local = trabajadores.find(t => t.dni===dni);
     _procesarResultado(local ? {encontrado:true,...local} : {encontrado:false}, dni);
+  }
+}
+
+async function buscarAmbas(dni) {
+  try {
+    const url = gsConfig.webhookUrl + '?accion=buscarAmbas&dni='+encodeURIComponent(dni);
+    const resp = await fetch(url);
+    const txt  = await resp.text();
+    const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
+    return JSON.parse(m ? m[1] : txt);
+  } catch(e) {
+    return {encontrado: false};
   }
 }
 
@@ -1659,7 +1721,7 @@ function _procesarResultado(res, dni) {
 }
 
 // Orden de campos del formulario para el auto-avance
-const ORDEN_CAMPOS = ['f-dni','f-nac','f-ap','f-am','f-nom','f-ec','f-hijos','f-mismadir',
+const ORDEN_CAMPOS = ['f-dni','f-ap','f-am','f-nom','f-ec','f-hijos','f-mismadir',
   'f-dir','f-dep','f-prov','f-dist','f-tel1','f-edu','f-inst','f-carrera','f-egreso',
   'f-incap','f-parentesco','f-cem','f-celcem'];
 
@@ -1702,7 +1764,7 @@ function mostrarWorkerCard(t, empresa) {
 //  FORM
 // ════════════════════════════════
 function cargarDatos(t) {
-  const m = {dni:'dni',nac:'nac',ap:'ap',am:'am',nombres:'nom',ec:'ec',dir:'dir',dep:'dep',prov:'prov',dist:'dist',tel1:'tel1',hijos:'hijos',edu:'edu',inst:'inst',carrera:'carrera',egreso:'egreso',incap:'incap',cem:'cem',celcem:'celcem'};
+  const m = {dni:'dni',ap:'ap',am:'am',nombres:'nom',ec:'ec',dir:'dir',dep:'dep',prov:'prov',dist:'dist',tel1:'tel1',hijos:'hijos',edu:'edu',inst:'inst',carrera:'carrera',egreso:'egreso',incap:'incap',cem:'cem',celcem:'celcem'};
   Object.entries(m).forEach(([k,id]) => { const el=document.getElementById('f-'+id); if(el) el.value=t[k]||''; });
   const hv = (t.hijos||'').toUpperCase();
   if(hv==='SI'||hv==='SÍ') { document.getElementById('f-hijos').value='SI'; }
@@ -1714,7 +1776,7 @@ function cargarDatos(t) {
 }
 
 function limpiarFormularioInterno() {
-  ['dni','nac','ap','am','nom','ec','dir','dep','prov','dist','tel1','hijos','edu','inst','carrera','egreso','incap','cem','celcem','parentesco','parentesco-otro'].forEach(c => { const el=document.getElementById('f-'+c); if(el) el.value=''; });
+  ['dni','ap','am','nom','ec','dir','dep','prov','dist','tel1','hijos','edu','inst','carrera','egreso','incap','cem','celcem','parentesco','parentesco-otro'].forEach(c => { const el=document.getElementById('f-'+c); if(el) el.value=''; });
   document.getElementById('g-edu-superior').style.display='none';
   document.getElementById('g-parentesco-otro').style.display='none';
   const hint=document.getElementById('tel-hint'); if(hint){ hint.style.color='var(--muted2)'; hint.textContent='Ingresa 7 dígitos (fijo) o 9 dígitos (celular)'; }
@@ -1735,7 +1797,6 @@ function limpiarFormulario() {
 function obtenerDatosFormulario() {
   return {
     dni: document.getElementById('f-dni').value.trim(),
-    nac: document.getElementById('f-nac').value.trim(),
     ap:  document.getElementById('f-ap').value.trim(),
     am:  document.getElementById('f-am').value.trim(),
     nombres: document.getElementById('f-nom').value.trim(),
@@ -1768,12 +1829,17 @@ function obtenerDatosFormulario() {
 }
 
 function validarDatos(d) {
-  if(!d.dni||!/^\d{8}$/.test(d.dni)) { showToast('DNI obligatorio (8 dígitos)','error'); return false; }
-  if(!d.nombres) { showToast('Nombres obligatorio','error'); return false; }
-  if(!d.ap) { showToast('Apellido paterno obligatorio','error'); return false; }
-  if(d.tel1&&!/^\d+$/.test(d.tel1)) { showToast('Teléfono solo números','error'); return false; }
-  if(d.celcem && d.celcem.length>0 && d.celcem.length!==7 && d.celcem.length!==9) { showToast('Teléfono de referencia: 7 dígitos (fijo) o 9 dígitos (celular)','error'); return false; }
-  if(d.egreso&&!/^\d{4}$/.test(d.egreso)) { showToast('Año de egreso: 4 dígitos','error'); return false; }
+  if(!d.dni||!/^\d{8}$/.test(d.dni)) { showToast('⚠️ DNI obligatorio (8 dígitos)','error'); return false; }
+  if(!d.ap) { showToast('⚠️ Falta el Apellido Paterno','error'); return false; }
+  if(!d.nombres) { showToast('⚠️ Faltan los Nombres','error'); return false; }
+  if(!d.ec) { showToast('⚠️ Selecciona el Estado Civil','error'); return false; }
+  if(!d.hijos) { showToast('⚠️ Indica si tiene hijos','error'); return false; }
+  if(!d.mismadir) { showToast('⚠️ Indica si sigue en la misma dirección','error'); return false; }
+  if(d.tel1 && (!/^\d+$/.test(d.tel1) || (d.tel1.length!==7 && d.tel1.length!==9))) { showToast('⚠️ Teléfono: 7 dígitos (fijo) o 9 (celular)','error'); return false; }
+  if(!d.edu) { showToast('⚠️ Selecciona el Nivel Educativo','error'); return false; }
+  if(!d.incap) { showToast('⚠️ Indica si tiene discapacidad','error'); return false; }
+  if(d.celcem && d.celcem.length>0 && d.celcem.length!==7 && d.celcem.length!==9) { showToast('⚠️ Teléfono de referencia: 7 o 9 dígitos','error'); return false; }
+  if(d.egreso&&!/^\d{4}$/.test(d.egreso)) { showToast('⚠️ Año de egreso: 4 dígitos','error'); return false; }
   return true;
 }
 
@@ -1785,11 +1851,12 @@ function guardarRegistro() {
   if(idx!==-1) trabajadores[idx]=datos; else { trabajadores.push(datos); hoyCount++; localStorage.setItem('hoy_count',hoyCount); }
   localStorage.setItem('pd_local', JSON.stringify(trabajadores));
   registrarEnBBRegistro(datos);
-  // Incrementar contador de sesión y re-sincronizar con el grupo compartido
-  if(sesionActiva) {
+  // Solo Bus Completo tiene contador; Complemento es libre
+  if(sesionActiva && !sesionActiva.libre) {
     sesionActiva.registrados++;
     actualizarContador();
-    setTimeout(() => sincronizarContadorGrupo(), 1500);
+    // Re-sincronizar con el grupo después de 3s (dar tiempo a que Sheets guarde)
+    setTimeout(() => sincronizarContadorGrupo(), 3000);
   }
   limpiarFormulario();
   mostrarStatus('success','✅ Registrado en BB.REGISTRO correctamente');
@@ -2325,5 +2392,3 @@ document.addEventListener('keypress', function(e) {
 </script>
 </body>
 </html>
-
-
