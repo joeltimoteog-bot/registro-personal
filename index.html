@@ -600,23 +600,13 @@ tr:hover td { background: #f8faff; }
           <label class="input-label">Nombres *</label>
           <input type="text" id="f-nom" class="input-field" placeholder="Nombres completos">
         </div>
-        <div class="form-row-2">
-          <div class="input-group">
-            <label class="input-label">Estado Civil</label>
-            <select id="f-ec" class="input-field" onchange="avanzarSiguiente('f-ec')">
-              <option value="">— Seleccionar —</option>
-              <option>Soltero</option><option>Casado</option>
-              <option>Conviviente</option><option>Divorciado</option><option>Viudo</option>
-            </select>
-          </div>
-          <div class="input-group">
-            <label class="input-label">Tiene Hijos</label>
-            <select id="f-hijos" class="input-field" onchange="avanzarSiguiente('f-hijos')">
-              <option value="">— Seleccionar —</option>
-              <option value="SI">SI</option>
-              <option value="NO">NO</option>
-            </select>
-          </div>
+        <div class="input-group">
+          <label class="input-label">Tiene Hijos</label>
+          <select id="f-hijos" class="input-field" onchange="avanzarSiguiente('f-hijos')">
+            <option value="">— Seleccionar —</option>
+            <option value="SI">SI</option>
+            <option value="NO">NO</option>
+          </select>
         </div>
 
       </div>
@@ -1228,6 +1218,7 @@ let cacheRapel   = []; // Cache local de hoja Rapel
 let cacheVerfrut = []; // Cache local de hoja Verfrut
 let cacheLoaded  = false;
 let empresaEncontrada = ''; // Rapel o Verfrut, donde se halló al trabajador
+let datosOriginales = null; // datos originales del trabajador encontrado
 let editDNI      = null;
 let sesion       = null; // { usuario, cargo, estado }
 
@@ -1702,12 +1693,14 @@ function _procesarResultado(res, dni) {
     modoEdicion=true; editDNI=dni;
     const emp = res._empresa || res.empresa || '';
     empresaEncontrada = emp;
+    datosOriginales = {dir:res.dir||'', dep:res.dep||'', prov:res.prov||'', dist:res.dist||''};
     mostrarStatus('found',`✅ Encontrado en <strong>${emp}</strong>: ${res.nombres} ${res.ap} ${res.am}`);
     mostrarWorkerCard(res, emp);
     cargarDatos(res);
   } else {
     modoEdicion=false; editDNI=null;
     empresaEncontrada = '';
+    datosOriginales = null;
     mostrarStatus('notfound','📝 No encontrado en Rapel ni Verfrut. Completa los datos para registrarlo.');
     limpiarFormularioInterno();
     document.getElementById('f-dni').value = dni;
@@ -1721,7 +1714,7 @@ function _procesarResultado(res, dni) {
 }
 
 // Orden de campos del formulario para el auto-avance
-const ORDEN_CAMPOS = ['f-dni','f-ap','f-am','f-nom','f-ec','f-hijos','f-mismadir',
+const ORDEN_CAMPOS = ['f-dni','f-ap','f-am','f-nom','f-hijos','f-mismadir',
   'f-dir','f-dep','f-prov','f-dist','f-tel1','f-edu','f-inst','f-carrera','f-egreso',
   'f-incap','f-parentesco','f-cem','f-celcem'];
 
@@ -1764,7 +1757,7 @@ function mostrarWorkerCard(t, empresa) {
 //  FORM
 // ════════════════════════════════
 function cargarDatos(t) {
-  const m = {dni:'dni',ap:'ap',am:'am',nombres:'nom',ec:'ec',dir:'dir',dep:'dep',prov:'prov',dist:'dist',tel1:'tel1',hijos:'hijos',edu:'edu',inst:'inst',carrera:'carrera',egreso:'egreso',incap:'incap',cem:'cem',celcem:'celcem'};
+  const m = {dni:'dni',ap:'ap',am:'am',nombres:'nom',dir:'dir',dep:'dep',prov:'prov',dist:'dist',tel1:'tel1',hijos:'hijos',edu:'edu',inst:'inst',carrera:'carrera',egreso:'egreso',incap:'incap',cem:'cem',celcem:'celcem'};
   Object.entries(m).forEach(([k,id]) => { const el=document.getElementById('f-'+id); if(el) el.value=t[k]||''; });
   const hv = (t.hijos||'').toUpperCase();
   if(hv==='SI'||hv==='SÍ') { document.getElementById('f-hijos').value='SI'; }
@@ -1795,17 +1788,31 @@ function limpiarFormulario() {
 //  GUARDAR
 // ════════════════════════════════
 function obtenerDatosFormulario() {
+  // Si sigue en la misma dirección (SI) => usar la dirección original de Rapel/Verfrut
+  // Si cambió (NO) => usar los nuevos campos que llenó
+  const mismaDir = (document.getElementById('f-mismadir')||{}).value || '';
+  let dirFinal, depFinal, provFinal, distFinal;
+  if(mismaDir === 'SI' && datosOriginales) {
+    dirFinal  = datosOriginales.dir || '';
+    depFinal  = datosOriginales.dep || '';
+    provFinal = datosOriginales.prov || '';
+    distFinal = datosOriginales.dist || '';
+  } else {
+    dirFinal  = document.getElementById('f-dir').value.trim();
+    depFinal  = document.getElementById('f-dep').value.trim();
+    provFinal = document.getElementById('f-prov').value.trim();
+    distFinal = document.getElementById('f-dist').value.trim();
+  }
   return {
     dni: document.getElementById('f-dni').value.trim(),
     ap:  document.getElementById('f-ap').value.trim(),
     am:  document.getElementById('f-am').value.trim(),
     nombres: document.getElementById('f-nom').value.trim(),
-    ec:  document.getElementById('f-ec').value,
-    mismadir: (document.getElementById('f-mismadir')||{}).value || '',
-    dir: document.getElementById('f-dir').value.trim(),
-    dep: document.getElementById('f-dep').value.trim(),
-    prov: document.getElementById('f-prov').value.trim(),
-    dist: document.getElementById('f-dist').value.trim(),
+    mismadir: mismaDir,
+    dir: dirFinal,
+    dep: depFinal,
+    prov: provFinal,
+    dist: distFinal,
     tel1: document.getElementById('f-tel1').value.trim(),
     hijos: document.getElementById('f-hijos').value,
     edu: document.getElementById('f-edu').value,
@@ -1832,7 +1839,6 @@ function validarDatos(d) {
   if(!d.dni||!/^\d{8}$/.test(d.dni)) { showToast('⚠️ DNI obligatorio (8 dígitos)','error'); return false; }
   if(!d.ap) { showToast('⚠️ Falta el Apellido Paterno','error'); return false; }
   if(!d.nombres) { showToast('⚠️ Faltan los Nombres','error'); return false; }
-  if(!d.ec) { showToast('⚠️ Selecciona el Estado Civil','error'); return false; }
   if(!d.hijos) { showToast('⚠️ Indica si tiene hijos','error'); return false; }
   if(!d.mismadir) { showToast('⚠️ Indica si sigue en la misma dirección','error'); return false; }
   if(d.tel1 && (!/^\d+$/.test(d.tel1) || (d.tel1.length!==7 && d.tel1.length!==9))) { showToast('⚠️ Teléfono: 7 dígitos (fijo) o 9 (celular)','error'); return false; }
@@ -2093,6 +2099,12 @@ async function _descargarBBRegistro(desde, hasta) {
 
     const ws = XLSX.utils.aoa_to_sheet(filas);
     ws['!cols'] = filas[0].map(()=>({wch:16}));
+    // Forzar columna DNI (columna A, índice 0) como TEXTO para que no pierda ceros ni use notación científica
+    const rango = XLSX.utils.decode_range(ws['!ref']);
+    for(let R = 1; R <= rango.e.r; R++) {
+      const celda = XLSX.utils.encode_cell({r:R, c:0});
+      if(ws[celda]) { ws[celda].t = 's'; ws[celda].v = String(ws[celda].v); ws[celda].z = '@'; }
+    }
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'BB.REGISTRO');
     const sufijo = (desde && hasta) ? desde + '_a_' + hasta : 'completo';
@@ -2121,9 +2133,12 @@ function exportarExcel() {
   if(typeof XLSX === 'undefined') { showToast('⚠️ Librería Excel no cargó. Usa CSV.','error'); return; }
   if(!trabajadores.length) { showToast('Sin datos para exportar','error'); return; }
   try {
-    const h=['DNI','ApellidoPaterno','ApellidoMaterno','Nombres','Nacionalidad','EstadoCivil','SigueMismaDir','Direccion','Departamento','Provincia','Distrito','Telefono1','Telefono2','TieneHijos','NivelEducativo','Institucion','Carrera','AnoEgreso','Discapacidad','Parentesco','ContactoReferencia','TelefonoReferencia','FechaRegistro','Ruta','Codigo','Grupo','Tipo','RegistradoPor'];
-    const r=trabajadores.map(t=>[t.dni,t.ap,t.am,t.nombres,t.nac,t.ec,t.mismadir||'',t.dir,t.dep,t.prov,t.dist,t.tel1,t.tel2,t.hijos,t.edu,t.inst,t.carrera,t.egreso,t.incap,t.parentesco||'',t.cem,t.celcem,t.fecha,t.ruta||'',t.codigo||'',t.sector||'',t.tipo||'',t.registradoPor||'']);
+    const h=['DNI','ApellidoPaterno','ApellidoMaterno','Nombres','SigueMismaDir','Direccion','Departamento','Provincia','Distrito','Telefono1','TieneHijos','NivelEducativo','Institucion','Carrera','AnoEgreso','Discapacidad','Parentesco','ContactoReferencia','TelefonoReferencia','FechaRegistro','Empresa','Ruta','Codigo','Grupo','Tipo','RegistradoPor'];
+    const r=trabajadores.map(t=>[t.dni,t.ap,t.am,t.nombres,t.mismadir||'',t.dir,t.dep,t.prov,t.dist,t.tel1,t.hijos,t.edu,t.inst,t.carrera,t.egreso,t.incap,t.parentesco||'',t.cem,t.celcem,t.fecha,t.empresaOrigen||'',t.ruta||'',t.codigo||'',t.sector||'',t.tipo||'',t.registradoPor||'']);
     const ws=XLSX.utils.aoa_to_sheet([h,...r]); ws['!cols']=h.map(()=>({wch:16}));
+    // DNI como texto
+    const rango = XLSX.utils.decode_range(ws['!ref']);
+    for(let R=1; R<=rango.e.r; R++) { const c=XLSX.utils.encode_cell({r:R,c:0}); if(ws[c]){ws[c].t='s';ws[c].v=String(ws[c].v);ws[c].z='@';} }
     const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Personal');
     XLSX.writeFile(wb,`Personal_${new Date().toLocaleDateString('es-PE').replace(/\//g,'-')}.xlsx`);
     showToast('✅ Excel exportado','success');
@@ -2131,9 +2146,9 @@ function exportarExcel() {
 }
 function exportarCSV() {
   if(!trabajadores.length) { showToast('Sin datos para exportar','error'); return; }
-  const h=['DNI','ApellidoPaterno','ApellidoMaterno','Nombres','Nacionalidad','EstadoCivil','SigueMismaDir','Direccion','Departamento','Provincia','Distrito','Telefono1','Telefono2','TieneHijos','NivelEducativo','Institucion','Carrera','AnoEgreso','Discapacidad','Parentesco','ContactoReferencia','TelefonoReferencia','FechaRegistro','Ruta','Codigo','Grupo','Tipo','RegistradoPor'];
-  const r=trabajadores.map(t=>[t.dni,t.ap,t.am,t.nombres,t.nac,t.ec,t.mismadir||'',t.dir,t.dep,t.prov,t.dist,t.tel1,t.tel2,t.hijos,t.edu,t.inst,t.carrera,t.egreso,t.incap,t.parentesco||'',t.cem,t.celcem,t.fecha,t.ruta||'',t.codigo||'',t.sector||'',t.tipo||'',t.registradoPor||'']);
-  const csv='\uFEFF'+[h,...r].map(row=>row.map(v=>`"${(v||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+  const h=['DNI','ApellidoPaterno','ApellidoMaterno','Nombres','SigueMismaDir','Direccion','Departamento','Provincia','Distrito','Telefono1','TieneHijos','NivelEducativo','Institucion','Carrera','AnoEgreso','Discapacidad','Parentesco','ContactoReferencia','TelefonoReferencia','FechaRegistro','Empresa','Ruta','Codigo','Grupo','Tipo','RegistradoPor'];
+  const r=trabajadores.map(t=>[t.dni,t.ap,t.am,t.nombres,t.mismadir||'',t.dir,t.dep,t.prov,t.dist,t.tel1,t.hijos,t.edu,t.inst,t.carrera,t.egreso,t.incap,t.parentesco||'',t.cem,t.celcem,t.fecha,t.empresaOrigen||'',t.ruta||'',t.codigo||'',t.sector||'',t.tipo||'',t.registradoPor||'']);
+  const csv='\uFEFF'+[h,...r].map(row=>row.map((v,i)=>i===0?`="${(v||'')}"`:`"${(v||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
   const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
   a.download=`Personal_${new Date().toLocaleDateString('es-PE').replace(/\//g,'-')}.csv`; a.click();
   showToast('✅ CSV exportado','success');
