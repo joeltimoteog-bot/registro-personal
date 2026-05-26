@@ -1788,16 +1788,11 @@ function limpiarFormulario() {
 //  GUARDAR
 // ════════════════════════════════
 function obtenerDatosFormulario() {
-  // Si sigue en la misma dirección (SI) => usar la dirección original de Rapel/Verfrut
-  // Si cambió (NO) => usar los nuevos campos que llenó
+  // Si sigue en la misma dirección (SI) => NO guardar dirección (queda vacío)
+  // Si cambió (NO) => guardar los nuevos campos que llenó
   const mismaDir = (document.getElementById('f-mismadir')||{}).value || '';
-  let dirFinal, depFinal, provFinal, distFinal;
-  if(mismaDir === 'SI' && datosOriginales) {
-    dirFinal  = datosOriginales.dir || '';
-    depFinal  = datosOriginales.dep || '';
-    provFinal = datosOriginales.prov || '';
-    distFinal = datosOriginales.dist || '';
-  } else {
+  let dirFinal = '', depFinal = '', provFinal = '', distFinal = '';
+  if(mismaDir === 'NO') {
     dirFinal  = document.getElementById('f-dir').value.trim();
     depFinal  = document.getElementById('f-dep').value.trim();
     provFinal = document.getElementById('f-prov').value.trim();
