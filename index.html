@@ -1044,7 +1044,8 @@ function handleRequest(d) {
     for (var i = 1; i < rd.length; i++) {
       if (!rd[i][0]) continue;
       rl.push({dni:rd[i][0], ap:rd[i][1], am:rd[i][2], nombres:rd[i][3],
-        sector:rd[i][25], tipo:rd[i][28], registradoPor:rd[i][29], fecha:rd[i][23]});
+        fecha:rd[i][21], ruta:rd[i][23], codigo:rd[i][24], sector:rd[i][25],
+        tipo:rd[i][26], registradoPor:rd[i][27]});
     }
     return JSON.stringify({registros:rl});
   }
@@ -1147,11 +1148,18 @@ function migrarPasswords() {
       </div>
     </div>
     <div class="card">
-      <div class="card-header"><div class="card-icon green">📱</div><div><div class="card-title">Código QR para trabajadores</div><div class="card-sub">Comparte este QR para que registren su DNI y nombres</div></div></div>
+      <div class="card-header"><div class="card-icon green">📱</div><div><div class="card-title">Código QR y Link para trabajadores</div><div class="card-sub">Comparte el QR o el link para que registren sus datos</div></div></div>
       <div class="card-body" style="text-align:center;">
         <div id="qrCodeBox" style="display:inline-block;padding:14px;background:white;border-radius:12px;border:1px solid var(--border);margin-bottom:12px;"></div>
-        <div style="font-size:11px;color:var(--muted);word-break:break-all;margin-bottom:10px;" id="qrUrlText"></div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:10px;">
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">🔗 Link del formulario</div>
+          <div style="font-size:12px;color:var(--green);word-break:break-all;font-weight:600;" id="qrUrlText">Presiona "Generar QR"</div>
+        </div>
         <button class="btn btn-outline btn-full" onclick="generarQR()">🔄 Generar / Actualizar QR</button>
+        <div class="actions-row" style="margin-top:8px;">
+          <button class="btn btn-outline" onclick="copiarLinkQR()">📋 Copiar link</button>
+          <button class="btn btn-outline" onclick="compartirWhatsApp()">💬 WhatsApp</button>
+        </div>
         <button class="btn btn-success btn-full" style="margin-top:8px;" onclick="descargarQR()">⬇️ Descargar QR (imagen)</button>
       </div>
     </div>
@@ -1436,30 +1444,47 @@ function iniciarAutoContador() {
 // ════════════════════════════════
 //  ESTADÍSTICAS
 // ════════════════════════════════
-function renderEstadisticas() {
-  document.getElementById('st-total').textContent = trabajadores.length;
-  document.getElementById('st-hoy').textContent   = hoyCount;
+async function renderEstadisticas() {
+  // Cargar TODOS los registros de BB.REGISTRO (Google Sheets), no solo los locales
+  let datos = trabajadores;
+  if(gsConfig.habilitado && gsConfig.webhookUrl) {
+    try {
+      document.getElementById('st-total').textContent = '...';
+      const url = gsConfig.webhookUrl + '?accion=listarBBRegistro';
+      const resp = await fetch(url);
+      const txt = await resp.text();
+      const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
+      const data = JSON.parse(m ? m[1] : txt);
+      if(data.registros && data.registros.length) datos = data.registros;
+    } catch(e) {}
+  }
 
-  const total = trabajadores.length || 1;
+  document.getElementById('st-total').textContent = datos.length;
+  // Contar los de hoy
+  const hoy = new Date().toLocaleDateString('es-PE');
+  const hoyN = datos.filter(t => (t.fecha||'').indexOf(hoy.split('/')[0]) === 0 || t.fecha === hoy).length;
+  document.getElementById('st-hoy').textContent = hoyN || hoyCount;
+
+  const total = datos.length || 1;
 
   // Por Grupo
   const sectores = {};
-  trabajadores.forEach(t => { const s = t.sector||'Sin grupo'; sectores[s]=(sectores[s]||0)+1; });
+  datos.forEach(t => { const s = t.sector||'Sin grupo'; sectores[s]=(sectores[s]||0)+1; });
   document.getElementById('stats-sector').innerHTML = renderBars(sectores, total, ['#1a3c6e','#c8102e','#d97706','#374151','#6b7280']);
 
-  // Por Tipo (Bus Nuevo / Complemento)
+  // Por Tipo
   const tipos = {};
-  trabajadores.forEach(t => { const tp = t.tipo||'Sin tipo'; tipos[tp]=(tipos[tp]||0)+1; });
+  datos.forEach(t => { const tp = t.tipo||'Sin tipo'; tipos[tp]=(tipos[tp]||0)+1; });
   document.getElementById('stats-tipo').innerHTML = renderBars(tipos, total, ['#c8102e','#1a3c6e']);
 
   // Por Usuario
   const usuarios = {};
-  trabajadores.forEach(t => { const u = t.registradoPor||'Sin usuario'; usuarios[u]=(usuarios[u]||0)+1; });
+  datos.forEach(t => { const u = t.registradoPor||'Sin usuario'; usuarios[u]=(usuarios[u]||0)+1; });
   document.getElementById('stats-usuario').innerHTML = renderBars(usuarios, total, ['#1a3c6e','#c8102e','#374151']);
 
   // Por Ruta/Código
   const rutas = {};
-  trabajadores.forEach(t => {
+  datos.forEach(t => {
     const r = (t.ruta && t.codigo) ? t.ruta+' / '+t.codigo : (t.ruta||t.codigo||'Sin ruta');
     rutas[r]=(rutas[r]||0)+1;
   });
@@ -2372,6 +2397,30 @@ function generarQR() {
   if(typeof QRCode === 'undefined') { showToast('Librería QR no cargó','error'); return; }
   new QRCode(box, { text: qrUrl, width: 200, height: 200, colorDark:'#1a3c6e', colorLight:'#ffffff' });
   showToast('✅ QR generado','success');
+}
+
+function obtenerLinkQR() {
+  return window.location.origin + window.location.pathname + '?qr=1';
+}
+
+function copiarLinkQR() {
+  const link = obtenerLinkQR();
+  navigator.clipboard.writeText(link).then(() => {
+    showToast('📋 Link copiado al portapapeles','success');
+  }).catch(() => {
+    // Fallback para navegadores que bloquean clipboard
+    const tmp = document.createElement('textarea');
+    tmp.value = link; document.body.appendChild(tmp); tmp.select();
+    document.execCommand('copy'); document.body.removeChild(tmp);
+    showToast('📋 Link copiado','success');
+  });
+}
+
+function compartirWhatsApp() {
+  const link = obtenerLinkQR();
+  const mensaje = '¡Hola! Por favor registra tus datos para el proceso de reclutamiento en el siguiente enlace:\n\n' + link + '\n\nGracias. — Unifrutti';
+  const url = 'https://wa.me/?text=' + encodeURIComponent(mensaje);
+  window.open(url, '_blank');
 }
 
 function descargarQR() {
