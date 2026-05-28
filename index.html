@@ -328,22 +328,11 @@ tr:hover td { background: #f8faff; }
           <input type="text" id="qr-nom" class="login-input" style="text-transform:uppercase;">
         </div>
         <div class="login-field">
-          <label class="login-label">Nacionalidad</label>
-          <input type="text" id="qr-nac" class="login-input" style="text-transform:uppercase;" placeholder="PERUANA">
-        </div>
-        <div class="login-field">
-          <label class="login-label">Estado Civil</label>
-          <select id="qr-ec" class="login-input">
-            <option value="">— Seleccionar —</option>
-            <option>SOLTERO</option><option>CASADO</option><option>CONVIVIENTE</option><option>DIVORCIADO</option><option>VIUDO</option>
-          </select>
-        </div>
-        <div class="login-field">
           <label class="login-label">¿Tiene Hijos?</label>
-          <select id="qr-hijos" class="login-input"><option value="">— Seleccionar —</option><option>SI</option><option>NO</option></select>
+          <select id="qr-hijos" class="login-input" onchange="qrAvanzar('qr-hijos')"><option value="">— Seleccionar —</option><option>SI</option><option>NO</option></select>
         </div>
         <div class="login-field">
-          <label class="login-label">Dirección</label>
+          <label class="login-label">Dirección Actual</label>
           <input type="text" id="qr-dir" class="login-input" style="text-transform:uppercase;">
         </div>
         <div class="login-field">
@@ -360,11 +349,12 @@ tr:hover td { background: #f8faff; }
         </div>
         <div class="login-field">
           <label class="login-label">Teléfono</label>
-          <input type="tel" id="qr-tel1" class="login-input" inputmode="numeric" placeholder="999000000">
+          <input type="tel" id="qr-tel1" class="login-input" inputmode="numeric" maxlength="9" placeholder="Fijo (6) o Celular (9)" oninput="qrValidarTel(this)">
+          <span style="font-size:11px;color:#6b7280;margin-top:3px;display:block;">📞 6 dígitos (fijo) o 9 dígitos (celular)</span>
         </div>
         <div class="login-field">
           <label class="login-label">Nivel Educativo</label>
-          <select id="qr-edu" class="login-input" onchange="qrToggleEdu()">
+          <select id="qr-edu" class="login-input" onchange="qrToggleEdu();qrAvanzar('qr-edu')">
             <option value="">— Seleccionar —</option>
             <option value="Educación técnica completa">Educación técnica completa</option>
             <option value="Educación Universitaria completa">Educación Universitaria completa</option>
@@ -382,13 +372,13 @@ tr:hover td { background: #f8faff; }
         </div>
         <div class="login-field">
           <label class="login-label">¿Tiene Discapacidad?</label>
-          <select id="qr-incap" class="login-input"><option value="">— Seleccionar —</option><option>SI</option><option>NO</option></select>
+          <select id="qr-incap" class="login-input" onchange="qrAvanzar('qr-incap')"><option value="">— Seleccionar —</option><option>SI</option><option>NO</option></select>
         </div>
         <div class="login-field">
           <label class="login-label">Parentesco contacto de referencia</label>
-          <select id="qr-parentesco" class="login-input">
+          <select id="qr-parentesco" class="login-input" onchange="qrAvanzar('qr-parentesco')">
             <option value="">— Seleccionar —</option>
-            <option>Esposo(a)</option><option>Hijo(a)</option><option>Papa</option><option>Mamá</option>
+            <option>Esposo(a)</option><option>Hijo(a)</option><option>Papá</option><option>Mamá</option><option>Hermano(a)</option>
             <option>Tío(a)</option><option>Sobrino(a)</option><option>Primo(a)</option><option>Otros</option>
           </select>
         </div>
@@ -398,7 +388,8 @@ tr:hover td { background: #f8faff; }
         </div>
         <div class="login-field">
           <label class="login-label">Teléfono de referencia</label>
-          <input type="tel" id="qr-celcem" class="login-input" inputmode="numeric" maxlength="9" placeholder="999000000">
+          <input type="tel" id="qr-celcem" class="login-input" inputmode="numeric" maxlength="9" placeholder="Fijo (6) o Celular (9)" oninput="qrValidarTel(this)">
+          <span style="font-size:11px;color:#6b7280;margin-top:3px;display:block;">📞 6 dígitos (fijo) o 9 dígitos (celular)</span>
         </div>
         <button class="login-btn" onclick="registrarQR()" id="qrBtn">Enviar mis datos</button>
         <div style="font-size:11px;color:#6b7280;margin-top:14px;text-align:center;line-height:1.5;">
@@ -629,7 +620,7 @@ tr:hover td { background: #f8faff; }
         </div>
         <div id="g-direccion" style="display:none;gap:12px;">
         <div class="input-group">
-          <label class="input-label">Dirección</label>
+          <label class="input-label">Dirección Actual</label>
           <input type="text" id="f-dir" class="input-field" placeholder="Av. / Jr. / Calle...">
         </div>
         <div class="form-row-2">
@@ -653,7 +644,8 @@ tr:hover td { background: #f8faff; }
         </div>
         <div class="input-group">
           <label class="input-label">Teléfono 1</label>
-          <input type="tel" id="f-tel1" class="input-field" placeholder="999000000" maxlength="9" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'').slice(0,9)">
+          <input type="tel" id="f-tel1" class="input-field" placeholder="Fijo (6) o Celular (9)" maxlength="9" inputmode="numeric" oninput="validarTelefono(this)">
+          <span style="font-size:11px;color:var(--muted);margin-top:3px;display:block;">📞 6 dígitos (fijo) o 9 dígitos (celular)</span>
         </div>
       </div>
     </div>
@@ -716,8 +708,9 @@ tr:hover td { background: #f8faff; }
             <option value="">— Seleccionar —</option>
             <option value="Esposo(a)">Esposo(a)</option>
             <option value="Hijo(a)">Hijo(a)</option>
-            <option value="Papa">Papa</option>
+            <option value="Papá">Papá</option>
             <option value="Mamá">Mamá</option>
+            <option value="Hermano(a)">Hermano(a)</option>
             <option value="Tío(a)">Tío(a)</option>
             <option value="Sobrino(a)">Sobrino(a)</option>
             <option value="Primo(a)">Primo(a)</option>
@@ -734,8 +727,8 @@ tr:hover td { background: #f8faff; }
         </div>
         <div class="input-group">
           <label class="input-label">Teléfono / Celular de referencia</label>
-          <input type="tel" id="f-celcem" class="input-field" placeholder="999000000" maxlength="9" inputmode="numeric" oninput="validarTelefono(this)">
-          <span id="tel-hint" style="font-size:10px;color:var(--muted2);">Ingresa 7 dígitos (fijo) o 9 dígitos (celular)</span>
+          <input type="tel" id="f-celcem" class="input-field" placeholder="Fijo (6) o Celular (9)" maxlength="9" inputmode="numeric" oninput="validarTelefono(this)">
+          <span style="font-size:11px;color:var(--muted);margin-top:3px;display:block;">📞 6 dígitos (fijo) o 9 dígitos (celular)</span>
         </div>
       </div>
     </div>
@@ -1074,12 +1067,12 @@ function handleRequest(d) {
     var qsh = ss.getSheetByName('PRE-REGISTRO-QR');
     if (!qsh) {
       qsh = ss.insertSheet('PRE-REGISTRO-QR');
-      qsh.appendRow(['DNI','ApellidoPaterno','ApellidoMaterno','Nombres','Nacionalidad',
-        'EstadoCivil','TieneHijos','Direccion','Departamento','Provincia','Distrito',
+      qsh.appendRow(['DNI','ApellidoPaterno','ApellidoMaterno','Nombres','TieneHijos',
+        'DireccionActual','Departamento','Provincia','Distrito',
         'Telefono','NivelEducativo','Institucion','Carrera','AnoEgreso','Discapacidad',
         'Parentesco','ContactoReferencia','TelefonoReferencia','FechaRegistro']);
     }
-    qsh.appendRow([d.dni, d.ap, d.am, d.nombres, d.nac||'', d.ec||'', d.hijos||'',
+    qsh.appendRow([d.dni, d.ap, d.am, d.nombres, d.hijos||'',
       d.dir||'', d.dep||'', d.prov||'', d.dist||'', d.tel1||'', d.edu||'',
       d.inst||'', d.carrera||'', d.egreso||'', d.incap||'', d.parentesco||'',
       d.cem||'', d.celcem||'', d.fecha]);
@@ -1584,14 +1577,10 @@ function toggleParentesco() {
 
 function validarTelefono(input) {
   input.value = input.value.replace(/\D/g, '');
-  const len = input.value.length;
-  const hint = document.getElementById('tel-hint');
-  if(len === 0) { hint.style.color = 'var(--muted2)'; hint.textContent = 'Ingresa 7 dígitos (fijo) o 9 dígitos (celular)'; }
-  else if(len === 7) { hint.style.color = 'var(--green)'; hint.textContent = '✅ Teléfono fijo válido (7 dígitos)'; }
-  else if(len === 9) { hint.style.color = 'var(--green)'; hint.textContent = '✅ Celular válido (9 dígitos)'; }
-  else if(len < 7) { hint.style.color = 'var(--yellow)'; hint.textContent = `${len} dígitos — faltan ${7-len} para fijo`; }
-  else if(len > 7 && len < 9) { hint.style.color = 'var(--yellow)'; hint.textContent = `${len} dígitos — faltan ${9-len} para celular`; }
-  else { hint.style.color = 'var(--red)'; hint.textContent = 'Máximo 9 dígitos'; input.value = input.value.slice(0,9); }
+  if(input.value.length > 9) {
+    input.value = input.value.slice(0, 9);
+    showToast('⚠️ No permitido: máximo 9 dígitos (celular) o 6 (fijo)', 'error');
+  }
 }
 
 // ════════════════════════════════
@@ -1836,10 +1825,10 @@ function validarDatos(d) {
   if(!d.nombres) { showToast('⚠️ Faltan los Nombres','error'); return false; }
   if(!d.hijos) { showToast('⚠️ Indica si tiene hijos','error'); return false; }
   if(!d.mismadir) { showToast('⚠️ Indica si sigue en la misma dirección','error'); return false; }
-  if(d.tel1 && (!/^\d+$/.test(d.tel1) || (d.tel1.length!==7 && d.tel1.length!==9))) { showToast('⚠️ Teléfono: 7 dígitos (fijo) o 9 (celular)','error'); return false; }
+  if(d.tel1 && (!/^\d+$/.test(d.tel1) || (d.tel1.length!==6 && d.tel1.length!==9))) { showToast('⚠️ Teléfono: 6 dígitos (fijo) o 9 (celular)','error'); return false; }
   if(!d.edu) { showToast('⚠️ Selecciona el Nivel Educativo','error'); return false; }
   if(!d.incap) { showToast('⚠️ Indica si tiene discapacidad','error'); return false; }
-  if(d.celcem && d.celcem.length>0 && d.celcem.length!==7 && d.celcem.length!==9) { showToast('⚠️ Teléfono de referencia: 7 o 9 dígitos','error'); return false; }
+  if(d.celcem && d.celcem.length>0 && d.celcem.length!==6 && d.celcem.length!==9) { showToast('⚠️ Teléfono de referencia: 6 o 9 dígitos','error'); return false; }
   if(d.egreso&&!/^\d{4}$/.test(d.egreso)) { showToast('⚠️ Año de egreso: 4 dígitos','error'); return false; }
   return true;
 }
@@ -1861,6 +1850,24 @@ function guardarRegistro() {
   }
   limpiarFormulario();
   mostrarStatus('success','✅ Registrado en BB.REGISTRO correctamente');
+  reproducirSonidoExito();
+}
+
+// Sonido de confirmación al guardar
+function reproducirSonidoExito() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.setValueAtTime(1320, ctx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.3);
+  } catch(e) {}
 }
 
 async function registrarEnBBRegistro(datos) {
@@ -2286,6 +2293,29 @@ function qrToggleEdu() {
   document.getElementById('qr-edu-sup').style.display = sup ? 'block' : 'none';
 }
 
+// Orden de campos del QR para auto-avance
+const QR_ORDEN = ['qr-dni','qr-ap','qr-am','qr-nom','qr-hijos','qr-dir','qr-dep','qr-prov',
+  'qr-dist','qr-tel1','qr-edu','qr-inst','qr-carrera','qr-egreso','qr-incap','qr-parentesco','qr-cem','qr-celcem'];
+
+function qrAvanzar(idActual) {
+  const idx = QR_ORDEN.indexOf(idActual);
+  if(idx === -1) return;
+  for(let i=idx+1; i<QR_ORDEN.length; i++) {
+    const el = document.getElementById(QR_ORDEN[i]);
+    if(el && el.offsetParent !== null) { el.focus(); return; }
+  }
+}
+
+function qrValidarTel(input) {
+  input.value = input.value.replace(/\D/g, '');
+  if(input.value.length > 9) {
+    input.value = input.value.slice(0, 9);
+    const err = document.getElementById('qrError');
+    err.textContent = '⚠️ No permitido: máximo 9 dígitos'; err.style.display='block';
+    setTimeout(() => err.style.display='none', 2500);
+  }
+}
+
 async function registrarQR() {
   const g = id => (document.getElementById(id)||{}).value || '';
   const dni = g('qr-dni').trim();
@@ -2296,6 +2326,9 @@ async function registrarQR() {
 
   if(!dni || !/^\d{8}$/.test(dni)) { err.textContent='⚠️ DNI inválido (8 dígitos)'; err.style.display='block'; return; }
   if(!ap || !nom) { err.textContent='⚠️ Completa apellido paterno y nombres'; err.style.display='block'; return; }
+  const t1 = g('qr-tel1'); const t2 = g('qr-celcem');
+  if(t1 && t1.length!==6 && t1.length!==9) { err.textContent='⚠️ Teléfono: 6 dígitos (fijo) o 9 (celular)'; err.style.display='block'; return; }
+  if(t2 && t2.length!==6 && t2.length!==9) { err.textContent='⚠️ Teléfono de referencia: 6 o 9 dígitos'; err.style.display='block'; return; }
 
   err.style.display='none';
   btn.disabled=true; btn.textContent='Enviando...';
@@ -2304,7 +2337,7 @@ async function registrarQR() {
     const payload = {
       accion:'registrarQR',
       dni, ap, am:g('qr-am').toUpperCase(), nombres:nom,
-      nac:g('qr-nac').toUpperCase(), ec:g('qr-ec'), hijos:g('qr-hijos'),
+      hijos:g('qr-hijos'),
       dir:g('qr-dir').toUpperCase(), dep:g('qr-dep'), prov:g('qr-prov'), dist:g('qr-dist').toUpperCase(),
       tel1:g('qr-tel1'), edu:g('qr-edu'), inst:g('qr-inst').toUpperCase(),
       carrera:g('qr-carrera').toUpperCase(), egreso:g('qr-egreso'),
@@ -2342,14 +2375,55 @@ function generarQR() {
 }
 
 function descargarQR() {
-  const img = document.querySelector('#qrCodeBox img') || document.querySelector('#qrCodeBox canvas');
-  if(!img) { showToast('Primero genera el QR','error'); return; }
-  let dataUrl;
-  if(img.tagName === 'CANVAS') dataUrl = img.toDataURL('image/png');
-  else dataUrl = img.src;
-  const a = document.createElement('a');
-  a.href = dataUrl; a.download = 'QR_Registro_Unifrutti.png'; a.click();
-  showToast('✅ QR descargado','success');
+  const canvas = document.querySelector('#qrCodeBox canvas');
+  const img = document.querySelector('#qrCodeBox img');
+  if(!canvas && !img) { showToast('Primero genera el QR','error'); return; }
+
+  // Crear un canvas propio para garantizar la descarga en móvil y PC
+  const tmpCanvas = document.createElement('canvas');
+  const size = 220;
+  tmpCanvas.width = size; tmpCanvas.height = size;
+  const ctx = tmpCanvas.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, size, size);
+
+  function descargar(dataUrl) {
+    // Convertir dataURL a Blob (funciona en móvil donde el href base64 falla)
+    fetch(dataUrl).then(r => r.blob()).then(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'QR_Registro_Unifrutti.png';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      showToast('✅ QR descargado','success');
+    }).catch(() => {
+      // Fallback: abrir en nueva pestaña para guardar manualmente
+      const a = document.createElement('a');
+      a.href = dataUrl; a.download = 'QR_Registro_Unifrutti.png';
+      a.target = '_blank'; a.click();
+      showToast('✅ QR generado, mantén presionado para guardar','success');
+    });
+  }
+
+  if(canvas) {
+    ctx.drawImage(canvas, 10, 10, 200, 200);
+    descargar(tmpCanvas.toDataURL('image/png'));
+  } else if(img) {
+    // Si es imagen, dibujarla en el canvas primero
+    const image = new Image();
+    image.crossOrigin = 'anonymous';
+    image.onload = function() {
+      ctx.drawImage(image, 10, 10, 200, 200);
+      descargar(tmpCanvas.toDataURL('image/png'));
+    };
+    image.onerror = function() {
+      descargar(img.src);
+    };
+    image.src = img.src;
+  }
 }
 
 // ════════════════════════════════
@@ -2396,7 +2470,12 @@ document.addEventListener('keypress', function(e) {
   const el = e.target;
   if(el.id && (el.id.startsWith('f-')) && typeof ORDEN_CAMPOS !== 'undefined' && ORDEN_CAMPOS.includes(el.id)) {
     e.preventDefault();
-    avanzarSiguiente(el.id);
+    // Si es el último campo (f-celcem), guardar automáticamente
+    if(el.id === 'f-celcem') {
+      guardarRegistro();
+    } else {
+      avanzarSiguiente(el.id);
+    }
   }
 });
 </script>
