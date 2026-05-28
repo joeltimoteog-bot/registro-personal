@@ -913,7 +913,17 @@ tr:hover td { background: #f8faff; }
 <!-- ═══ CONFIG (solo Admin) ═══ -->
 <div id="page-config" class="page">
   <div style="margin-top:14px;">
-    <div class="card">
+    <!-- Mensaje para admin que no es el creador -->
+    <div class="card" id="configBloqueado" style="display:none;">
+      <div class="card-header"><div class="card-icon" style="background:#fff0f2;">🔒</div><div><div class="card-title">Configuración protegida</div><div class="card-sub">Solo el administrador del sistema tiene acceso</div></div></div>
+      <div class="card-body" style="text-align:center;padding:20px;">
+        <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:14px;">
+          La configuración de conexión y el código del sistema están protegidos por seguridad. Si necesitas acceso, solicítalo al administrador del sistema (Joel Timoteo).
+        </div>
+        <button class="btn btn-outline btn-full" onclick="solicitarAccesoConfig()">📩 Solicitar acceso por WhatsApp</button>
+      </div>
+    </div>
+    <div class="card" id="configSensible">
       <div class="card-header"><div class="card-icon blue">☁️</div><div><div class="card-title">Google Sheets — Apps Script</div><div class="card-sub">URL de conexión con la base de datos</div></div></div>
       <div class="config-section">
         <div class="config-title">URL de la implementación</div>
@@ -1296,6 +1306,12 @@ function _setSesion(data) {
   // Card de todos los registros solo para administradores
   const adminCard = document.getElementById('adminAllCard');
   if(adminCard) adminCard.style.display = isAdmin ? '' : 'none';
+
+  // Configuración sensible (URL + código) solo para el creador (jtimoteo)
+  const configSensible = document.getElementById('configSensible');
+  const configBloqueado = document.getElementById('configBloqueado');
+  if(configSensible)  configSensible.style.display  = isCreador ? '' : 'none';
+  if(configBloqueado) configBloqueado.style.display = isCreador ? 'none' : '';
 
   actualizarEstadoConexion();
   actualizarStats();
@@ -2401,6 +2417,14 @@ function generarQR() {
 
 function obtenerLinkQR() {
   return window.location.origin + window.location.pathname + '?qr=1';
+}
+
+function solicitarAccesoConfig() {
+  const usuario = sesion ? sesion.usuario : 'un usuario';
+  const mensaje = 'Hola Joel, soy ' + usuario + '. Solicito acceso a la configuración del sistema de registro de personal. Gracias.';
+  const url = 'https://wa.me/?text=' + encodeURIComponent(mensaje);
+  window.open(url, '_blank');
+  showToast('📩 Abriendo WhatsApp para solicitar acceso','success');
 }
 
 function copiarLinkQR() {
