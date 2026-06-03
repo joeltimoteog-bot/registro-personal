@@ -1711,18 +1711,32 @@ function _renderStatsDesdeDatos() {
   datos.forEach(t => { const tp = t.tipo||'Sin tipo'; tipos[tp]=(tipos[tp]||0)+1; });
   document.getElementById('stats-tipo').innerHTML = renderBars(tipos, total, ['#c8102e','#1a3c6e']);
 
-  // Por Usuario
+  // Por Usuario - solo nombres válidos (no DNIs ni vacíos), top 10
   const usuarios = {};
-  datos.forEach(t => { const u = t.registradoPor||'Sin usuario'; usuarios[u]=(usuarios[u]||0)+1; });
-  document.getElementById('stats-usuario').innerHTML = renderBars(usuarios, total, ['#1a3c6e','#c8102e','#374151']);
+  datos.forEach(t => {
+    let u = String(t.registradoPor||'').trim();
+    // Si es número (es un DNI mal mapeado) o está vacío, agrupar como "Sin usuario"
+    if(!u || /^\d+$/.test(u)) u = 'Sin usuario';
+    usuarios[u] = (usuarios[u]||0)+1;
+  });
+  // Ordenar por cantidad descendente y tomar solo los top 10
+  const usuariosTop = Object.entries(usuarios)
+    .sort((a,b) => b[1] - a[1])
+    .slice(0, 10)
+    .reduce((acc,[k,v]) => { acc[k]=v; return acc; }, {});
+  document.getElementById('stats-usuario').innerHTML = renderBars(usuariosTop, total, ['#1a3c6e','#c8102e','#374151']);
 
-  // Por Ruta/Código
+  // Por Ruta/Código - top 10
   const rutas = {};
   datos.forEach(t => {
     const r = (t.ruta && t.codigo) ? t.ruta+' / '+t.codigo : (t.ruta||t.codigo||'Sin ruta');
     rutas[r]=(rutas[r]||0)+1;
   });
-  document.getElementById('stats-ruta').innerHTML = renderBars(rutas, total, ['#c8102e','#1a3c6e','#374151']);
+  const rutasTop = Object.entries(rutas)
+    .sort((a,b) => b[1] - a[1])
+    .slice(0, 10)
+    .reduce((acc,[k,v]) => { acc[k]=v; return acc; }, {});
+  document.getElementById('stats-ruta').innerHTML = renderBars(rutasTop, total, ['#c8102e','#1a3c6e','#374151']);
 }
 
 function renderBars(obj, total, colors) {
