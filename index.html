@@ -858,7 +858,10 @@ tr:hover td { background: #f8faff; }
   <div style="margin-top:14px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
       <div style="font-size:14px;font-weight:700;color:var(--text);">📊 Indicadores de registro</div>
-      <button class="btn btn-sm btn-outline" onclick="renderEstadisticas()">🔄 Actualizar</button>
+      <div style="display:flex;gap:6px;">
+        <button class="btn btn-sm btn-outline" onclick="enviarReporteWhatsApp()" style="background:#dcfce7;border-color:#16a34a;color:#15803d;">📤 Enviar reporte</button>
+        <button class="btn btn-sm btn-outline" onclick="renderEstadisticas()">🔄 Actualizar</button>
+      </div>
     </div>
 
     <!-- Toggle entre HOY y GENERAL -->
@@ -1104,12 +1107,37 @@ function handleRequest(d) {
     if (!bsh) return JSON.stringify({ok:false, msg:'Hoja no encontrada'});
     var fila = parseInt(d.fila);
     if (!fila || fila < 2) return JSON.stringify({ok:false, msg:'Fila inválida'});
+
+    // Guardar valores anteriores para auditoría
+    var valoresAntes = bsh.getRange(fila, 1, 1, 27).getValues()[0];
+
     var pf = (d.parentesco === 'Otros' && d.parentescoOtro) ? d.parentescoOtro : (d.parentesco||'');
     bsh.getRange(fila, 1, 1, 27).setValues([[d.dni,d.ap,d.am,d.nombres,d.mismadir||'',
       d.dir,d.dep,d.prov,d.dist,d.tel1,d.hijos,d.edu,d.inst,d.carrera,d.egreso,
       d.incap,pf,d.cem,d.celcem,d.fecha,d.empresaOrigen||'',d.ruta||'',d.codigo||'',
       d.sector||'',d.tipo||'',d.registradoPor||'',d.tardio||'NO']]);
-    return JSON.stringify({ok:true});
+
+    // Registrar en AUDITORIA
+    var aud = ss.getSheetByName('AUDITORIA');
+    if (!aud) {
+      aud = ss.insertSheet('AUDITORIA');
+      aud.appendRow(['FechaHora','Usuario','Accion','DNI','Fila','CamposModificados','ValoresAntes']);
+    }
+    var cambios = [];
+    var nuevos = [d.dni,d.ap,d.am,d.nombres,d.mismadir||'',d.dir,d.dep,d.prov,d.dist,
+      d.tel1,d.hijos,d.edu,d.inst,d.carrera,d.egreso,d.incap,pf,d.cem,d.celcem,d.fecha,
+      d.empresaOrigen||'',d.ruta||'',d.codigo||'',d.sector||'',d.tipo||'',d.registradoPor||'',d.tardio||'NO'];
+    var nombres = ['DNI','ApPat','ApMat','Nombres','MismaDir','Dir','Dep','Prov','Dist',
+      'Tel1','Hijos','Edu','Inst','Carrera','Egreso','Incap','Parentesco','Cem','CelCem','Fecha',
+      'Empresa','Ruta','Codigo','Grupo','Tipo','RegPor','Tardio'];
+    for (var k = 0; k < nuevos.length; k++) {
+      if (String(valoresAntes[k]||'') !== String(nuevos[k]||'')) {
+        cambios.push(nombres[k]+': "'+(valoresAntes[k]||'')+'" → "'+(nuevos[k]||'')+'"');
+      }
+    }
+    aud.appendRow([new Date(), d.usuarioEditor||'-', 'EDITAR', d.dni, fila,
+      cambios.length+' campo(s)', cambios.join(' | ')]);
+    return JSON.stringify({ok:true, cambios:cambios.length});
   }
 
   // LISTAR TODOS LOS REGISTROS DE BB.REGISTRO (admin)
@@ -1348,6 +1376,42 @@ async function iniciarSesion() {
   }
 }
 
+function mostrarBannerBienvenida(mensaje, rol) {
+  const consejos = [
+    '💡 Tip: Usa el botón 📷 para escanear el DNI con la cámara y agilizar el registro',
+    '💡 Tip: Si el trabajador sigue en la misma dirección, marca SÍ y no llenes los campos de dirección',
+    '💡 Tip: El botón "⏰ Personal tardío" te permite registrar a quienes llegan después del bus',
+    '💡 Tip: En la pestaña Stats puedes alternar entre vista "Hoy" y "Total general"',
+    '💡 Tip: Puedes editar cualquier registro existente con el botón ✏️ en la pestaña Lista',
+    '💡 Tip: Al exportar, marca "Solo Personal Tardío" para filtrar esos registros',
+    '💡 Tip: Comparte el QR o el link del formulario por WhatsApp con un solo botón'
+  ];
+  const tip = consejos[Math.floor(Math.random() * consejos.length)];
+
+  const banner = document.createElement('div');
+  banner.id = 'bienvenidaBanner';
+  banner.style.cssText = `
+    position: fixed; top: 70px; left: 50%; transform: translateX(-50%) translateY(-150%);
+    background: linear-gradient(135deg, #1a3c6e, #c8102e);
+    color: white; padding: 16px 22px; border-radius: 14px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+    z-index: 5000; max-width: 92%; min-width: 280px; text-align: center;
+    transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    font-family: 'Tahoma', sans-serif;
+  `;
+  banner.innerHTML = `
+    <div style="font-size:16px;font-weight:700;margin-bottom:4px;">${mensaje}</div>
+    <div style="font-size:11px;opacity:0.85;margin-bottom:8px;">Sesión iniciada como ${rol}</div>
+    <div style="font-size:12px;background:rgba(255,255,255,0.15);padding:8px 12px;border-radius:8px;line-height:1.4;">${tip}</div>
+  `;
+  document.body.appendChild(banner);
+  setTimeout(() => banner.style.transform = 'translateX(-50%) translateY(0)', 50);
+  setTimeout(() => {
+    banner.style.transform = 'translateX(-50%) translateY(-150%)';
+    setTimeout(() => banner.remove(), 600);
+  }, 4500);
+}
+
 function _setSesion(data) {
   sesion = data;
   document.getElementById('loginScreen').style.display = 'none';
@@ -1383,20 +1447,28 @@ function _setSesion(data) {
   actualizarEstadoConexion();
   actualizarStats();
   if(isAdmin) cargarUsuarios();
-  // Cache desactivado: con +2000 registros es mejor buscar puntualmente
-  // Los administradores entran directo con mensaje de bienvenida; usuarios normales ven el modal
-  if(isAdmin) {
-    const primerNombre = data.usuario.charAt(0).toUpperCase() + data.usuario.slice(1);
-    setTimeout(() => showToast('👋 Hola ' + primerNombre + ', bienvenido. ¿En qué trabajamos hoy?', 'success'), 500);
-  } else {
-    setTimeout(() => abrirSesionModal(), 400);
-  }
+  // Mensaje de bienvenida con saludo según hora del día
+  const primerNombre = data.usuario.charAt(0).toUpperCase() + data.usuario.slice(1);
+  const hora = new Date().getHours();
+  let saludo = 'Hola';
+  if(hora >= 5 && hora < 12)       saludo = '☀️ Buenos días';
+  else if(hora >= 12 && hora < 19) saludo = '🌤️ Buenas tardes';
+  else                              saludo = '🌙 Buenas noches';
+  const mensaje = saludo + ' ' + primerNombre + ', bienvenido al sistema.';
+  setTimeout(() => mostrarBannerBienvenida(mensaje, data.estado), 300);
+
+  if(!isAdmin) setTimeout(() => abrirSesionModal(), 1200);
   document.getElementById('loginBtn').disabled = false;
   document.getElementById('loginLoading').style.display = 'none';
 }
 
-function cerrarSesion() {
-  if(!confirm('¿Cerrar sesión?')) return;
+async function cerrarSesion() {
+  // Preguntar si quiere enviar reporte del día por WhatsApp
+  let mensaje = '¿Cerrar sesión?';
+  if(sesion && datosStatsCache !== null && datosStatsCache.length) {
+    mensaje = '¿Cerrar sesión?\n\nSi quieres recibir un reporte de tu trabajo de hoy por WhatsApp, presiona "Cancelar" y usa el botón "📤 Enviar reporte" primero.';
+  }
+  if(!confirm(mensaje)) return;
   if(intervaloContador) { clearInterval(intervaloContador); intervaloContador = null; }
   sesion = null;
   sesionActiva = null;
@@ -1406,6 +1478,57 @@ function cerrarSesion() {
   document.getElementById('loginPass').value = '';
   document.getElementById('loginError').style.display = 'none';
   showPage('buscar', document.querySelector('.tab'));
+}
+
+async function enviarReporteWhatsApp() {
+  if(!sesion) { showToast('Sin sesión activa','error'); return; }
+  // Asegurar datos actualizados
+  if(!datosStatsCache) await renderEstadisticas();
+  if(!datosStatsCache || !datosStatsCache.length) {
+    showToast('No hay datos para reportar','error'); return;
+  }
+
+  const hoy = new Date().toLocaleDateString('es-PE');
+  const datosHoy = datosStatsCache.filter(t => {
+    const f = String(t.fecha||'').trim();
+    return f === hoy || f.indexOf(hoy) === 0;
+  });
+
+  // Filtrar solo los registros del usuario actual
+  const misRegistros = datosHoy.filter(t => (t.registradoPor||'').toLowerCase() === sesion.usuario.toLowerCase());
+
+  const totalHoy = datosHoy.length;
+  const mios = misRegistros.length;
+  const tardiosMios = misRegistros.filter(t => String(t.tardio||'').toUpperCase()==='SI').length;
+  const busCompletoMios = misRegistros.filter(t => t.tipo === 'Bus Completo').length;
+  const complementoMios = misRegistros.filter(t => t.tipo === 'Complemento').length;
+
+  // Agrupar mis registros por grupo/código
+  const porGrupo = {};
+  misRegistros.forEach(t => {
+    const k = (t.ruta||'') + ' / ' + (t.codigo||'') + ' / Grupo ' + (t.sector||'-');
+    porGrupo[k] = (porGrupo[k]||0) + 1;
+  });
+  let detalleGrupos = '';
+  Object.keys(porGrupo).forEach(k => { detalleGrupos += '\n  • ' + k + ': ' + porGrupo[k]; });
+
+  const reporte =
+    '📊 *REPORTE DEL DÍA - UNIFRUTTI*\n' +
+    '📅 ' + hoy + '\n' +
+    '👤 Usuario: ' + sesion.usuario + '\n' +
+    '─────────────────\n' +
+    '*MIS REGISTROS HOY:* ' + mios + '\n' +
+    '  🚌 Bus Completo: ' + busCompletoMios + '\n' +
+    '  ➕ Complemento:  ' + complementoMios + '\n' +
+    '  ⏰ Personal tardío: ' + tardiosMios + '\n' +
+    (detalleGrupos ? '\n*Detalle por grupo:*' + detalleGrupos + '\n' : '') +
+    '─────────────────\n' +
+    '*TOTAL HOY EN EL SISTEMA:* ' + totalHoy + '\n\n' +
+    '_Reporte automático del Sistema de Registro de Personal._';
+
+  const url = 'https://wa.me/?text=' + encodeURIComponent(reporte);
+  window.open(url, '_blank');
+  showToast('📤 Reporte abierto en WhatsApp','success');
 }
 
 // ════════════════════════════════
@@ -2110,23 +2233,42 @@ function validarDatos(d) {
   return true;
 }
 
-function guardarRegistro() {
+async function guardarRegistro() {
   if(!sesionActiva && !modoEditar) { showToast('⚠️ Primero inicia un registro con el botón "Nuevo registro"','error'); abrirSesionModal(); return; }
   const datos = obtenerDatosFormulario();
   if(!validarDatos(datos)) return;
   datos.tardio = modoTardio;
 
   if(modoEditar && filaEditar) {
-    // Actualizar registro existente en BB.REGISTRO
     actualizarRegistroBB(datos);
     return;
+  }
+
+  // ⚠️ Verificar DNI duplicado en BB.REGISTRO antes de insertar
+  if(gsConfig.habilitado && gsConfig.webhookUrl) {
+    try {
+      const u = gsConfig.webhookUrl + '?accion=buscarBBRegistro&dni=' + encodeURIComponent(datos.dni);
+      const r = await fetch(u);
+      const t = await r.text();
+      const m = t.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
+      const dup = JSON.parse(m ? m[1] : t);
+      if(dup.encontrado) {
+        const seguir = confirm(
+          '⚠️ DUPLICADO DETECTADO\n\n' +
+          'El DNI ' + datos.dni + ' ya está registrado en BB.REGISTRO:\n' +
+          '• ' + (dup.nombres||'') + ' ' + (dup.ap||'') + '\n' +
+          '• Registrado el ' + (dup.fecha||'') + ' por ' + (dup.registradoPor||'') + '\n\n' +
+          '¿Deseas registrarlo de nuevo de todas formas?'
+        );
+        if(!seguir) { showToast('Registro cancelado - DNI duplicado','error'); return; }
+      }
+    } catch(e) { /* si falla, continuar normalmente */ }
   }
 
   const idx = trabajadores.findIndex(t => t.dni===datos.dni);
   if(idx!==-1) trabajadores[idx]=datos; else { trabajadores.push(datos); hoyCount++; localStorage.setItem('hoy_count',hoyCount); }
   localStorage.setItem('pd_local', JSON.stringify(trabajadores));
   registrarEnBBRegistro(datos);
-  // Solo Bus Completo tiene contador; Complemento es libre
   if(sesionActiva && !sesionActiva.libre) {
     sesionActiva.registrados++;
     actualizarContador();
@@ -2141,16 +2283,16 @@ function guardarRegistro() {
 async function actualizarRegistroBB(datos) {
   if(!gsConfig.habilitado||!gsConfig.webhookUrl) { showToast('⚠️ Sin conexión GS','error'); return; }
   try {
-    const payload = {accion:'actualizarRegistro', fila:filaEditar, ...datos};
+    const payload = {accion:'actualizarRegistro', fila:filaEditar, usuarioEditor: sesion ? sesion.usuario : '-', ...datos};
     const url = gsConfig.webhookUrl+'?data='+encodeURIComponent(JSON.stringify(payload));
     const resp = await fetch(url);
     const txt = await resp.text();
     const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
     const r = JSON.parse(m ? m[1] : txt);
     if(r.ok) {
-      mostrarStatus('success','✅ Registro actualizado correctamente');
+      const msg = r.cambios ? '✅ Registro actualizado ('+r.cambios+' campo(s) modificado(s))' : '✅ Registro actualizado correctamente';
+      mostrarStatus('success', msg);
       reproducirSonidoExito();
-      // Salir del modo edición
       modoEditar = false; filaEditar = null; modoTardio = false;
       document.getElementById('btnGuardarText').textContent = 'Registrar en BB.REGISTRO';
       document.getElementById('btnGuardarIcon').textContent = '💾';
