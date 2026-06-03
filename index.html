@@ -580,6 +580,9 @@ tr:hover td { background: #f8faff; }
         </div>
       </div>
       <div style="margin-top:9px;font-size:11px;color:var(--muted2);">ℹ️ Busca automáticamente en Rapel y Verfrut · Toca 📷 para escanear DNI</div>
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-outline btn-sm" onclick="iniciarPersonalTardio()" style="flex:1;min-width:140px;background:#fff8e6;border-color:#f0c040;color:#8a6500;">⏰ Personal tardío</button>
+      </div>
     </div>
   </div>
 
@@ -632,7 +635,7 @@ tr:hover td { background: #f8faff; }
       <div class="section-body hidden" id="sec-ubicacion">
         <div class="input-group">
           <label class="input-label">¿El colaborador sigue viviendo en su misma dirección?</label>
-          <select id="f-mismadir" class="input-field" onchange="toggleDireccion();">
+          <select id="f-mismadir" class="input-field" onchange="toggleDireccion();avanzarSiguiente('f-mismadir');">
             <option value="">— Seleccionar —</option>
             <option value="SI">SI</option>
             <option value="NO">NO</option>
@@ -652,7 +655,7 @@ tr:hover td { background: #f8faff; }
           </div>
           <div class="input-group">
             <label class="input-label">Provincia</label>
-            <select id="f-prov" class="input-field">
+            <select id="f-prov" class="input-field" onchange="avanzarSiguiente('f-prov');">
               <option value="">— Seleccionar —</option>
             </select>
           </div>
@@ -679,7 +682,7 @@ tr:hover td { background: #f8faff; }
       <div class="section-body hidden" id="sec-educacion">
         <div class="input-group">
           <label class="input-label">Nivel Educativo</label>
-          <select id="f-edu" class="input-field" onchange="toggleEducacion()">
+          <select id="f-edu" class="input-field" onchange="toggleEducacion();avanzarSiguiente('f-edu');">
             <option value="">— Seleccionar —</option>
             <option value="Educación técnica completa">Educación técnica completa</option>
             <option value="Educación Universitaria completa">Educación Universitaria completa</option>
@@ -724,7 +727,7 @@ tr:hover td { background: #f8faff; }
         </div>
         <div class="input-group">
           <label class="input-label">Parentesco del Contacto de Referencia</label>
-          <select id="f-parentesco" class="input-field" onchange="toggleParentesco()">
+          <select id="f-parentesco" class="input-field" onchange="toggleParentesco();avanzarSiguiente('f-parentesco');">
             <option value="">— Seleccionar —</option>
             <option value="Esposo(a)">Esposo(a)</option>
             <option value="Hijo(a)">Hijo(a)</option>
@@ -817,6 +820,10 @@ tr:hover td { background: #f8faff; }
             <input type="date" id="exp-hasta" class="input-field">
           </div>
         </div>
+        <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#fff8e6;border:1px solid #f0c040;border-radius:8px;margin-bottom:10px;cursor:pointer;">
+          <input type="checkbox" id="exp-solo-tardios" style="width:18px;height:18px;cursor:pointer;">
+          <span style="font-size:13px;font-weight:600;color:#8a6500;">⏰ Solo exportar Personal Tardío</span>
+        </label>
         <button class="btn btn-success btn-full" onclick="exportarBBRegistro()">⬇️ Descargar por rango de fechas (Excel)</button>
         <button class="btn btn-outline btn-full" style="margin-top:8px;" onclick="exportarBBRegistroTodo()">⬇️ Descargar TODO (sin filtro)</button>
       </div>
@@ -853,9 +860,16 @@ tr:hover td { background: #f8faff; }
       <div style="font-size:14px;font-weight:700;color:var(--text);">📊 Indicadores de registro</div>
       <button class="btn btn-sm btn-outline" onclick="renderEstadisticas()">🔄 Actualizar</button>
     </div>
+
+    <!-- Toggle entre HOY y GENERAL -->
+    <div style="display:flex;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:4px;margin-bottom:14px;">
+      <button id="btnVistaHoy" onclick="cambiarVistaStats('hoy')" style="flex:1;padding:9px;border:none;border-radius:7px;background:white;font-weight:700;font-size:12px;cursor:pointer;box-shadow:var(--shadow-sm);color:var(--red);">📅 Hoy</button>
+      <button id="btnVistaGeneral" onclick="cambiarVistaStats('general')" style="flex:1;padding:9px;border:none;border-radius:7px;background:transparent;font-weight:700;font-size:12px;cursor:pointer;color:var(--muted);">🌐 Total general</button>
+    </div>
+
     <div class="stats-grid" id="statsTop">
-      <div class="stat-box"><div class="stat-num" id="st-total">0</div><div class="stat-label">Total registrados</div></div>
-      <div class="stat-box"><div class="stat-num" id="st-hoy">0</div><div class="stat-label">Registrados hoy</div></div>
+      <div class="stat-box"><div class="stat-num" id="st-total">0</div><div class="stat-label" id="st-total-label">Total del día</div></div>
+      <div class="stat-box"><div class="stat-num" id="st-tardios">0</div><div class="stat-label">Personal tardío</div></div>
     </div>
     <div class="card">
       <div class="card-body" style="padding-bottom:6px;">
@@ -865,7 +879,7 @@ tr:hover td { background: #f8faff; }
     </div>
     <div class="card">
       <div class="card-body" style="padding-bottom:6px;">
-        <div class="stat-card-title">🚌 Por Tipo (Bus Nuevo / Complemento)</div>
+        <div class="stat-card-title">🚌 Por Tipo (Bus Completo / Complemento)</div>
         <div id="stats-tipo"></div>
       </div>
     </div>
@@ -1051,17 +1065,50 @@ function handleRequest(d) {
     var reg = ss.getSheetByName('BB.REGISTRO');
     if (!reg) {
       reg = ss.insertSheet('BB.REGISTRO');
-      reg.appendRow(['DNI','ApellidoPaterno','ApellidoMaterno','Nombres','Nacionalidad',
-        'EstadoCivil','SigueMismaDir','Direccion','Departamento','Provincia','Distrito',
-        'Telefono1','TieneHijos','NivelEducativo','Institucion','Carrera','AnoEgreso',
-        'Discapacidad','Parentesco','ContactoReferencia','TelefonoReferencia',
-        'FechaRegistro','Empresa','Ruta','Codigo','Grupo','Tipo','RegistradoPor']);
+      reg.appendRow(['DNI','ApellidoPaterno','ApellidoMaterno','Nombres','SigueMismaDir',
+        'DireccionActual','Departamento','Provincia','Distrito','Telefono1','TieneHijos',
+        'NivelEducativo','Institucion','Carrera','AnoEgreso','Discapacidad','Parentesco',
+        'ContactoReferencia','TelefonoReferencia','FechaRegistro','Empresa','Ruta',
+        'Codigo','Grupo','Tipo','RegistradoPor','EsTardio']);
     }
     var parentescoFinal = (d.parentesco === 'Otros' && d.parentescoOtro) ? d.parentescoOtro : (d.parentesco||'');
-    reg.appendRow([d.dni,d.ap,d.am,d.nombres,d.nac,d.ec,d.mismadir||'',d.dir,d.dep,d.prov,
+    reg.appendRow([d.dni,d.ap,d.am,d.nombres,d.mismadir||'',d.dir,d.dep,d.prov,
       d.dist,d.tel1,d.hijos,d.edu,d.inst,d.carrera,d.egreso,d.incap,parentescoFinal,
       d.cem,d.celcem,d.fecha,d.empresaOrigen||'',d.ruta||'',d.codigo||'',d.sector||'',
-      d.tipo||'',d.registradoPor||'']);
+      d.tipo||'',d.registradoPor||'',d.tardio?'SI':'NO']);
+    return JSON.stringify({ok:true});
+  }
+
+  // BUSCAR UN REGISTRO EN BB.REGISTRO POR DNI (para editar)
+  if (accion === 'buscarBBRegistro') {
+    var bsh = ss.getSheetByName('BB.REGISTRO');
+    if (!bsh) return JSON.stringify({encontrado:false});
+    var dniB = String(d.dni).trim();
+    var col = bsh.getRange(1, 1, bsh.getLastRow(), 1);
+    var enc = col.createTextFinder(dniB).matchEntireCell(true).findNext();
+    if (!enc) enc = col.createTextFinder(String(parseInt(dniB))).matchEntireCell(true).findNext();
+    if (!enc) return JSON.stringify({encontrado:false});
+    var f = enc.getRow();
+    var v = bsh.getRange(f, 1, 1, 27).getValues()[0];
+    return JSON.stringify({encontrado:true, fila:f,
+      dni:v[0], ap:v[1], am:v[2], nombres:v[3], mismadir:v[4], dir:v[5],
+      dep:v[6], prov:v[7], dist:v[8], tel1:v[9], hijos:v[10], edu:v[11],
+      inst:v[12], carrera:v[13], egreso:v[14], incap:v[15], parentesco:v[16],
+      cem:v[17], celcem:v[18], fecha:v[19], empresaOrigen:v[20], ruta:v[21],
+      codigo:v[22], sector:v[23], tipo:v[24], registradoPor:v[25], tardio:v[26]});
+  }
+
+  // ACTUALIZAR REGISTRO EXISTENTE EN BB.REGISTRO
+  if (accion === 'actualizarRegistro') {
+    var bsh = ss.getSheetByName('BB.REGISTRO');
+    if (!bsh) return JSON.stringify({ok:false, msg:'Hoja no encontrada'});
+    var fila = parseInt(d.fila);
+    if (!fila || fila < 2) return JSON.stringify({ok:false, msg:'Fila inválida'});
+    var pf = (d.parentesco === 'Otros' && d.parentescoOtro) ? d.parentescoOtro : (d.parentesco||'');
+    bsh.getRange(fila, 1, 1, 27).setValues([[d.dni,d.ap,d.am,d.nombres,d.mismadir||'',
+      d.dir,d.dep,d.prov,d.dist,d.tel1,d.hijos,d.edu,d.inst,d.carrera,d.egreso,
+      d.incap,pf,d.cem,d.celcem,d.fecha,d.empresaOrigen||'',d.ruta||'',d.codigo||'',
+      d.sector||'',d.tipo||'',d.registradoPor||'',d.tardio||'NO']]);
     return JSON.stringify({ok:true});
   }
 
@@ -1074,8 +1121,8 @@ function handleRequest(d) {
     for (var i = 1; i < rd.length; i++) {
       if (!rd[i][0]) continue;
       rl.push({dni:rd[i][0], ap:rd[i][1], am:rd[i][2], nombres:rd[i][3],
-        fecha:rd[i][21], ruta:rd[i][23], codigo:rd[i][24], sector:rd[i][25],
-        tipo:rd[i][26], registradoPor:rd[i][27]});
+        fecha:rd[i][19], ruta:rd[i][21], codigo:rd[i][22], sector:rd[i][23],
+        tipo:rd[i][24], registradoPor:rd[i][25], tardio:rd[i][26]});
     }
     return JSON.stringify({registros:rl});
   }
@@ -1087,8 +1134,8 @@ function handleRequest(d) {
     var rd = rsh.getDataRange().getValues();
     var count = 0;
     for (var i = 1; i < rd.length; i++) {
-      if (String(rd[i][25]).trim() === String(d.grupo).trim()
-          && String(rd[i][24]).trim() === String(d.codigo).trim()) count++;
+      if (String(rd[i][23]).trim() === String(d.grupo).trim()
+          && String(rd[i][22]).trim() === String(d.codigo).trim()) count++;
     }
     return JSON.stringify({count:count});
   }
@@ -1480,9 +1527,22 @@ function iniciarAutoContador() {
 // ════════════════════════════════
 //  ESTADÍSTICAS
 // ════════════════════════════════
+let datosStatsCache = null;
+let vistaStats = 'hoy'; // 'hoy' o 'general'
+
+function cambiarVistaStats(v) {
+  vistaStats = v;
+  document.getElementById('btnVistaHoy').style.background     = v==='hoy' ? 'white' : 'transparent';
+  document.getElementById('btnVistaHoy').style.color         = v==='hoy' ? 'var(--red)' : 'var(--muted)';
+  document.getElementById('btnVistaHoy').style.boxShadow     = v==='hoy' ? 'var(--shadow-sm)' : 'none';
+  document.getElementById('btnVistaGeneral').style.background = v==='general' ? 'white' : 'transparent';
+  document.getElementById('btnVistaGeneral').style.color     = v==='general' ? 'var(--red)' : 'var(--muted)';
+  document.getElementById('btnVistaGeneral').style.boxShadow = v==='general' ? 'var(--shadow-sm)' : 'none';
+  document.getElementById('st-total-label').textContent      = v==='hoy' ? 'Total del día' : 'Total general';
+  _renderStatsDesdeDatos();
+}
+
 async function renderEstadisticas() {
-  // Cargar TODOS los registros de BB.REGISTRO (Google Sheets), no solo los locales
-  let datos = trabajadores;
   if(gsConfig.habilitado && gsConfig.webhookUrl) {
     try {
       document.getElementById('st-total').textContent = '...';
@@ -1491,15 +1551,30 @@ async function renderEstadisticas() {
       const txt = await resp.text();
       const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
       const data = JSON.parse(m ? m[1] : txt);
-      if(data.registros && data.registros.length) datos = data.registros;
-    } catch(e) {}
+      datosStatsCache = data.registros || [];
+    } catch(e) { datosStatsCache = trabajadores; }
+  } else {
+    datosStatsCache = trabajadores;
+  }
+  _renderStatsDesdeDatos();
+}
+
+function _renderStatsDesdeDatos() {
+  if(!datosStatsCache) return;
+  const hoy = new Date().toLocaleDateString('es-PE');
+  let datos;
+  if(vistaStats === 'hoy') {
+    datos = datosStatsCache.filter(t => {
+      const f = String(t.fecha||'').trim();
+      return f === hoy || f.indexOf(hoy) === 0;
+    });
+  } else {
+    datos = datosStatsCache;
   }
 
   document.getElementById('st-total').textContent = datos.length;
-  // Contar los de hoy
-  const hoy = new Date().toLocaleDateString('es-PE');
-  const hoyN = datos.filter(t => (t.fecha||'').indexOf(hoy.split('/')[0]) === 0 || t.fecha === hoy).length;
-  document.getElementById('st-hoy').textContent = hoyN || hoyCount;
+  const tardios = datos.filter(t => String(t.tardio||'').toUpperCase() === 'SI').length;
+  document.getElementById('st-tardios').textContent = tardios;
 
   const total = datos.length || 1;
 
@@ -1610,7 +1685,7 @@ function actualizarDistrito() {
   const cont = document.getElementById('f-dist-wrap');
   const key = dep + '|' + prov;
   if(DISTRITOS[key]) {
-    let html = '<select id="f-dist" class="input-field"><option value="">— Seleccionar —</option>';
+    let html = '<select id="f-dist" class="input-field" onchange="avanzarSiguiente(\'f-dist\');"><option value="">— Seleccionar —</option>';
     DISTRITOS[key].forEach(d => { html += '<option value="'+d+'">'+d+'</option>'; });
     html += '</select>';
     cont.innerHTML = html;
@@ -1769,6 +1844,69 @@ function cerrarEscaner() {
     }).catch(() => { escanerInstancia = null; });
   }
   document.getElementById('escanerModal').style.display = 'none';
+}
+
+// ════════════════════════════════
+//  PERSONAL TARDÍO + EDICIÓN
+// ════════════════════════════════
+let modoTardio = false;     // Marca el próximo registro como tardío
+let modoEditar = false;     // Si está editando un registro existente
+let filaEditar = null;      // Fila en BB.REGISTRO que se está editando
+
+function iniciarPersonalTardio() {
+  // Abre el modal de sesión y marca que el próximo registro será tardío
+  modoTardio = true;
+  modoEditar = false;
+  filaEditar = null;
+  abrirSesionModal();
+  showToast('⏰ Modo Personal Tardío: configura ruta/grupo y luego registra','success');
+}
+
+async function editarRegistroPorDNI() {
+  const dni = prompt('Ingresa el DNI del registro a editar (8 dígitos):');
+  if(!dni || !/^\d{8}$/.test(dni.trim())) {
+    showToast('DNI inválido','error');
+    return;
+  }
+  await editarRegistroBB(dni.trim());
+}
+
+async function editarRegistroBB(dni) {
+  if(!gsConfig.habilitado || !gsConfig.webhookUrl) { showToast('Sin conexión','error'); return; }
+  showToast('🔍 Buscando registro...','');
+  try {
+    const url = gsConfig.webhookUrl + '?accion=buscarBBRegistro&dni=' + encodeURIComponent(dni);
+    const resp = await fetch(url);
+    const txt = await resp.text();
+    const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
+    const r = JSON.parse(m ? m[1] : txt);
+    if(!r.encontrado) { showToast('No se encontró ese DNI en BB.REGISTRO','error'); return; }
+
+    // Activar modo edición y poblar formulario
+    modoEditar = true;
+    filaEditar = r.fila;
+    modoTardio = String(r.tardio||'').toUpperCase() === 'SI';
+    empresaEncontrada = r.empresaOrigen || '';
+
+    // Activar sesión con los datos del registro
+    sesionActiva = {
+      ruta: r.ruta || '', codigo: r.codigo || '', sector: r.sector || '',
+      tipo: r.tipo || '', cantidad: 0, registrados: 0, libre: (r.tipo === 'Complemento')
+    };
+    actualizarSesionBar();
+
+    // Ir a pestaña Buscar y cargar datos
+    showPage('buscar', document.querySelector('.tab'));
+    document.getElementById('dniSearch').value = dni;
+    document.getElementById('workerCardWrap').innerHTML = '';
+    document.getElementById('formCard').style.display = 'block';
+    mostrarStatus('found', '✏️ Editando registro: ' + (r.nombres||'') + ' ' + (r.ap||''));
+    cargarDatos(r);
+    document.getElementById('btnGuardarText').textContent = 'Actualizar registro';
+    document.getElementById('btnGuardarIcon').textContent = '✏️';
+  } catch(e) {
+    showToast('Error al buscar: ' + e.message,'error');
+  }
 }
 
 function buscarDNI() {
@@ -1973,9 +2111,17 @@ function validarDatos(d) {
 }
 
 function guardarRegistro() {
-  if(!sesionActiva) { showToast('⚠️ Primero inicia un registro con el botón "Nuevo registro"','error'); abrirSesionModal(); return; }
+  if(!sesionActiva && !modoEditar) { showToast('⚠️ Primero inicia un registro con el botón "Nuevo registro"','error'); abrirSesionModal(); return; }
   const datos = obtenerDatosFormulario();
   if(!validarDatos(datos)) return;
+  datos.tardio = modoTardio;
+
+  if(modoEditar && filaEditar) {
+    // Actualizar registro existente en BB.REGISTRO
+    actualizarRegistroBB(datos);
+    return;
+  }
+
   const idx = trabajadores.findIndex(t => t.dni===datos.dni);
   if(idx!==-1) trabajadores[idx]=datos; else { trabajadores.push(datos); hoyCount++; localStorage.setItem('hoy_count',hoyCount); }
   localStorage.setItem('pd_local', JSON.stringify(trabajadores));
@@ -1984,12 +2130,35 @@ function guardarRegistro() {
   if(sesionActiva && !sesionActiva.libre) {
     sesionActiva.registrados++;
     actualizarContador();
-    // Re-sincronizar con el grupo después de 3s (dar tiempo a que Sheets guarde)
     setTimeout(() => sincronizarContadorGrupo(), 3000);
   }
   limpiarFormulario();
-  mostrarStatus('success','✅ Registrado en BB.REGISTRO correctamente');
+  const msg = modoTardio ? '✅ Registrado como Personal Tardío en BB.REGISTRO' : '✅ Registrado en BB.REGISTRO correctamente';
+  mostrarStatus('success', msg);
   reproducirSonidoExito();
+}
+
+async function actualizarRegistroBB(datos) {
+  if(!gsConfig.habilitado||!gsConfig.webhookUrl) { showToast('⚠️ Sin conexión GS','error'); return; }
+  try {
+    const payload = {accion:'actualizarRegistro', fila:filaEditar, ...datos};
+    const url = gsConfig.webhookUrl+'?data='+encodeURIComponent(JSON.stringify(payload));
+    const resp = await fetch(url);
+    const txt = await resp.text();
+    const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
+    const r = JSON.parse(m ? m[1] : txt);
+    if(r.ok) {
+      mostrarStatus('success','✅ Registro actualizado correctamente');
+      reproducirSonidoExito();
+      // Salir del modo edición
+      modoEditar = false; filaEditar = null; modoTardio = false;
+      document.getElementById('btnGuardarText').textContent = 'Registrar en BB.REGISTRO';
+      document.getElementById('btnGuardarIcon').textContent = '💾';
+      limpiarFormulario();
+    } else {
+      showToast('Error al actualizar: '+(r.msg||'desconocido'),'error');
+    }
+  } catch(e) { showToast('Error al actualizar: '+e.message,'error'); }
 }
 
 // Sonido de confirmación al guardar
@@ -2076,14 +2245,16 @@ function renderTodosRegistros() {
     (t.sector||'').toLowerCase().includes(q));
   const cont = document.getElementById('adminTableContainer');
   if(!f.length) { cont.innerHTML = '<div class="empty-state"><div class="empty-icon">🌐</div><h3>Sin registros</h3></div>'; return; }
-  let html = '<div class="table-wrap"><table><thead><tr><th>DNI</th><th>Nombre</th><th>Grupo</th><th>Tipo</th><th>Usuario</th><th>Fecha</th></tr></thead><tbody>';
+  let html = '<div class="table-wrap"><table><thead><tr><th>DNI</th><th>Nombre</th><th>Grupo</th><th>Tipo</th><th>Usuario</th><th>Fecha</th><th>Editar</th></tr></thead><tbody>';
   f.forEach(t => {
+    const tardioBadge = String(t.tardio||'').toUpperCase() === 'SI' ? ' <span class="badge" style="background:#fff3cd;color:#8a6500;">⏰ Tardío</span>' : '';
     html += '<tr><td><strong style="font-family:JetBrains Mono,monospace;font-size:12px;">'+t.dni+'</strong></td>'+
-      '<td>'+(t.nombres||'')+' '+(t.ap||'')+' '+(t.am||'')+'</td>'+
+      '<td>'+(t.nombres||'')+' '+(t.ap||'')+' '+(t.am||'')+tardioBadge+'</td>'+
       '<td>'+(t.sector||'-')+'</td>'+
       '<td><span class="badge badge-blue">'+(t.tipo||'-')+'</span></td>'+
       '<td>'+(t.registradoPor||'-')+'</td>'+
-      '<td style="font-size:11px;">'+(t.fecha||'-')+'</td></tr>';
+      '<td style="font-size:11px;">'+(t.fecha||'-')+'</td>'+
+      '<td><button class="btn btn-outline btn-sm" onclick="editarRegistroBB(\''+t.dni+'\')">✏️</button></td></tr>';
   });
   html += '</tbody></table></div>';
   cont.innerHTML = html;
@@ -2212,6 +2383,7 @@ async function exportarBBRegistroTodo() {
 async function _descargarBBRegistro(desde, hasta) {
   if(typeof XLSX === 'undefined') { showToast('⚠️ Librería Excel no cargó','error'); return; }
   if(!gsConfig.habilitado || !gsConfig.webhookUrl) { showToast('Sin conexión Google Sheets','error'); return; }
+  const soloTardios = document.getElementById('exp-solo-tardios') && document.getElementById('exp-solo-tardios').checked;
   showToast('⏳ Descargando registros...','');
   try {
     const url = gsConfig.webhookUrl + '?accion=exportarBBRegistro';
@@ -2222,25 +2394,37 @@ async function _descargarBBRegistro(desde, hasta) {
     let filas = data.filas || [];
     if(!filas.length) { showToast('No hay registros en BB.REGISTRO','error'); return; }
 
-    // Filtrar por rango de fechas si se especificó
+    const header = filas[0];
+    let idxFecha = header.indexOf('FechaRegistro');
+    if(idxFecha === -1) idxFecha = 19;
+    let idxTardio = header.indexOf('EsTardio');
+    if(idxTardio === -1) idxTardio = 26;
+
+    let resultado = filas.slice(1);
+
+    // Filtrar por rango de fechas
     if(desde && hasta) {
-      const header = filas[0];
-      // Buscar columna FechaRegistro
-      let idxFecha = header.indexOf('FechaRegistro');
-      if(idxFecha === -1) idxFecha = 22; // posición por defecto
       const dDesde = new Date(desde + 'T00:00:00');
       const dHasta = new Date(hasta + 'T23:59:59');
-      const filtradas = filas.slice(1).filter(row => {
+      resultado = resultado.filter(row => {
         const f = parseFechaPE(row[idxFecha]);
         return f && f >= dDesde && f <= dHasta;
       });
-      filas = [header, ...filtradas];
-      if(filas.length === 1) { showToast('Sin registros en ese rango','error'); return; }
     }
+
+    // Filtrar solo tardíos
+    if(soloTardios) {
+      resultado = resultado.filter(row => String(row[idxTardio]||'').toUpperCase() === 'SI');
+    }
+
+    if(!resultado.length) {
+      showToast('Sin registros con esos filtros','error'); return;
+    }
+    filas = [header, ...resultado];
 
     const ws = XLSX.utils.aoa_to_sheet(filas);
     ws['!cols'] = filas[0].map(()=>({wch:16}));
-    // Forzar columna DNI (columna A, índice 0) como TEXTO para que no pierda ceros ni use notación científica
+    // Forzar columna DNI como TEXTO
     const rango = XLSX.utils.decode_range(ws['!ref']);
     for(let R = 1; R <= rango.e.r; R++) {
       const celda = XLSX.utils.encode_cell({r:R, c:0});
@@ -2248,7 +2432,8 @@ async function _descargarBBRegistro(desde, hasta) {
     }
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'BB.REGISTRO');
-    const sufijo = (desde && hasta) ? desde + '_a_' + hasta : 'completo';
+    let sufijo = (desde && hasta) ? desde + '_a_' + hasta : 'completo';
+    if(soloTardios) sufijo += '_TARDIOS';
     XLSX.writeFile(wb, `BB-REGISTRO_${sufijo}.xlsx`);
     showToast('✅ ' + (filas.length-1) + ' registros exportados','success');
   } catch(e) {
