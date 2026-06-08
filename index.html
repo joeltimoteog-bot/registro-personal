@@ -483,6 +483,29 @@ tr:hover td { background: #f8faff; }
   </div>
 </div>
 
+<!-- ══════════ MODAL EDITAR REGISTRO ══════════ -->
+<div class="sesion-modal-overlay" id="editarModal" style="display:none;">
+  <div class="sesion-modal">
+    <div class="sesion-modal-title">✏️ Editar registro existente</div>
+    <div class="sesion-modal-sub">Ingresa el DNI y la fecha del registro que deseas editar</div>
+    <div style="display:grid;gap:12px;">
+      <div class="input-group">
+        <label class="input-label">DNI del trabajador *</label>
+        <input type="tel" id="edit-dni" class="input-field input-mono" placeholder="00000000" maxlength="8" inputmode="numeric">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Fecha del registro *</label>
+        <input type="date" id="edit-fecha" class="input-field">
+      </div>
+      <div id="editError" style="display:none;background:var(--red-light);border:1px solid #fecaca;color:var(--red);border-radius:8px;padding:9px 13px;font-size:12px;"></div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-outline" onclick="cerrarModalEditar()" style="flex:1;">Cancelar</button>
+        <button class="btn btn-primary" onclick="confirmarEdicion()" style="flex:2;">🔍 Buscar y editar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ══════════ MODAL ESCÁNER DNI ══════════ -->
 <div id="escanerModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;padding:16px;overflow:auto;">
   <div style="max-width:500px;margin:0 auto;background:white;border-radius:14px;overflow:hidden;">
@@ -582,6 +605,7 @@ tr:hover td { background: #f8faff; }
       <div style="margin-top:9px;font-size:11px;color:var(--muted2);">ℹ️ Busca automáticamente en Rapel y Verfrut · Toca 📷 para escanear DNI</div>
       <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
         <button class="btn btn-outline btn-sm" onclick="iniciarPersonalTardio()" style="flex:1;min-width:140px;background:#fff8e6;border-color:#f0c040;color:#8a6500;">⏰ Personal tardío</button>
+        <button class="btn btn-outline btn-sm" onclick="abrirModalEditar()" style="flex:1;min-width:140px;background:#e8f0fe;border-color:#1a3c6e;color:#1a3c6e;">✏️ Editar registro</button>
       </div>
     </div>
   </div>
@@ -826,6 +850,7 @@ tr:hover td { background: #f8faff; }
         </label>
         <button class="btn btn-success btn-full" onclick="exportarBBRegistro()">⬇️ Descargar por rango de fechas (Excel)</button>
         <button class="btn btn-outline btn-full" style="margin-top:8px;" onclick="exportarBBRegistroTodo()">⬇️ Descargar TODO (sin filtro)</button>
+        <button class="btn btn-full" style="margin-top:8px;background:#fff8e6;border:1.5px solid #f0c040;color:#8a6500;font-weight:700;" onclick="exportarSoloTardios()">⏰ Descargar SOLO Personal Tardío</button>
       </div>
     </div>
     <div class="card">
@@ -1393,15 +1418,18 @@ function mostrarBannerBienvenida(mensaje, rol) {
   banner.style.cssText = `
     position: fixed; top: 70px; left: 50%; transform: translateX(-50%) translateY(-150%);
     background: linear-gradient(135deg, #1a3c6e, #c8102e);
-    color: white; padding: 16px 22px; border-radius: 14px;
+    color: white; padding: 18px 24px; border-radius: 14px;
     box-shadow: 0 10px 40px rgba(0,0,0,0.25);
-    z-index: 5000; max-width: 92%; min-width: 280px; text-align: center;
+    z-index: 5000; max-width: 92%; min-width: 300px; text-align: center;
     transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
     font-family: 'Tahoma', sans-serif;
   `;
   banner.innerHTML = `
-    <div style="font-size:16px;font-weight:700;margin-bottom:4px;">${mensaje}</div>
-    <div style="font-size:11px;opacity:0.85;margin-bottom:8px;">Sesión iniciada como ${rol}</div>
+    <div style="font-size:17px;font-weight:700;margin-bottom:6px;">${mensaje}</div>
+    <div style="font-size:12px;opacity:0.95;line-height:1.5;margin-bottom:8px;padding:8px;background:rgba(255,255,255,0.12);border-radius:8px;">
+      ¡Hola! Te saluda <strong>Joel Timoteo Gonza</strong>,<br>creador del Sistema de Registro de Personal.<br>
+      <span style="font-size:11px;opacity:0.9;">Sesión iniciada como ${rol}</span>
+    </div>
     <div style="font-size:12px;background:rgba(255,255,255,0.15);padding:8px 12px;border-radius:8px;line-height:1.4;">${tip}</div>
   `;
   document.body.appendChild(banner);
@@ -1409,7 +1437,7 @@ function mostrarBannerBienvenida(mensaje, rol) {
   setTimeout(() => {
     banner.style.transform = 'translateX(-50%) translateY(-150%)';
     setTimeout(() => banner.remove(), 600);
-  }, 4500);
+  }, 6000);
 }
 
 function _setSesion(data) {
@@ -1999,16 +2027,45 @@ function iniciarPersonalTardio() {
   showToast('⏰ Modo Personal Tardío: configura ruta/grupo y luego registra','success');
 }
 
-async function editarRegistroPorDNI() {
-  const dni = prompt('Ingresa el DNI del registro a editar (8 dígitos):');
-  if(!dni || !/^\d{8}$/.test(dni.trim())) {
-    showToast('DNI inválido','error');
-    return;
-  }
-  await editarRegistroBB(dni.trim());
+function abrirModalEditar() {
+  document.getElementById('editarModal').style.display = 'flex';
+  document.getElementById('edit-dni').value = '';
+  document.getElementById('edit-fecha').value = '';
+  document.getElementById('editError').style.display = 'none';
+  setTimeout(() => document.getElementById('edit-dni').focus(), 100);
 }
 
-async function editarRegistroBB(dni) {
+function cerrarModalEditar() {
+  document.getElementById('editarModal').style.display = 'none';
+}
+
+async function confirmarEdicion() {
+  const dni = document.getElementById('edit-dni').value.trim();
+  const fecha = document.getElementById('edit-fecha').value.trim();
+  const err = document.getElementById('editError');
+  if(!dni || !/^\d{8}$/.test(dni)) {
+    err.textContent = '⚠️ DNI inválido (debe ser 8 dígitos)';
+    err.style.display = 'block'; return;
+  }
+  if(!fecha) {
+    err.textContent = '⚠️ Ingresa la fecha de registro';
+    err.style.display = 'block'; return;
+  }
+  // Convertir fecha del input date (yyyy-mm-dd) a formato es-PE (dd/mm/yyyy)
+  let fechaPE = fecha;
+  if(/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+    const [y,m,d] = fecha.split('-');
+    fechaPE = parseInt(d) + '/' + parseInt(m) + '/' + y;
+  }
+  cerrarModalEditar();
+  await editarRegistroBB(dni, fechaPE);
+}
+
+async function editarRegistroPorDNI() {
+  abrirModalEditar();
+}
+
+async function editarRegistroBB(dni, fechaFiltro) {
   if(!gsConfig.habilitado || !gsConfig.webhookUrl) { showToast('Sin conexión','error'); return; }
   showToast('🔍 Buscando registro...','');
   try {
@@ -2017,7 +2074,21 @@ async function editarRegistroBB(dni) {
     const txt = await resp.text();
     const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
     const r = JSON.parse(m ? m[1] : txt);
-    if(!r.encontrado) { showToast('No se encontró ese DNI en BB.REGISTRO','error'); return; }
+    if(!r.encontrado) { showToast('❌ No se encontró ese DNI en BB.REGISTRO','error'); return; }
+
+    // Verificar que la fecha del registro coincida con la solicitada
+    if(fechaFiltro) {
+      const fechaRegistro = String(r.fecha||'').trim();
+      if(fechaRegistro && fechaRegistro !== fechaFiltro) {
+        const seguir = confirm(
+          '⚠️ La fecha no coincide\n\n' +
+          'DNI ' + dni + ' fue registrado el: ' + fechaRegistro + '\n' +
+          'Tú indicaste: ' + fechaFiltro + '\n\n' +
+          '¿Editar este registro de todas formas?'
+        );
+        if(!seguir) return;
+      }
+    }
 
     // Activar modo edición y poblar formulario
     modoEditar = true;
@@ -2211,7 +2282,7 @@ function obtenerDatosFormulario() {
     dep: depFinal,
     prov: provFinal,
     dist: distFinal,
-    tel1: document.getElementById('f-tel1').value.trim(),
+    tel1: (document.getElementById('f-tel1').value.trim() || '-'),
     hijos: document.getElementById('f-hijos').value,
     edu: document.getElementById('f-edu').value,
     inst: document.getElementById('f-inst').value.trim(),
@@ -2219,7 +2290,7 @@ function obtenerDatosFormulario() {
     egreso: document.getElementById('f-egreso').value.trim(),
     incap: document.getElementById('f-incap').value,
     cem: document.getElementById('f-cem').value.trim(),
-    celcem: document.getElementById('f-celcem').value.trim(),
+    celcem: (document.getElementById('f-celcem').value.trim() || '-'),
     parentesco: (document.getElementById('f-parentesco')||{}).value || '',
     parentescoOtro: (document.getElementById('f-parentesco-otro')||{}).value || '',
     fecha: new Date().toLocaleDateString('es-PE'),
@@ -2239,10 +2310,10 @@ function validarDatos(d) {
   if(!d.nombres) { showToast('⚠️ Faltan los Nombres','error'); return false; }
   if(!d.hijos) { showToast('⚠️ Indica si tiene hijos','error'); return false; }
   if(!d.mismadir) { showToast('⚠️ Indica si sigue en la misma dirección','error'); return false; }
-  if(d.tel1 && (!/^\d+$/.test(d.tel1) || (d.tel1.length!==6 && d.tel1.length!==9))) { showToast('⚠️ Teléfono: 6 dígitos (fijo) o 9 (celular)','error'); return false; }
+  if(d.tel1 && d.tel1 !== '-' && (!/^\d+$/.test(d.tel1) || (d.tel1.length!==6 && d.tel1.length!==9))) { showToast('⚠️ Teléfono: 6 dígitos (fijo) o 9 (celular)','error'); return false; }
   if(!d.edu) { showToast('⚠️ Selecciona el Nivel Educativo','error'); return false; }
   if(!d.incap) { showToast('⚠️ Indica si tiene discapacidad','error'); return false; }
-  if(d.celcem && d.celcem.length>0 && d.celcem.length!==6 && d.celcem.length!==9) { showToast('⚠️ Teléfono de referencia: 6 o 9 dígitos','error'); return false; }
+  if(d.celcem && d.celcem !== '-' && d.celcem.length>0 && d.celcem.length!==6 && d.celcem.length!==9) { showToast('⚠️ Teléfono de referencia: 6 o 9 dígitos','error'); return false; }
   if(d.egreso&&!/^\d{4}$/.test(d.egreso)) { showToast('⚠️ Año de egreso: 4 dígitos','error'); return false; }
   return true;
 }
@@ -2534,6 +2605,19 @@ async function exportarBBRegistro() {
 
 async function exportarBBRegistroTodo() {
   _descargarBBRegistro(null, null);
+}
+
+async function exportarSoloTardios() {
+  // Forzar el checkbox "solo tardíos" y descargar (con o sin rango de fechas)
+  const chk = document.getElementById('exp-solo-tardios');
+  if(chk) chk.checked = true;
+  const desde = document.getElementById('exp-desde').value;
+  const hasta = document.getElementById('exp-hasta').value;
+  if(desde && hasta) {
+    _descargarBBRegistro(desde, hasta);
+  } else {
+    _descargarBBRegistro(null, null);
+  }
 }
 
 async function _descargarBBRegistro(desde, hasta) {
