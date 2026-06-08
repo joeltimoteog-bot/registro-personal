@@ -1388,7 +1388,10 @@ async function iniciarSesion() {
     const data  = JSON.parse(match ? match[1] : txt);
 
     if(data.ok) {
-      _setSesion(data);
+      // Mostrar pantalla de bienvenida animada antes de entrar al módulo
+      mostrarPantallaBienvenida(data, () => {
+        _setSesion(data);
+      });
     } else {
       errEl.textContent = data.msg || 'Usuario o contraseña incorrectos';
       errEl.style.display = 'block';
@@ -1401,14 +1404,73 @@ async function iniciarSesion() {
   }
 }
 
+function mostrarPantallaBienvenida(data, callback) {
+  const primerNombre = data.usuario.charAt(0).toUpperCase() + data.usuario.slice(1);
+  const hora = new Date().getHours();
+  let saludo = 'Hola';
+  if(hora >= 5 && hora < 12)       saludo = 'Buenos días';
+  else if(hora >= 12 && hora < 19) saludo = 'Buenas tardes';
+  else                              saludo = 'Buenas noches';
+
+  // Crear overlay de bienvenida
+  const overlay = document.createElement('div');
+  overlay.id = 'welcomeOverlay';
+  overlay.style.cssText = `
+    position: fixed; inset: 0; z-index: 99999;
+    background: linear-gradient(135deg, #1a3c6e 0%, #c8102e 100%);
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; padding: 20px; text-align: center;
+    font-family: 'Tahoma', sans-serif; color: white;
+    animation: fadeInOverlay 0.4s ease-out;
+  `;
+
+  overlay.innerHTML = `
+    <style>
+      @keyframes fadeInOverlay { from { opacity:0; } to { opacity:1; } }
+      @keyframes fadeOutOverlay { from { opacity:1; } to { opacity:0; } }
+      @keyframes spinEmoji { 0% { transform: rotate(0deg) scale(1); } 50% { transform: rotate(180deg) scale(1.15); } 100% { transform: rotate(360deg) scale(1); } }
+      @keyframes pulseText { 0%, 100% { opacity: 0.85; } 50% { opacity: 1; } }
+      @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+      @keyframes progressBar { from { width: 0%; } to { width: 100%; } }
+      .welcome-emoji { font-size: 80px; animation: spinEmoji 1.5s linear infinite; display: inline-block; margin-bottom: 20px; }
+      .welcome-title { font-size: 26px; font-weight: 800; margin-bottom: 8px; animation: slideUp 0.6s ease-out 0.2s both; }
+      .welcome-sub   { font-size: 15px; opacity: 0.95; margin-bottom: 6px; animation: slideUp 0.6s ease-out 0.4s both; }
+      .welcome-creator { font-size: 13px; opacity: 0.85; margin-bottom: 22px; padding: 10px 18px; background: rgba(255,255,255,0.12); border-radius: 10px; animation: slideUp 0.6s ease-out 0.6s both; line-height: 1.5; }
+      .welcome-loading { font-size: 13px; opacity: 0.85; animation: pulseText 1.4s ease-in-out infinite; }
+      .progress-track { width: 220px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden; margin-top: 16px; }
+      .progress-fill { height: 100%; background: white; border-radius: 4px; animation: progressBar 2.5s ease-out forwards; }
+    </style>
+    <div class="welcome-emoji">⚙️</div>
+    <div class="welcome-title">${saludo}, ${primerNombre}</div>
+    <div class="welcome-sub">Bienvenido al Sistema de Registro de Personal</div>
+    <div class="welcome-creator">
+      ¡Hola! Te saluda <strong>Joel Timoteo Gonza</strong>,<br>
+      creador del Sistema de Registro de Personal.
+    </div>
+    <div class="welcome-loading">Cargando tu sesión como ${data.estado}...</div>
+    <div class="progress-track"><div class="progress-fill"></div></div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  // Tras 2.5 segundos, cerrar overlay y entrar al módulo
+  setTimeout(() => {
+    overlay.style.animation = 'fadeOutOverlay 0.4s ease-out forwards';
+    setTimeout(() => {
+      overlay.remove();
+      callback();
+    }, 400);
+  }, 2500);
+}
+
 function mostrarBannerBienvenida(mensaje, rol) {
   const consejos = [
     '💡 Tip: Usa el botón 📷 para escanear el DNI con la cámara y agilizar el registro',
     '💡 Tip: Si el trabajador sigue en la misma dirección, marca SÍ y no llenes los campos de dirección',
     '💡 Tip: El botón "⏰ Personal tardío" te permite registrar a quienes llegan después del bus',
     '💡 Tip: En la pestaña Stats puedes alternar entre vista "Hoy" y "Total general"',
-    '💡 Tip: Puedes editar cualquier registro existente con el botón ✏️ en la pestaña Lista',
-    '💡 Tip: Al exportar, marca "Solo Personal Tardío" para filtrar esos registros',
+    '💡 Tip: Puedes editar cualquier registro con el botón "✏️ Editar registro" en la pestaña Buscar',
+    '💡 Tip: Al exportar, usa "⏰ Descargar SOLO Personal Tardío" para filtrar esos registros',
     '💡 Tip: Comparte el QR o el link del formulario por WhatsApp con un solo botón'
   ];
   const tip = consejos[Math.floor(Math.random() * consejos.length)];
@@ -1418,18 +1480,13 @@ function mostrarBannerBienvenida(mensaje, rol) {
   banner.style.cssText = `
     position: fixed; top: 70px; left: 50%; transform: translateX(-50%) translateY(-150%);
     background: linear-gradient(135deg, #1a3c6e, #c8102e);
-    color: white; padding: 18px 24px; border-radius: 14px;
+    color: white; padding: 14px 20px; border-radius: 12px;
     box-shadow: 0 10px 40px rgba(0,0,0,0.25);
-    z-index: 5000; max-width: 92%; min-width: 300px; text-align: center;
+    z-index: 5000; max-width: 92%; min-width: 280px; text-align: center;
     transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
     font-family: 'Tahoma', sans-serif;
   `;
   banner.innerHTML = `
-    <div style="font-size:17px;font-weight:700;margin-bottom:6px;">${mensaje}</div>
-    <div style="font-size:12px;opacity:0.95;line-height:1.5;margin-bottom:8px;padding:8px;background:rgba(255,255,255,0.12);border-radius:8px;">
-      ¡Hola! Te saluda <strong>Joel Timoteo Gonza</strong>,<br>creador del Sistema de Registro de Personal.<br>
-      <span style="font-size:11px;opacity:0.9;">Sesión iniciada como ${rol}</span>
-    </div>
     <div style="font-size:12px;background:rgba(255,255,255,0.15);padding:8px 12px;border-radius:8px;line-height:1.4;">${tip}</div>
   `;
   document.body.appendChild(banner);
@@ -1437,7 +1494,7 @@ function mostrarBannerBienvenida(mensaje, rol) {
   setTimeout(() => {
     banner.style.transform = 'translateX(-50%) translateY(-150%)';
     setTimeout(() => banner.remove(), 600);
-  }, 6000);
+  }, 4000);
 }
 
 function _setSesion(data) {
