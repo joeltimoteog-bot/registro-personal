@@ -1489,7 +1489,7 @@ function migrarPasswords() {
 // ════════════════════════════════
 const PERU_UBIGEO = {"AMAZONAS": ["Chachapoyas", "Bagua", "Bongará", "Condorcanqui", "Luya", "Rodríguez de Mendoza", "Utcubamba"], "ÁNCASH": ["Huaraz", "Aija", "Antonio Raymondi", "Asunción", "Bolognesi", "Carhuaz", "Carlos Fermín Fitzcarrald", "Casma", "Corongo", "Huari", "Huarmey", "Huaylas", "Mariscal Luzuriaga", "Ocros", "Pallasca", "Pomabamba", "Recuay", "Santa", "Sihuas", "Yungay"], "APURÍMAC": ["Abancay", "Andahuaylas", "Antabamba", "Aymaraes", "Cotabambas", "Chincheros", "Grau"], "AREQUIPA": ["Arequipa", "Camaná", "Caravelí", "Castilla", "Caylloma", "Condesuyos", "Islay", "La Unión"], "AYACUCHO": ["Huamanga", "Cangallo", "Huanca Sancos", "Huanta", "La Mar", "Lucanas", "Parinacochas", "Páucar del Sara Sara", "Sucre", "Víctor Fajardo", "Vilcas Huamán"], "CAJAMARCA": ["Cajamarca", "Cajabamba", "Celendín", "Chota", "Contumazá", "Cutervo", "Hualgayoc", "Jaén", "San Ignacio", "San Marcos", "San Miguel", "San Pablo", "Santa Cruz"], "CALLAO": ["Callao"], "CUSCO": ["Cusco", "Acomayo", "Anta", "Calca", "Canas", "Canchis", "Chumbivilcas", "Espinar", "La Convención", "Paruro", "Paucartambo", "Quispicanchi", "Urubamba"], "HUANCAVELICA": ["Huancavelica", "Acobamba", "Angaraes", "Castrovirreyna", "Churcampa", "Huaytará", "Tayacaja"], "HUÁNUCO": ["Huánuco", "Ambo", "Dos de Mayo", "Huacaybamba", "Huamalíes", "Leoncio Prado", "Marañón", "Pachitea", "Puerto Inca", "Lauricocha", "Yarowilca"], "ICA": ["Ica", "Chincha", "Nasca", "Palpa", "Pisco"], "JUNÍN": ["Huancayo", "Concepción", "Chanchamayo", "Jauja", "Junín", "Satipo", "Tarma", "Yauli", "Chupaca"], "LA LIBERTAD": ["Trujillo", "Ascope", "Bolívar", "Chepén", "Julcán", "Otuzco", "Pacasmayo", "Pataz", "Sánchez Carrión", "Santiago de Chuco", "Gran Chimú", "Virú"], "LAMBAYEQUE": ["Chiclayo", "Ferreñafe", "Lambayeque"], "LIMA": ["Lima", "Barranca", "Cajatambo", "Canta", "Cañete", "Huaral", "Huarochirí", "Huaura", "Oyón", "Yauyos"], "LORETO": ["Maynas", "Alto Amazonas", "Loreto", "Mariscal Ramón Castilla", "Requena", "Ucayali", "Datem del Marañón", "Putumayo"], "MADRE DE DIOS": ["Tambopata", "Manu", "Tahuamanu"], "MOQUEGUA": ["Mariscal Nieto", "General Sánchez Cerro", "Ilo"], "PASCO": ["Pasco", "Daniel Alcides Carrión", "Oxapampa"], "PIURA": ["Piura", "Ayabaca", "Huancabamba", "Morropón", "Paita", "Sullana", "Talara", "Sechura"], "PUNO": ["Puno", "Azángaro", "Carabaya", "Chucuito", "El Collao", "Huancané", "Lampa", "Melgar", "Moho", "San Antonio de Putina", "San Román", "Sandia", "Yunguyo"], "SAN MARTÍN": ["Moyobamba", "Bellavista", "El Dorado", "Huallaga", "Lamas", "Mariscal Cáceres", "Picota", "Rioja", "San Martín", "Tocache"], "TACNA": ["Tacna", "Candarave", "Jorge Basadre", "Tarata"], "TUMBES": ["Tumbes", "Contralmirante Villar", "Zarumilla"], "UCAYALI": ["Coronel Portillo", "Atalaya", "Padre Abad", "Purús"]};
 const DISTRITOS = {
-  "PIURA|Piura": ["PIURA","CASTILLA","CATACAOS","CURA MORI","EL TALLÁN","LA ARENA","LA UNIÓN","LAS LOMAS","TAMBOGRANDE","VEINTISÉIS DE OCTUBRE"]
+  "PIURA|Piura": ["PIURA","CASTILLA","CATACAOS","CURA MORI","EL TALLÁN","LA ARENA","LA UNIÓN","LAS LOMAS","TAMBO GRANDE","VEINTISÉIS DE OCTUBRE"]
 };
 let trabajadores = JSON.parse(localStorage.getItem('pd_local') || '[]');
 let gsConfig     = JSON.parse(localStorage.getItem('gs_config') || JSON.stringify({
@@ -2101,7 +2101,9 @@ function cargarProvincias() {
   if(dep && PERU_UBIGEO[dep]) {
     PERU_UBIGEO[dep].forEach(prov => {
       const o = document.createElement('option');
-      o.value = prov; o.textContent = prov;
+      // Mostrar la provincia en MAYÚSCULAS pero mantener el valor original para que coincida con DISTRITOS
+      o.value = prov;
+      o.textContent = prov.toUpperCase();
       selProv.appendChild(o);
     });
   }
