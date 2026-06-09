@@ -2397,14 +2397,52 @@ function buscarDNI() {
   mostrarStatus('searching','<span class="searching-dots">🔍 Buscando</span>');
 
   if(gsConfig.habilitado && gsConfig.webhookUrl) {
-    // Una sola llamada que busca en Rapel Y Verfrut (más rápido que 2 llamadas)
-    buscarAmbas(dni).then(res => {
-      if(res && res.encontrado) { _procesarResultado(res, dni); }
-      else _procesarResultado({encontrado:false}, dni);
-    }).catch(() => _procesarResultado({encontrado:false}, dni));
+    // 1° Buscar PRIMERO en BB.REGISTRO (datos más recientes del trabajador)
+    buscarEnBBRegistroPrimero(dni).then(resBB => {
+      if(resBB && resBB.encontrado) {
+        // Tiene registro previo en BB.REGISTRO → usar esos datos
+        const datos = {
+          encontrado: true,
+          _empresa: resBB.empresaOrigen || 'BB.REGISTRO',
+          _fechaAnterior: resBB.fecha,
+          _yaRegistrado: true,
+          dni: resBB.dni, ap: resBB.ap, am: resBB.am, nombres: resBB.nombres,
+          dir: resBB.dir, dep: resBB.dep, prov: resBB.prov, dist: resBB.dist,
+          tel1: resBB.tel1, hijos: resBB.hijos, edu: resBB.edu, inst: resBB.inst,
+          carrera: resBB.carrera, egreso: resBB.egreso, incap: resBB.incap,
+          parentesco: resBB.parentesco, cem: resBB.cem, celcem: resBB.celcem,
+          mismadir: resBB.mismadir
+        };
+        _procesarResultado(datos, dni);
+      } else {
+        // 2° Si no está en BB.REGISTRO, buscar en Rapel/Verfrut
+        buscarAmbas(dni).then(res => {
+          if(res && res.encontrado) { _procesarResultado(res, dni); }
+          else _procesarResultado({encontrado:false}, dni);
+        }).catch(() => _procesarResultado({encontrado:false}, dni));
+      }
+    }).catch(() => {
+      // Si falla la consulta a BB.REGISTRO, caer a Rapel/Verfrut como fallback
+      buscarAmbas(dni).then(res => {
+        if(res && res.encontrado) { _procesarResultado(res, dni); }
+        else _procesarResultado({encontrado:false}, dni);
+      }).catch(() => _procesarResultado({encontrado:false}, dni));
+    });
   } else {
     const local = trabajadores.find(t => t.dni===dni);
     _procesarResultado(local ? {encontrado:true,...local} : {encontrado:false}, dni);
+  }
+}
+
+async function buscarEnBBRegistroPrimero(dni) {
+  try {
+    const url = gsConfig.webhookUrl + '?accion=buscarBBRegistro&dni='+encodeURIComponent(dni);
+    const resp = await fetch(url);
+    const txt = await resp.text();
+    const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
+    return JSON.parse(m ? m[1] : txt);
+  } catch(e) {
+    return {encontrado: false};
   }
 }
 
@@ -2439,14 +2477,22 @@ function _procesarResultado(res, dni) {
     const emp = res._empresa || res.empresa || '';
     empresaEncontrada = emp;
     datosOriginales = {dir:res.dir||'', dep:res.dep||'', prov:res.prov||'', dist:res.dist||''};
-    mostrarStatus('found',`✅ Encontrado en <strong>${emp}</strong>: ${res.nombres} ${res.ap} ${res.am}`);
+
+    if(res._yaRegistrado) {
+      // Trabajador con registro previo en BB.REGISTRO - mostrar mensaje especial
+      mostrarStatus('found',
+        `🔄 <strong>${res.nombres} ${res.ap} ${res.am}</strong> ya tiene registro previo del <strong>${res._fechaAnterior}</strong>. ` +
+        `Sus datos se cargaron automáticamente. Verifica y guarda para crear un nuevo registro con la fecha de hoy.`);
+    } else {
+      mostrarStatus('found',`✅ Encontrado en <strong>${emp}</strong>: ${res.nombres} ${res.ap} ${res.am}`);
+    }
     mostrarWorkerCard(res, emp);
     cargarDatos(res);
   } else {
     modoEdicion=false; editDNI=null;
     empresaEncontrada = '';
     datosOriginales = null;
-    mostrarStatus('notfound','📝 No encontrado en Rapel ni Verfrut. Completa los datos para registrarlo.');
+    mostrarStatus('notfound','📝 No encontrado en BB.REGISTRO, Rapel ni Verfrut. Completa los datos para registrarlo.');
     limpiarFormularioInterno();
     document.getElementById('f-dni').value = dni;
     document.getElementById('sec-personal').classList.remove('hidden');
@@ -2591,14 +2637,41 @@ function validarDatos(d) {
 
 async function guardarRegistro() {
   if(!sesionActiva && !modoEditar) { showToast('⚠️ Primero inicia un registro con el botón "Nuevo registro"','error'); abrirSesionModal(); return; }
-  const datos = obtenerDatosFormulario();
-  if(!validarDatos(datos)) return;
-  datos.tardio = modoTardio;
 
-  if(modoEditar && filaEditar) {
-    actualizarRegistroBB(datos);
-    return;
+  // Bloquear botón para evitar doble clic / doble guardado accidental
+  const btnGuardar = document.querySelector('button[onclick="guardarRegistro()"]');
+  if(btnGuardar && btnGuardar.disabled) return; // Ya hay un guardado en proceso
+  if(btnGuardar) {
+    btnGuardar.disabled = true;
+    btnGuardar.style.opacity = '0.6';
+    btnGuardar.style.cursor = 'wait';
   }
+
+  try {
+    const datos = obtenerDatosFormulario();
+    if(!validarDatos(datos)) {
+      _desbloquearBtnGuardar();
+      return;
+    }
+    datos.tardio = modoTardio;
+
+    if(modoEditar && filaEditar) {
+      await actualizarRegistroBB(datos);
+      _desbloquearBtnGuardar();
+      return;
+    }
+    await _continuarGuardado(datos);
+  } finally {
+    _desbloquearBtnGuardar();
+  }
+}
+
+function _desbloquearBtnGuardar() {
+  const btn = document.querySelector('button[onclick="guardarRegistro()"]');
+  if(btn) { btn.disabled = false; btn.style.opacity = ''; btn.style.cursor = ''; }
+}
+
+async function _continuarGuardado(datos) {
 
   // ⚠️ Verificar DNI duplicado en BB.REGISTRO antes de insertar
   if(gsConfig.habilitado && gsConfig.webhookUrl) {
@@ -2609,21 +2682,47 @@ async function guardarRegistro() {
       const m = t.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
       const dup = JSON.parse(m ? m[1] : t);
       if(dup.encontrado) {
+        const fechaHoy = new Date().toLocaleDateString('es-PE');
+        const fechaAnterior = String(dup.fecha||'').trim();
+
+        // CASO 1: Mismo día → BLOQUEAR
+        if(fechaAnterior === fechaHoy || fechaAnterior.indexOf(fechaHoy) === 0) {
+          await confirmarPersonalizado({
+            titulo: '🚫 Registro duplicado bloqueado',
+            mensaje:
+              'El DNI <strong>' + datos.dni + '</strong> ya fue registrado HOY:<br><br>' +
+              '👤 <strong>' + (dup.nombres||'') + ' ' + (dup.ap||'') + '</strong><br>' +
+              '📅 Hoy mismo (' + fechaAnterior + ')<br>' +
+              '👨‍💼 Por <strong>' + (dup.registradoPor||'') + '</strong><br>' +
+              '🚌 Grupo: <strong>' + (dup.sector||'-') + '</strong> · Ruta: <strong>' + (dup.ruta||'-') + '</strong><br><br>' +
+              '<strong style="color:#c8102e;">No se permite registrar al mismo trabajador dos veces en el mismo día.</strong><br><br>' +
+              'Si necesitas modificar el registro existente, usa el botón "✏️ Editar registro".',
+            btnConfirmar: 'Entendido',
+            btnCancelar: '✖ Cerrar',
+            tipo: 'danger'
+          });
+          showToast('🚫 Bloqueado: DNI ya registrado HOY','error');
+          return;
+        }
+
+        // CASO 2: Fecha diferente → AVISAR pero PERMITIR (los datos ya están cargados)
         const seguir = await confirmarPersonalizado({
-          titulo: '⚠️ DNI duplicado detectado',
+          titulo: '🔄 Trabajador con registro previo',
           mensaje:
-            'El DNI <strong>' + datos.dni + '</strong> ya está registrado en BB.REGISTRO:<br><br>' +
+            'El DNI <strong>' + datos.dni + '</strong> tiene un registro anterior en BB.REGISTRO:<br><br>' +
             '👤 <strong>' + (dup.nombres||'') + ' ' + (dup.ap||'') + '</strong><br>' +
-            '📅 Registrado el <strong>' + (dup.fecha||'') + '</strong><br>' +
-            '👨‍💼 Por <strong>' + (dup.registradoPor||'') + '</strong><br><br>' +
-            '¿Deseas registrarlo de nuevo de todas formas?',
-          btnConfirmar: '✅ Sí, registrar igual',
-          btnCancelar: '✖ No, cancelar',
-          tipo: 'warning'
+            '📅 Última vez: <strong>' + fechaAnterior + '</strong><br>' +
+            '🚌 Grupo anterior: <strong>' + (dup.sector||'-') + '</strong><br><br>' +
+            '<strong style="color:#16a34a;">Sus datos ya están cargados en el formulario.</strong><br>' +
+            'Se creará un <strong>nuevo registro con fecha de hoy</strong>.<br><br>' +
+            '¿Continuar con el registro?',
+          btnConfirmar: '✅ Sí, crear nuevo registro',
+          btnCancelar: '✖ Cancelar',
+          tipo: 'info'
         });
-        if(!seguir) { showToast('Registro cancelado - DNI duplicado','error'); return; }
+        if(!seguir) { showToast('Registro cancelado','error'); return; }
       }
-    } catch(e) { /* si falla, continuar normalmente */ }
+    } catch(e) { /* si falla la consulta, continuar normalmente */ }
   }
 
   const idx = trabajadores.findIndex(t => t.dni===datos.dni);
