@@ -1546,7 +1546,7 @@ if(hoyDate !== hoy) { hoyCount=0; localStorage.setItem('hoy_date',hoy); localSto
 // ════════════════════════════════
 //  CONTROL DE VERSIÓN / ACTUALIZACIÓN AUTOMÁTICA
 // ════════════════════════════════
-const VERSION_ACTUAL = '2.1.0'; // ⚠️ Este número debe coincidir con version.json
+const VERSION_ACTUAL = '2.2.0'; // ⚠️ Este número debe coincidir con version.json
 let _versionAvisada = false;
 
 async function verificarVersion() {
@@ -2773,12 +2773,17 @@ function validarDatos(d) {
   return true;
 }
 
+let _guardandoEnProceso = false; // Bandera global para evitar doble guardado
+
 async function guardarRegistro() {
   if(!sesionActiva && !modoEditar) { showToast('⚠️ Primero inicia un registro con el botón "Nuevo registro"','error'); abrirSesionModal(); return; }
 
-  // Bloquear botón para evitar doble clic / doble guardado accidental
+  // Protección global: si ya hay un guardado en proceso, ignorar
+  if(_guardandoEnProceso) { return; }
+  _guardandoEnProceso = true;
+
+  // Bloquear botón visualmente
   const btnGuardar = document.querySelector('button[onclick="guardarRegistro()"]');
-  if(btnGuardar && btnGuardar.disabled) return; // Ya hay un guardado en proceso
   if(btnGuardar) {
     btnGuardar.disabled = true;
     btnGuardar.style.opacity = '0.6';
@@ -2788,18 +2793,17 @@ async function guardarRegistro() {
   try {
     const datos = obtenerDatosFormulario();
     if(!validarDatos(datos)) {
-      _desbloquearBtnGuardar();
       return;
     }
     datos.tardio = modoTardio;
 
     if(modoEditar && filaEditar) {
       await actualizarRegistroBB(datos);
-      _desbloquearBtnGuardar();
       return;
     }
     await _continuarGuardado(datos);
   } finally {
+    _guardandoEnProceso = false;
     _desbloquearBtnGuardar();
   }
 }
@@ -2810,6 +2814,11 @@ function _desbloquearBtnGuardar() {
 }
 
 async function _continuarGuardado(datos) {
+
+  // Generar ID único para este registro (previene duplicados por reintentos de red)
+  datos._regId = datos.dni + '_' + new Date().toLocaleDateString('es-PE').replace(/\//g,'-') + '_' +
+                 (sesionActiva ? (sesionActiva.sector||'') + (sesionActiva.codigo||'') : '') + '_' +
+                 Date.now();
 
   // ⚠️ Verificar DNI duplicado en BB.REGISTRO antes de insertar
   if(gsConfig.habilitado && gsConfig.webhookUrl) {
@@ -2866,7 +2875,15 @@ async function _continuarGuardado(datos) {
   const idx = trabajadores.findIndex(t => t.dni===datos.dni);
   if(idx!==-1) trabajadores[idx]=datos; else { trabajadores.push(datos); hoyCount++; localStorage.setItem('hoy_count',hoyCount); }
   localStorage.setItem('pd_local', JSON.stringify(trabajadores));
-  registrarEnBBRegistro(datos);
+
+  // Esperar a que el guardado en BB.REGISTRO termine ANTES de continuar
+  const guardadoOk = await registrarEnBBRegistro(datos);
+  if(!guardadoOk) {
+    // Si falló el guardado, revertir el conteo local para no descuadrar
+    showToast('⚠️ No se confirmó el guardado. Verifica antes de reintentar.','error');
+    return;
+  }
+
   if(sesionActiva && !sesionActiva.libre) {
     sesionActiva.registrados++;
     actualizarContador();
@@ -2919,7 +2936,7 @@ function reproducirSonidoExito() {
 }
 
 async function registrarEnBBRegistro(datos) {
-  if(!gsConfig.habilitado||!gsConfig.webhookUrl) { showToast('⚠️ Sin conexión GS. Guardado local.','error'); return; }
+  if(!gsConfig.habilitado||!gsConfig.webhookUrl) { showToast('⚠️ Sin conexión GS. Guardado local.','error'); return false; }
   try {
     const payload = {accion:'registrar', token:_token(), ...datos};
     const url = gsConfig.webhookUrl+'?data='+encodeURIComponent(JSON.stringify(payload));
@@ -2927,9 +2944,10 @@ async function registrarEnBBRegistro(datos) {
     const txt  = await resp.text();
     const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
     const r = JSON.parse(m ? m[1] : txt);
-    if(_sesionExpirada(r)) return;
-    if(r.ok) showToast('☁️ Guardado en BB.REGISTRO','success');
-  } catch(e) { showToast('⚠️ Error al guardar en Google Sheets','error'); }
+    if(_sesionExpirada(r)) return false;
+    if(r.ok) { showToast('☁️ Guardado en BB.REGISTRO','success'); return true; }
+    return false;
+  } catch(e) { showToast('⚠️ Error al guardar en Google Sheets','error'); return false; }
 }
 
 // ════════════════════════════════
