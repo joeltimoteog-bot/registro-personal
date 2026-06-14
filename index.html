@@ -1544,6 +1544,105 @@ const hoy = new Date().toDateString();
 if(hoyDate !== hoy) { hoyCount=0; localStorage.setItem('hoy_date',hoy); localStorage.setItem('hoy_count','0'); }
 
 // ════════════════════════════════
+//  CONTROL DE VERSIÓN / ACTUALIZACIÓN AUTOMÁTICA
+// ════════════════════════════════
+const VERSION_ACTUAL = '2.1.0'; // ⚠️ Este número debe coincidir con version.json
+let _versionAvisada = false;
+
+async function verificarVersion() {
+  try {
+    // Agregar timestamp para evitar que el navegador use caché del version.json
+    const resp = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
+    if(!resp.ok) return;
+    const data = await resp.json();
+    if(data.version && data.version !== VERSION_ACTUAL && !_versionAvisada) {
+      _versionAvisada = true;
+      mostrarAvisoActualizacion(data.version, data.notas);
+    }
+  } catch(e) { /* sin conexión o sin archivo: ignorar */ }
+}
+
+function mostrarAvisoActualizacion(nuevaVersion, notas) {
+  // Evitar duplicados
+  if(document.getElementById('updateOverlay')) return;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'updateOverlay';
+  overlay.style.cssText = `
+    position: fixed; inset: 0; z-index: 999999;
+    background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(6px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px; font-family: 'Tahoma', sans-serif;
+    animation: updFadeIn 0.3s ease-out;
+  `;
+  overlay.innerHTML = `
+    <style>
+      @keyframes updFadeIn { from { opacity:0; } to { opacity:1; } }
+      @keyframes updSlideUp { from { transform: translateY(30px) scale(0.92); opacity:0; } to { transform: translateY(0) scale(1); opacity:1; } }
+      @keyframes updPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+      .upd-box { background:white; border-radius:18px; max-width:420px; width:100%; overflow:hidden; box-shadow:0 25px 70px rgba(0,0,0,0.4); animation: updSlideUp 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+      .upd-header { background:linear-gradient(135deg,#1a3c6e,#c8102e); color:white; padding:28px 22px; text-align:center; }
+      .upd-icon { font-size:48px; display:inline-block; animation: updPulse 1.5s ease-in-out infinite; margin-bottom:8px; }
+      .upd-body { padding:24px 22px; text-align:center; }
+      .upd-btn { width:100%; padding:15px; border:none; border-radius:12px; font-size:15px; font-weight:800; cursor:pointer; background:linear-gradient(135deg,#1a3c6e,#c8102e); color:white; font-family:'Tahoma',sans-serif; transition:transform 0.1s, box-shadow 0.2s; margin-top:8px; }
+      .upd-btn:hover { transform:translateY(-2px); box-shadow:0 8px 20px rgba(200,16,46,0.3); }
+      .upd-btn:active { transform:translateY(0); }
+    </style>
+    <div class="upd-box">
+      <div class="upd-header">
+        <div class="upd-icon">🔄</div>
+        <div style="font-size:19px;font-weight:800;">Sistema Actualizado</div>
+        <div style="font-size:12px;opacity:0.9;margin-top:4px;">Nueva versión ${nuevaVersion} disponible</div>
+      </div>
+      <div class="upd-body">
+        <div style="font-size:14px;color:#374151;line-height:1.6;margin-bottom:6px;">
+          El administrador ha actualizado el sistema con mejoras.
+        </div>
+        <div style="font-size:12px;color:#6b7280;line-height:1.5;background:#f9fafb;padding:12px;border-radius:10px;margin:14px 0;">
+          ${notas || 'Mejoras y correcciones del sistema.'}
+        </div>
+        <div style="font-size:13px;color:#1a3c6e;font-weight:700;margin-bottom:4px;">
+          Presiona "Continuar" para actualizar y seguir trabajando al 100%.
+        </div>
+        <button class="upd-btn" onclick="aplicarActualizacion()">
+          ✅ Continuar y actualizar
+        </button>
+        <div style="font-size:11px;color:#9ca3af;margin-top:10px;">
+          Tus datos guardados están seguros. Esto solo recarga el sistema.
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+}
+
+function aplicarActualizacion() {
+  // Mostrar estado de carga en el botón
+  const btn = document.querySelector('.upd-btn');
+  if(btn) { btn.textContent = '⏳ Actualizando...'; btn.disabled = true; btn.style.opacity = '0.7'; }
+
+  // Limpiar caché del navegador y recargar
+  try {
+    if('caches' in window) {
+      caches.keys().then(names => {
+        names.forEach(name => caches.delete(name));
+      }).finally(() => _recargarLimpio());
+    } else {
+      _recargarLimpio();
+    }
+  } catch(e) {
+    _recargarLimpio();
+  }
+}
+
+function _recargarLimpio() {
+  // Recargar forzando descarga desde el servidor (no desde caché)
+  const url = window.location.href.split('?')[0] + '?v=' + Date.now();
+  window.location.replace(url);
+}
+
+
+// ════════════════════════════════
 //  LOGIN
 // ════════════════════════════════
 async function iniciarSesion() {
@@ -3525,6 +3624,10 @@ if(urlParams.get('qr') === '1') {
 
 // Si ya tiene GS config, mostrarlo en login
 actualizarEstadoConexion();
+
+// Verificar versión del sistema al cargar y cada 2 minutos
+verificarVersion();
+setInterval(verificarVersion, 120000); // cada 2 minutos
 
 document.getElementById('modalOverlay').addEventListener('click',function(e){ if(e.target===this) cerrarModal(); });
 document.getElementById('loginPass').addEventListener('keypress',function(e){ if(e.key==='Enter') iniciarSesion(); });
