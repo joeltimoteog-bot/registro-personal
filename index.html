@@ -1506,7 +1506,31 @@ let cacheLoaded  = false;
 let empresaEncontrada = ''; // Rapel o Verfrut, donde se halló al trabajador
 let datosOriginales = null; // datos originales del trabajador encontrado
 let editDNI      = null;
-let sesion       = null; // { usuario, cargo, estado }
+let sesion       = null; // { usuario, cargo, estado, token }
+
+// Helper: devuelve el token de sesión para acciones sensibles del Apps Script
+function _token() { return sesion && sesion.token ? sesion.token : ''; }
+
+// Helper: detecta si la respuesta del Apps Script indica sesión expirada
+function _sesionExpirada(data) {
+  if(data && data.ok === false && data.msg && data.msg.indexOf('Sesión expirada') !== -1) {
+    confirmarPersonalizado({
+      titulo: '🔒 Sesión expirada',
+      mensaje: 'Tu sesión ha caducado por seguridad (8 horas). Por favor vuelve a iniciar sesión para continuar.',
+      btnConfirmar: 'Volver a iniciar sesión',
+      btnCancelar: '✖ Cerrar',
+      tipo: 'warning'
+    }).then(() => {
+      sesion = null;
+      sesionActiva = null;
+      document.getElementById('appScreen').style.display = 'none';
+      document.getElementById('loginScreen').style.display = 'flex';
+      document.getElementById('loginPass').value = '';
+    });
+    return true;
+  }
+  return false;
+}
 
 const hoy = new Date().toDateString();
 if(hoyDate !== hoy) { hoyCount=0; localStorage.setItem('hoy_date',hoy); localStorage.setItem('hoy_count','0'); }
@@ -1872,7 +1896,7 @@ function actualizarContador() {
 async function sincronizarContadorGrupo() {
   if(!sesionActiva || sesionActiva.libre || !gsConfig.habilitado || !gsConfig.webhookUrl) return;
   try {
-    const url = gsConfig.webhookUrl + '?accion=contarGrupo&grupo=' + encodeURIComponent(sesionActiva.sector) + '&codigo=' + encodeURIComponent(sesionActiva.codigo);
+    const url = gsConfig.webhookUrl + '?accion=contarGrupo&grupo=' + encodeURIComponent(sesionActiva.sector) + '&codigo=' + encodeURIComponent(sesionActiva.codigo) + '&token=' + encodeURIComponent(_token());
     const resp = await fetch(url);
     const txt = await resp.text();
     const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
@@ -1915,7 +1939,7 @@ async function renderEstadisticas() {
   if(gsConfig.habilitado && gsConfig.webhookUrl) {
     try {
       document.getElementById('st-total').textContent = '...';
-      const url = gsConfig.webhookUrl + '?accion=listarBBRegistro';
+      const url = gsConfig.webhookUrl + '?accion=listarBBRegistro&token=' + encodeURIComponent(_token());
       const resp = await fetch(url);
       const txt = await resp.text();
       const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
@@ -2026,7 +2050,7 @@ async function cargarMetricasAcerca() {
     // Usar cache si está disponible, sino consultar
     let datos = datosStatsCache;
     if(!datos) {
-      const url = gsConfig.webhookUrl + '?accion=listarBBRegistro';
+      const url = gsConfig.webhookUrl + '?accion=listarBBRegistro&token=' + encodeURIComponent(_token());
       const resp = await fetch(url);
       const txt = await resp.text();
       const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
@@ -2337,7 +2361,7 @@ async function editarRegistroBB(dni, fechaFiltro) {
   if(!gsConfig.habilitado || !gsConfig.webhookUrl) { showToast('Sin conexión','error'); return; }
   showToast('🔍 Buscando registro...','');
   try {
-    const url = gsConfig.webhookUrl + '?accion=buscarBBRegistro&dni=' + encodeURIComponent(dni);
+    const url = gsConfig.webhookUrl + '?accion=buscarBBRegistro&dni=' + encodeURIComponent(dni) + '&token=' + encodeURIComponent(_token());
     const resp = await fetch(url);
     const txt = await resp.text();
     const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
@@ -2438,7 +2462,7 @@ function buscarDNI() {
 
 async function buscarEnBBRegistroPrimero(dni) {
   try {
-    const url = gsConfig.webhookUrl + '?accion=buscarBBRegistro&dni='+encodeURIComponent(dni);
+    const url = gsConfig.webhookUrl + '?accion=buscarBBRegistro&dni='+encodeURIComponent(dni) + '&token=' + encodeURIComponent(_token());
     const resp = await fetch(url);
     const txt = await resp.text();
     const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
@@ -2678,7 +2702,7 @@ async function _continuarGuardado(datos) {
   // ⚠️ Verificar DNI duplicado en BB.REGISTRO antes de insertar
   if(gsConfig.habilitado && gsConfig.webhookUrl) {
     try {
-      const u = gsConfig.webhookUrl + '?accion=buscarBBRegistro&dni=' + encodeURIComponent(datos.dni);
+      const u = gsConfig.webhookUrl + '?accion=buscarBBRegistro&dni=' + encodeURIComponent(datos.dni) + '&token=' + encodeURIComponent(_token());
       const r = await fetch(u);
       const t = await r.text();
       const m = t.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
@@ -2745,7 +2769,7 @@ async function _continuarGuardado(datos) {
 async function actualizarRegistroBB(datos) {
   if(!gsConfig.habilitado||!gsConfig.webhookUrl) { showToast('⚠️ Sin conexión GS','error'); return; }
   try {
-    const payload = {accion:'actualizarRegistro', fila:filaEditar, usuarioEditor: sesion ? sesion.usuario : '-', ...datos};
+    const payload = {accion:'actualizarRegistro', token:_token(), fila:filaEditar, usuarioEditor: sesion ? sesion.usuario : '-', ...datos};
     const url = gsConfig.webhookUrl+'?data='+encodeURIComponent(JSON.stringify(payload));
     const resp = await fetch(url);
     const txt = await resp.text();
@@ -2785,12 +2809,13 @@ function reproducirSonidoExito() {
 async function registrarEnBBRegistro(datos) {
   if(!gsConfig.habilitado||!gsConfig.webhookUrl) { showToast('⚠️ Sin conexión GS. Guardado local.','error'); return; }
   try {
-    const payload = {accion:'registrar',...datos};
+    const payload = {accion:'registrar', token:_token(), ...datos};
     const url = gsConfig.webhookUrl+'?data='+encodeURIComponent(JSON.stringify(payload));
     const resp = await fetch(url);
     const txt  = await resp.text();
     const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
     const r = JSON.parse(m ? m[1] : txt);
+    if(_sesionExpirada(r)) return;
     if(r.ok) showToast('☁️ Guardado en BB.REGISTRO','success');
   } catch(e) { showToast('⚠️ Error al guardar en Google Sheets','error'); }
 }
@@ -2828,7 +2853,7 @@ async function cargarTodosRegistros() {
   const cont = document.getElementById('adminTableContainer');
   cont.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><h3>Cargando todos los registros...</h3></div>';
   try {
-    const url = gsConfig.webhookUrl + '?accion=listarBBRegistro';
+    const url = gsConfig.webhookUrl + '?accion=listarBBRegistro&token=' + encodeURIComponent(_token());
     const resp = await fetch(url);
     const txt = await resp.text();
     const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
@@ -2885,7 +2910,7 @@ async function cargarUsuarios() {
     return;
   }
   try {
-    const url = gsConfig.webhookUrl+'?accion=listarUsuarios';
+    const url = gsConfig.webhookUrl+'?accion=listarUsuarios&token=' + encodeURIComponent(_token());
     const resp = await fetch(url);
     const txt  = await resp.text();
     const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
@@ -2915,7 +2940,7 @@ async function agregarUsuario() {
   if(!user||!pass||!cargo) { showToast('Completa todos los campos','error'); return; }
   if(!gsConfig.habilitado||!gsConfig.webhookUrl) { showToast('Sin conexión Google Sheets','error'); return; }
   try {
-    const payload = {accion:'agregarUsuario', usuario:user, cargo, estado, password:pass};
+    const payload = {accion:'agregarUsuario', token:_token(), usuario:user, cargo, estado, password:pass};
     const url = gsConfig.webhookUrl+'?data='+encodeURIComponent(JSON.stringify(payload));
     const resp = await fetch(url);
     const txt  = await resp.text();
@@ -2941,7 +2966,7 @@ function confirmarEliminarUsuario(usuario) {
 
 async function eliminarUsuario(usuario) {
   try {
-    const payload = {accion:'eliminarUsuario', usuario};
+    const payload = {accion:'eliminarUsuario', token:_token(), usuario};
     const url = gsConfig.webhookUrl+'?data='+encodeURIComponent(JSON.stringify(payload));
     const resp = await fetch(url);
     const txt  = await resp.text();
@@ -3003,7 +3028,7 @@ async function _descargarBBRegistro(desde, hasta) {
   const soloTardios = document.getElementById('exp-solo-tardios') && document.getElementById('exp-solo-tardios').checked;
   showToast('⏳ Descargando registros...','');
   try {
-    const url = gsConfig.webhookUrl + '?accion=exportarBBRegistro';
+    const url = gsConfig.webhookUrl + '?accion=exportarBBRegistro&token=' + encodeURIComponent(_token());
     const resp = await fetch(url);
     const txt = await resp.text();
     const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
@@ -3143,7 +3168,7 @@ async function probarConexion() {
   if(!gsConfig.webhookUrl) { showToast('Guarda la URL primero','error'); return; }
   showToast('🔄 Probando...','');
   try {
-    const url=gsConfig.webhookUrl+'?accion=listarUsuarios';
+    const url=gsConfig.webhookUrl+'?accion=listarUsuarios&token=' + encodeURIComponent(_token());
     const resp=await fetch(url);
     if(resp.ok) showToast('✅ Conexión exitosa','success'); else showToast('⚠️ Error','error');
   } catch(e) { showToast('❌ Sin conexión','error'); }
