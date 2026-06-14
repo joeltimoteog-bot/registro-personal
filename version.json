@@ -1,5 +1,5 @@
 {
-  "version": "2.2.0",
+  "version": "2.3.0",
   "fecha": "2026-06-14",
-  "notas": "Mejora en la prevención de registros duplicados. El sistema ahora es más rápido y seguro al guardar."
+  "notas": "Prueba del aviso de actualización"
 }
