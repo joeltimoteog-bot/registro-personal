@@ -1325,8 +1325,12 @@ function migrarPasswords() {
           📘 Descargar Manual de Usuario (17 pág.)
         </a>
         <a href="Documento_Impacto_Sistema.pdf" download="Documento_Impacto_Sistema.pdf"
-           class="btn btn-full" style="text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px;background:#1a3c6e;color:white;border:none;">
+           class="btn btn-full" style="text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px;background:#1a3c6e;color:white;border:none;margin-bottom:8px;">
           📊 Descargar Documento de Impacto (1 pág.)
+        </a>
+        <a href="Documento_Tecnico_Continuidad.pdf" download="Documento_Tecnico_Continuidad.pdf"
+           class="btn btn-full admin-only-doc" style="text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px;background:#374151;color:white;border:none;">
+          🔧 Documento Técnico de Continuidad (admin)
         </a>
       </div>
     </div>
@@ -1701,6 +1705,11 @@ function _setSesion(data) {
   // Card de todos los registros solo para administradores
   const adminCard = document.getElementById('adminAllCard');
   if(adminCard) adminCard.style.display = isAdmin ? '' : 'none';
+
+  // Documento técnico solo visible para administradores
+  document.querySelectorAll('.admin-only-doc').forEach(el => {
+    el.style.display = isAdmin ? 'flex' : 'none';
+  });
 
   // Configuración sensible (URL + código) solo para el creador (jtimoteo)
   const configSensible = document.getElementById('configSensible');
