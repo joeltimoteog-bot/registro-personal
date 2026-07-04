@@ -1368,7 +1368,7 @@ function migrarPasswords() {
         <div style="font-size:18px;font-weight:800;letter-spacing:0.5px;margin-bottom:4px;">Sistema de Registro de Personal</div>
         <div style="font-size:12px;opacity:0.9;margin-bottom:14px;">Unifrutti — Rapel & Verfrut</div>
         <div style="display:inline-block;background:rgba(255,255,255,0.18);padding:5px 14px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:1px;">
-          VERSIÓN 1.0
+          VERSIÓN <span class="ver-dinamica">--</span>
         </div>
       </div>
       <div style="position:absolute;top:-30px;right:-30px;width:120px;height:120px;background:rgba(255,255,255,0.06);border-radius:50%;"></div>
@@ -1493,7 +1493,7 @@ function migrarPasswords() {
   Si tienes alguna duda del sistema por favor me comentas por interno. Saludos. 🙂
 </div>
 <div style="text-align:center;padding:4px 20px 18px;font-size:9pt;color:#9ca3af;font-family:Tahoma,sans-serif;border-top:1px solid #f3f4f6;margin-top:8px;padding-top:14px;">
-  Sistema de Registro de Personal v1.0 · © 2026 Unifrutti<br>
+  Sistema de Registro de Personal v<span class="ver-dinamica">--</span> · © 2026 Unifrutti<br>
   <span style="font-size:8pt;">Desarrollado por <strong style="color:#c8102e;">Joel Timoteo Gonza</strong></span>
 </div>
 </div><!-- /appScreen -->
@@ -1629,6 +1629,11 @@ if(hoyDate !== hoy) { hoyCount=0; localStorage.setItem('hoy_date',hoy); localSto
 //  CONTROL DE VERSIÓN / ACTUALIZACIÓN AUTOMÁTICA
 // ════════════════════════════════
 const VERSION_ACTUAL = '2.6.0'; // ⚠️ Este número debe coincidir con version.json
+
+// Mostrar la versión real en todos los lugares de la interfaz (footer, Acerca, etc.)
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.ver-dinamica').forEach(el => el.textContent = VERSION_ACTUAL);
+});
 let _versionAvisada = false;
 
 async function verificarVersion() {
@@ -2120,7 +2125,7 @@ function iniciarAutoContador() {
   if(intervaloContador) clearInterval(intervaloContador);
   intervaloContador = setInterval(() => {
     if(sesionActiva) sincronizarContadorGrupo();
-  }, 10000);
+  }, 20000); // 20 seg: optimizado para varios usuarios simultáneos
 }
 
 // ════════════════════════════════
