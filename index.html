@@ -834,7 +834,20 @@ tr:hover td { background: #f8faff; }
   <div style="margin-top:14px;">
     <div class="card">
       <div class="card-header"><div class="card-icon green">☁️</div><div><div class="card-title">Exportar registros (BB.REGISTRO)</div><div class="card-sub">Descarga desde Google Sheets por rango de fechas</div></div></div>
-      <div class="card-body">
+
+      <!-- Mensaje para usuarios NO autorizados a exportar -->
+      <div class="card-body" id="exportBloqueado" style="display:none;text-align:center;padding:22px;">
+        <div style="font-size:34px;margin-bottom:10px;">🔒</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.7;">
+          La exportación de la base de datos está restringida porque contiene
+          <strong>datos personales sensibles</strong> de los trabajadores.<br><br>
+          Solo el personal autorizado puede descargar registros. Si necesitas
+          una exportación, solicítala a <strong>Joel Timoteo Gonza</strong>
+          (Coordinador de Relaciones Laborales).
+        </div>
+      </div>
+
+      <div class="card-body" id="exportAutorizado">
         <div class="form-row-2" style="margin-bottom:12px;">
           <div class="input-group">
             <label class="input-label">Desde</label>
@@ -978,12 +991,21 @@ tr:hover td { background: #f8faff; }
   <div style="margin-top:14px;">
     <!-- Mensaje para admin que no es el creador -->
     <div class="card" id="configBloqueado" style="display:none;">
-      <div class="card-header"><div class="card-icon" style="background:#fff0f2;">🔒</div><div><div class="card-title">Configuración protegida</div><div class="card-sub">Solo el administrador del sistema tiene acceso</div></div></div>
+      <div class="card-header"><div class="card-icon" style="background:#fff0f2;">🔒</div><div><div class="card-title">Configuración protegida</div><div class="card-sub">Acceso exclusivo del creador del sistema</div></div></div>
       <div class="card-body" style="text-align:center;padding:20px;">
-        <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:14px;">
-          La configuración de conexión y el código del sistema están protegidos por seguridad. Si necesitas acceso, solicítalo al administrador del sistema (Joel Timoteo).
+        <div style="font-size:34px;margin-bottom:10px;">©</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:14px;">
+          La configuración del sistema (conexión, código y estructura) está protegida.<br><br>
+          <strong style="color:#c8102e;">Este sistema es propiedad intelectual de Joel Timoteo Gonza.</strong><br>
+          Por derechos de autor, no está permitido modificar la configuración, copiar ni reproducir
+          el sistema sin autorización expresa del creador.<br><br>
+          Si necesitas realizar algún cambio o tienes alguna consulta, comunícate directamente con
+          <strong>Joel Timoteo Gonza</strong> (Coordinador de Relaciones Laborales — Reclutamiento de Personal).
         </div>
-        <button class="btn btn-outline btn-full" onclick="solicitarAccesoConfig()">📩 Solicitar acceso por WhatsApp</button>
+        <button class="btn btn-outline btn-full" onclick="solicitarAccesoConfig()">📩 Contactar a Joel Timoteo por WhatsApp</button>
+        <div style="font-size:10px;color:#9ca3af;margin-top:12px;">
+          © 2026 Sistema de Registro de Personal · Todos los derechos reservados
+        </div>
       </div>
     </div>
     <div class="card" id="configSensible">
@@ -1519,6 +1541,66 @@ let sesion       = null; // { usuario, cargo, estado, token }
 // Helper: devuelve el token de sesión para acciones sensibles del Apps Script
 function _token() { return sesion && sesion.token ? sesion.token : ''; }
 
+// ── EXPORTACIÓN RESTRINGIDA ──
+// Solo estos usuarios pueden exportar la base de datos (datos sensibles)
+const EXPORT_AUTORIZADOS = ['jtimoteo', 'jsiancas', 'javendano'];
+
+function _puedeExportar() {
+  return sesion && EXPORT_AUTORIZADOS.includes(String(sesion.usuario||'').toLowerCase());
+}
+
+// Aviso de confidencialidad que debe aceptarse antes de cada exportación
+async function _confirmarConfidencialidad() {
+  if(!_puedeExportar()) {
+    await confirmarPersonalizado({
+      titulo: '🔒 Exportación restringida',
+      mensaje: 'No tienes autorización para exportar la base de datos.<br><br>' +
+               'Los registros contienen <strong>datos personales sensibles</strong>. ' +
+               'Si necesitas una exportación, solicítala a <strong>Joel Timoteo Gonza</strong>.',
+      btnConfirmar: 'Entendido',
+      btnCancelar: '✖ Cerrar',
+      tipo: 'danger'
+    });
+    return false;
+  }
+
+  // El creador (jtimoteo) exporta directo, sin aviso — él define los criterios
+  const esCreador = sesion && String(sesion.usuario||'').toLowerCase() === 'jtimoteo';
+  if(esCreador) {
+    _registrarExportacion();
+    return true;
+  }
+
+  // Usuarios autorizados (jsiancas, javendano): deben aceptar el compromiso de confidencialidad
+  const acepta = await confirmarPersonalizado({
+    titulo: '⚠️ Aviso de confidencialidad',
+    mensaje:
+      'Estás a punto de descargar información con <strong>datos personales sensibles</strong> ' +
+      'de los trabajadores (DNI, teléfonos, direcciones).<br><br>' +
+      '<strong style="color:#c8102e;">Al continuar, te comprometes a:</strong><br>' +
+      '• Usar esta información SOLO para el flujo de trabajo autorizado<br>' +
+      '• No compartirla con terceros ni fuera de la empresa<br>' +
+      '• No realizar copias fuera del ámbito laboral<br>' +
+      '• Eliminar el archivo cuando ya no sea necesario<br><br>' +
+      '<span style="font-size:11px;color:#6b7280;">Esta descarga quedará registrada con tu usuario, fecha y hora. ' +
+      'Autorizado por Joel Timoteo Gonza, creador del sistema.</span>',
+    btnConfirmar: '✅ Acepto y descargar',
+    btnCancelar: '✖ Cancelar',
+    tipo: 'warning'
+  });
+  if(acepta) _registrarExportacion();
+  return acepta;
+}
+
+// Registra en el Apps Script quién exportó y cuándo (auditoría)
+function _registrarExportacion() {
+  try {
+    if(!gsConfig.habilitado || !gsConfig.webhookUrl) return;
+    const payload = {accion:'logExportacion', token:_token(), usuario: sesion ? sesion.usuario : '-'};
+    fetch(gsConfig.webhookUrl + '?data=' + encodeURIComponent(JSON.stringify(payload)));
+  } catch(e) { /* silencioso */ }
+}
+
 // Helper: detecta si la respuesta del Apps Script indica sesión expirada
 function _sesionExpirada(data) {
   if(data && data.ok === false && data.msg && data.msg.indexOf('Sesión expirada') !== -1) {
@@ -1546,7 +1628,7 @@ if(hoyDate !== hoy) { hoyCount=0; localStorage.setItem('hoy_date',hoy); localSto
 // ════════════════════════════════
 //  CONTROL DE VERSIÓN / ACTUALIZACIÓN AUTOMÁTICA
 // ════════════════════════════════
-const VERSION_ACTUAL = '2.3.0'; // ⚠️ Este número debe coincidir con version.json
+const VERSION_ACTUAL = '2.6.0'; // ⚠️ Este número debe coincidir con version.json
 let _versionAvisada = false;
 
 async function verificarVersion() {
@@ -1724,7 +1806,7 @@ function mostrarPantallaBienvenida(data, callback) {
       .welcome-creator { font-size: 13px; opacity: 0.85; margin-bottom: 22px; padding: 10px 18px; background: rgba(255,255,255,0.12); border-radius: 10px; animation: slideUp 0.6s ease-out 0.6s both; line-height: 1.5; }
       .welcome-loading { font-size: 13px; opacity: 0.85; animation: pulseText 1.4s ease-in-out infinite; }
       .progress-track { width: 220px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden; margin-top: 16px; }
-      .progress-fill { height: 100%; background: white; border-radius: 4px; animation: progressBar 2.5s ease-out forwards; }
+      .progress-fill { height: 100%; background: white; border-radius: 4px; animation: progressBar 1.2s ease-out forwards; }
     </style>
     <div class="welcome-emoji">⚙️</div>
     <div class="welcome-title">${saludo}, ${primerNombre}</div>
@@ -1739,14 +1821,19 @@ function mostrarPantallaBienvenida(data, callback) {
 
   document.body.appendChild(overlay);
 
-  // Tras 2.5 segundos, cerrar overlay y entrar al módulo
-  setTimeout(() => {
-    overlay.style.animation = 'fadeOutOverlay 0.4s ease-out forwards';
+  // Cerrar y entrar al módulo (1.2 seg, o al tocar la pantalla para saltar)
+  let _cerrado = false;
+  const cerrarBienvenida = () => {
+    if(_cerrado) return;
+    _cerrado = true;
+    overlay.style.animation = 'fadeOutOverlay 0.3s ease-out forwards';
     setTimeout(() => {
       overlay.remove();
       callback();
-    }, 400);
-  }, 2500);
+    }, 300);
+  };
+  overlay.addEventListener('click', cerrarBienvenida); // Tocar para entrar de inmediato
+  setTimeout(cerrarBienvenida, 1200);
 }
 
 function mostrarBannerBienvenida(mensaje, rol) {
@@ -1809,10 +1896,17 @@ function _setSesion(data) {
   const adminCard = document.getElementById('adminAllCard');
   if(adminCard) adminCard.style.display = isAdmin ? '' : 'none';
 
-  // Documento técnico solo visible para administradores
+  // Documento técnico y guía suplente: solo visibles para el CREADOR (protección de derechos de autor)
   document.querySelectorAll('.admin-only-doc').forEach(el => {
-    el.style.display = isAdmin ? 'flex' : 'none';
+    el.style.display = isCreador ? 'flex' : 'none';
   });
+
+  // Exportación de BB.REGISTRO: solo usuarios autorizados (datos sensibles)
+  const expAut = document.getElementById('exportAutorizado');
+  const expBloq = document.getElementById('exportBloqueado');
+  const autorizado = _puedeExportar();
+  if(expAut)  expAut.style.display  = autorizado ? '' : 'none';
+  if(expBloq) expBloq.style.display = autorizado ? 'none' : '';
 
   // Configuración sensible (URL + código) solo para el creador (jtimoteo)
   const configSensible = document.getElementById('configSensible');
@@ -2876,13 +2970,22 @@ async function _continuarGuardado(datos) {
   if(idx!==-1) trabajadores[idx]=datos; else { trabajadores.push(datos); hoyCount++; localStorage.setItem('hoy_count',hoyCount); }
   localStorage.setItem('pd_local', JSON.stringify(trabajadores));
 
+  // Guardar borrador de seguridad ANTES de enviar (por si falla la conexión)
+  try { localStorage.setItem('_borrador_ultimo', JSON.stringify(datos)); } catch(e){}
+
   // Esperar a que el guardado en BB.REGISTRO termine ANTES de continuar
   const guardadoOk = await registrarEnBBRegistro(datos);
   if(!guardadoOk) {
-    // Si falló el guardado, revertir el conteo local para no descuadrar
-    showToast('⚠️ No se confirmó el guardado. Verifica antes de reintentar.','error');
+    // El guardado no se confirmó. NO limpiar el formulario para no perder los datos.
+    mostrarStatus('error',
+      '⚠️ No se pudo confirmar el guardado (posible problema de internet). ' +
+      'Tus datos siguen en el formulario. Verifica tu conexión y presiona Guardar de nuevo. ' +
+      'Si el trabajador ya aparece en la lista, NO lo guardes otra vez.');
     return;
   }
+
+  // Guardado exitoso: limpiar borrador de seguridad
+  try { localStorage.removeItem('_borrador_ultimo'); } catch(e){}
 
   if(sesionActiva && !sesionActiva.libre) {
     sesionActiva.registrados++;
@@ -2937,17 +3040,43 @@ function reproducirSonidoExito() {
 
 async function registrarEnBBRegistro(datos) {
   if(!gsConfig.habilitado||!gsConfig.webhookUrl) { showToast('⚠️ Sin conexión GS. Guardado local.','error'); return false; }
-  try {
-    const payload = {accion:'registrar', token:_token(), ...datos};
-    const url = gsConfig.webhookUrl+'?data='+encodeURIComponent(JSON.stringify(payload));
-    const resp = await fetch(url);
-    const txt  = await resp.text();
-    const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
-    const r = JSON.parse(m ? m[1] : txt);
-    if(_sesionExpirada(r)) return false;
-    if(r.ok) { showToast('☁️ Guardado en BB.REGISTRO','success'); return true; }
-    return false;
-  } catch(e) { showToast('⚠️ Error al guardar en Google Sheets','error'); return false; }
+
+  const payload = {accion:'registrar', token:_token(), ...datos};
+  const url = gsConfig.webhookUrl+'?data='+encodeURIComponent(JSON.stringify(payload));
+
+  // Intentar hasta 2 veces con timeout de 20 segundos (para internet lento/lluvia)
+  for(let intento = 1; intento <= 2; intento++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 segundos
+      const resp = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      const txt = await resp.text();
+      const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
+      const r = JSON.parse(m ? m[1] : txt);
+      if(_sesionExpirada(r)) return false;
+      if(r.ok) {
+        // El Apps Script confirma guardado (o detecta que ya estaba = duplicado evitado)
+        if(r.duplicado) showToast('☁️ Registro confirmado (ya estaba guardado)','success');
+        else showToast('☁️ Guardado en BB.REGISTRO','success');
+        return true;
+      }
+      // Si respondió pero no ok, no reintentar (es un rechazo válido)
+      showToast('⚠️ '+(r.msg||'No se pudo guardar'),'error');
+      return false;
+    } catch(e) {
+      // Error de red o timeout. Si es el primer intento, reintentar
+      if(intento === 1) {
+        showToast('🔄 Conexión lenta, reintentando...','info');
+        await new Promise(res => setTimeout(res, 2000)); // esperar 2 seg antes de reintentar
+        continue;
+      }
+      // Segundo intento falló también
+      showToast('⚠️ Sin respuesta del servidor (revisa tu internet)','error');
+      return false;
+    }
+  }
+  return false;
 }
 
 // ════════════════════════════════
@@ -3155,6 +3284,11 @@ async function exportarSoloTardios() {
 async function _descargarBBRegistro(desde, hasta) {
   if(typeof XLSX === 'undefined') { showToast('⚠️ Librería Excel no cargó','error'); return; }
   if(!gsConfig.habilitado || !gsConfig.webhookUrl) { showToast('Sin conexión Google Sheets','error'); return; }
+
+  // ── Control de autorización + aviso de confidencialidad ──
+  const autorizado = await _confirmarConfidencialidad();
+  if(!autorizado) return;
+
   const soloTardios = document.getElementById('exp-solo-tardios') && document.getElementById('exp-solo-tardios').checked;
   showToast('⏳ Descargando registros...','');
   try {

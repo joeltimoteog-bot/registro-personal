@@ -1,5 +1,5 @@
 {
-  "version": "2.3.0",
-  "fecha": "2026-06-14",
-  "notas": "Prueba del aviso de actualización"
+  "version": "2.6.0",
+  "fecha": "2026-06-15",
+  "notas": "Refuerzo de seguridad: exportación de datos restringida a personal autorizado, con aviso de confidencialidad y registro de descargas."
 }
