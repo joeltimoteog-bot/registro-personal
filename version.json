@@ -1,5 +1,5 @@
 {
-  "version": "2.7.0",
+  "version": "2.8.0",
   "fecha": "2026-07-08",
-  "notas": "Corrección importante: la sesión ya no se pierde al cambiar de aplicación o recargar la página. Ya no te botará del sistema."
+  "notas": "¡Ahora puedes instalar el sistema como app en tu celular! Abre el menú del navegador y elige 'Instalar aplicación' o 'Agregar a pantalla de inicio'."
 }
