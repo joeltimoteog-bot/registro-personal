@@ -1613,6 +1613,7 @@ function _sesionExpirada(data) {
     }).then(() => {
       sesion = null;
       sesionActiva = null;
+      try { localStorage.removeItem('sesion_activa'); } catch(e){}
       document.getElementById('appScreen').style.display = 'none';
       document.getElementById('loginScreen').style.display = 'flex';
       document.getElementById('loginPass').value = '';
@@ -1628,7 +1629,7 @@ if(hoyDate !== hoy) { hoyCount=0; localStorage.setItem('hoy_date',hoy); localSto
 // ════════════════════════════════
 //  CONTROL DE VERSIÓN / ACTUALIZACIÓN AUTOMÁTICA
 // ════════════════════════════════
-const VERSION_ACTUAL = '2.6.0'; // ⚠️ Este número debe coincidir con version.json
+const VERSION_ACTUAL = '2.7.0'; // ⚠️ Este número debe coincidir con version.json
 
 // Mostrar la versión real en todos los lugares de la interfaz (footer, Acerca, etc.)
 document.addEventListener('DOMContentLoaded', () => {
@@ -1877,6 +1878,14 @@ function mostrarBannerBienvenida(mensaje, rol) {
 
 function _setSesion(data) {
   sesion = data;
+  // Guardar sesión en el navegador para que sobreviva recargas de página
+  // (en celulares, cambiar de app o usar la cámara recarga la página)
+  try {
+    localStorage.setItem('sesion_activa', JSON.stringify({
+      usuario: data.usuario, cargo: data.cargo, estado: data.estado,
+      token: data.token, guardadaEn: Date.now()
+    }));
+  } catch(e){}
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('appScreen').style.display   = 'block';
   const isAdmin = data.estado === 'Administrador';
@@ -1953,6 +1962,7 @@ async function cerrarSesion() {
   if(intervaloContador) { clearInterval(intervaloContador); intervaloContador = null; }
   sesion = null;
   sesionActiva = null;
+  try { localStorage.removeItem('sesion_activa'); } catch(e){}
   document.getElementById('appScreen').style.display   = 'none';
   document.getElementById('loginScreen').style.display = 'flex';
   document.getElementById('loginUser').value = '';
@@ -3781,6 +3791,26 @@ if(urlParams.get('qr') === '1') {
 
 // Si ya tiene GS config, mostrarlo en login
 actualizarEstadoConexion();
+
+// ── RESTAURAR SESIÓN GUARDADA (evita que la recarga del navegador bote al usuario) ──
+(function restaurarSesion() {
+  try {
+    if(urlParams.get('qr') === '1') return; // el modo QR no usa sesión
+    const guardada = localStorage.getItem('sesion_activa');
+    if(!guardada) return;
+    const s = JSON.parse(guardada);
+    // Válida por 20 horas (margen bajo las 24h del token del servidor)
+    const horas = (Date.now() - (s.guardadaEn||0)) / 3600000;
+    if(horas > 20 || !s.token) {
+      localStorage.removeItem('sesion_activa');
+      return;
+    }
+    // Restaurar directo al sistema, sin pedir login de nuevo
+    _setSesion(s);
+  } catch(e) {
+    try { localStorage.removeItem('sesion_activa'); } catch(e2){}
+  }
+})();
 
 // Verificar versión del sistema al cargar y cada 2 minutos
 verificarVersion();

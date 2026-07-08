@@ -1,5 +1,5 @@
 {
-  "version": "2.6.0",
-  "fecha": "2026-06-15",
-  "notas": "Refuerzo de seguridad: exportación de datos restringida a personal autorizado, con aviso de confidencialidad y registro de descargas."
+  "version": "2.7.0",
+  "fecha": "2026-07-08",
+  "notas": "Corrección importante: la sesión ya no se pierde al cambiar de aplicación o recargar la página. Ya no te botará del sistema."
 }
