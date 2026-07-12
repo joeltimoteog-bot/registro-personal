@@ -423,6 +423,40 @@ tr:hover td { background: rgba(232,238,247,0.55); }
 .user-pill { background: rgba(255,255,255,0.7); }
 .user-pill:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(26,60,110,0.12); }
 
+/* ── v3.4.0: LOGIN PREMIUM GLASS ── */
+#loginScreen { background: linear-gradient(150deg, #0d1f3d 0%, #1a3c6e 55%, #142e54 100%); position: relative; overflow: hidden; }
+#loginScreen::before {
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background:
+    radial-gradient(560px 420px at 85% 10%, rgba(200,16,46,0.22), transparent 70%),
+    radial-gradient(640px 480px at 8% 92%, rgba(90,140,210,0.25), transparent 70%),
+    radial-gradient(420px 320px at 25% 15%, rgba(255,255,255,0.07), transparent 70%);
+}
+#loginScreen .login-box { position:relative; border:1.5px solid rgba(255,255,255,0.35); box-shadow: 0 30px 80px rgba(0,0,0,0.45); }
+.login-form { background: rgba(255,255,255,0.94); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.login-brand { background: linear-gradient(160deg, #16345f, #0e2240); }
+
+/* ── v3.4.0: ESQUELETO DE CARGA ── */
+.skel-card { background: rgba(255,255,255,0.75); border:1.5px solid rgba(255,255,255,0.85); border-radius:12px; padding:16px; margin-bottom:14px; box-shadow: 0 8px 26px rgba(26,60,110,0.14); }
+.skel-line { height:14px; border-radius:7px; background: linear-gradient(90deg,#e3e9f3 25%,#f2f5fa 50%,#e3e9f3 75%); background-size:200% 100%; animation: skelWave 1.2s linear infinite; }
+.skel-line + .skel-line { margin-top:10px; }
+@keyframes skelWave { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+/* ── v3.4.0: BARRA DE PROGRESO DEL FORMULARIO ── */
+.form-progress { padding: 10px 17px 9px; background: rgba(255,255,255,0.88); border-bottom: 1px solid var(--border); }
+.form-progress-top { display:flex; justify-content:space-between; align-items:center; font-size:11px; font-weight:700; color:var(--blue); margin-bottom:6px; letter-spacing:0.5px; }
+.form-progress-track { height:8px; border-radius:4px; background:#e6ebf4; overflow:hidden; }
+.form-progress-fill { height:100%; width:0%; border-radius:4px; background: linear-gradient(90deg, var(--blue), #3b6cb0); transition: width .35s cubic-bezier(.16,1,.3,1), background .3s; }
+.form-progress-fill.done { background: linear-gradient(90deg, #16a34a, #22c55e); }
+.form-progress-missing { font-size:10px; color:var(--muted); margin-top:5px; line-height:1.4; }
+
+/* ── v3.4.0: RESUMEN DEL DÍA ── */
+.resumen-dia { display:flex; align-items:center; gap:14px; background: rgba(255,255,255,0.68); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border:1.5px solid rgba(255,255,255,0.85); border-radius:14px; padding:12px 16px; margin-bottom:14px; box-shadow: 0 8px 26px rgba(26,60,110,0.14); animation: cardIn .5s cubic-bezier(.16,1,.3,1) both; }
+.resumen-dia-num { font-size:30px; font-weight:700; font-family:'JetBrains Mono',monospace; color:var(--blue); line-height:1; text-align:center; }
+.resumen-dia-label { font-size:10px; color:var(--muted); font-weight:700; letter-spacing:0.5px; margin-top:3px; }
+.resumen-dia-ult { flex:1; display:flex; flex-wrap:wrap; gap:5px; justify-content:flex-end; }
+.resumen-chip { padding:3px 9px; border-radius:20px; font-size:10.5px; font-weight:600; background:#e8eef7; color:#1a3c6e; border:1px solid #b8cce4; white-space:nowrap; }
+
 /* Accesibilidad: respetar animaciones reducidas del sistema */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
@@ -1841,7 +1875,7 @@ function incrementarContadorFirebase() {
 // ════════════════════════════════
 //  CONTROL DE VERSIÓN / ACTUALIZACIÓN AUTOMÁTICA
 // ════════════════════════════════
-const VERSION_ACTUAL = '3.3.2'; // ⚠️ Este número debe coincidir con version.json
+const VERSION_ACTUAL = '3.4.0'; // ⚠️ Este número debe coincidir con version.json
 
 // Mostrar la versión real en todos los lugares de la interfaz (footer, Acerca, etc.)
 document.addEventListener('DOMContentLoaded', () => {
@@ -4076,6 +4110,124 @@ document.getElementById('dniSearch').addEventListener('input', function(){
     buscarDNI();
   }
 });
+
+// ═══════════════════════════════════════════════════════════
+//  v3.4.0: MEJORAS DE EXPERIENCIA
+//  (Envolturas: NO se modificó ninguna función original)
+// ═══════════════════════════════════════════════════════════
+
+function _escaparHTML(s){ return String(s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// 1) ESQUELETO DE CARGA al buscar DNI
+const _buscarDNI_v34 = buscarDNI;
+buscarDNI = function() {
+  const dniV = document.getElementById('dniSearch').value.trim();
+  if(/^\d{8}$/.test(dniV)) {
+    document.getElementById('workerCardWrap').innerHTML =
+      '<div class="skel-card"><div class="skel-line" style="width:62%"></div><div class="skel-line" style="width:38%"></div><div class="skel-line" style="width:82%"></div></div>';
+  }
+  _buscarDNI_v34();
+};
+const _procesarResultado_v34 = _procesarResultado;
+_procesarResultado = function(res, dni) {
+  document.getElementById('workerCardWrap').innerHTML = ''; // quitar esqueleto
+  _procesarResultado_v34(res, dni);
+  _actualizarProgresoForm();
+};
+
+// 2) BARRA DE PROGRESO del formulario (7 campos obligatorios de validarDatos)
+const CAMPOS_OBLIG_V34 = [
+  ['f-dni','DNI'],['f-ap','Ap. Paterno'],['f-nom','Nombres'],['f-hijos','Hijos'],
+  ['f-mismadir','Dirección'],['f-edu','Educación'],['f-incap','Discapacidad']
+];
+(function crearBarraProgreso(){
+  const fc = document.getElementById('formCard');
+  if(!fc) return;
+  const bar = document.createElement('div');
+  bar.id = 'formProgress';
+  bar.className = 'form-progress';
+  bar.innerHTML = '<div class="form-progress-top"><span>📋 PROGRESO DEL REGISTRO</span><span id="fpPct">0%</span></div>' +
+    '<div class="form-progress-track"><div class="form-progress-fill" id="fpFill"></div></div>' +
+    '<div class="form-progress-missing" id="fpMissing"></div>';
+  fc.insertBefore(bar, fc.firstChild);
+  fc.addEventListener('input', _actualizarProgresoForm);
+  fc.addEventListener('change', _actualizarProgresoForm);
+})();
+function _actualizarProgresoForm(){
+  const fill = document.getElementById('fpFill');
+  if(!fill) return;
+  let ok = 0; const faltan = [];
+  CAMPOS_OBLIG_V34.forEach(function(par){
+    const el = document.getElementById(par[0]);
+    const v = el ? String(el.value||'').trim() : '';
+    const valido = par[0]==='f-dni' ? /^\d{8}$/.test(v) : v !== '';
+    if(valido) ok++; else faltan.push(par[1]);
+  });
+  const pct = Math.round(ok / CAMPOS_OBLIG_V34.length * 100);
+  fill.style.width = pct + '%';
+  fill.classList.toggle('done', pct === 100);
+  document.getElementById('fpPct').textContent = pct + '%';
+  document.getElementById('fpMissing').textContent = pct === 100
+    ? '✅ Campos obligatorios completos — puedes guardar'
+    : 'Faltan: ' + faltan.join(', ');
+}
+const _cargarDatos_v34 = cargarDatos;
+cargarDatos = function(r){ _cargarDatos_v34(r); _actualizarProgresoForm(); };
+const _limpiarFormulario_v34 = limpiarFormulario;
+limpiarFormulario = function(){ _limpiarFormulario_v34(); _actualizarProgresoForm(); };
+_actualizarProgresoForm();
+
+// 3) RESUMEN DEL DÍA del usuario (local, sin llamadas extra al servidor)
+let _ultimoDatosForm = null;
+const _obtenerDatosForm_v34 = obtenerDatosFormulario;
+obtenerDatosFormulario = function(){ _ultimoDatosForm = _obtenerDatosForm_v34(); return _ultimoDatosForm; };
+
+function _resumenDiaKey(){
+  const u = (typeof sesion !== 'undefined' && sesion) ? sesion.usuario : 'anon';
+  return '_resumen_dia_' + u + '_' + new Date().toLocaleDateString('es-PE').replace(/\//g,'-');
+}
+function _renderResumenDia(){
+  let cont = document.getElementById('resumenDia');
+  if(!cont){
+    const sb = document.getElementById('statusBanner');
+    if(!sb) return;
+    cont = document.createElement('div');
+    cont.id = 'resumenDia';
+    sb.parentNode.insertBefore(cont, sb);
+  }
+  let lista = [];
+  try { lista = JSON.parse(localStorage.getItem(_resumenDiaKey()) || '[]'); } catch(e){}
+  if(!lista.length){ cont.innerHTML = ''; return; }
+  const chips = lista.slice(0,5).map(function(r){
+    return '<span class="resumen-chip">' + _escaparHTML(r.hora) + ' · ' + _escaparHTML(r.nombre) + '</span>';
+  }).join('');
+  cont.innerHTML = '<div class="resumen-dia"><div><div class="resumen-dia-num">' + lista.length +
+    '</div><div class="resumen-dia-label">HOY POR TI</div></div><div class="resumen-dia-ult">' + chips + '</div></div>';
+}
+function _onRegistroExitosoV34(){
+  try {
+    if(!_ultimoDatosForm || !_ultimoDatosForm.dni) return;
+    const key = _resumenDiaKey();
+    let lista = [];
+    try { lista = JSON.parse(localStorage.getItem(key) || '[]'); } catch(e){}
+    lista.unshift({
+      dni: _ultimoDatosForm.dni,
+      nombre: ((_ultimoDatosForm.nombres||'') + ' ' + (_ultimoDatosForm.ap||'')).trim(),
+      hora: new Date().toLocaleTimeString('es-PE', {hour:'2-digit', minute:'2-digit'})
+    });
+    if(lista.length > 30) lista.length = 30;
+    localStorage.setItem(key, JSON.stringify(lista));
+    _ultimoDatosForm = null;
+    _renderResumenDia();
+  } catch(e){}
+}
+// Se engancha al mensaje de éxito del guardado ("✅ Registrado en BB.REGISTRO...")
+const _mostrarStatus_v34 = mostrarStatus;
+mostrarStatus = function(tipo, msg){
+  _mostrarStatus_v34(tipo, msg);
+  if(tipo === 'success' && typeof msg === 'string' && msg.indexOf('Registrado') !== -1) _onRegistroExitosoV34();
+};
+_renderResumenDia();
 
 // CAMBIO 05: Convertir a MAYÚSCULAS todo lo que escribe el usuario en campos de texto
 document.addEventListener('input', function(e) {

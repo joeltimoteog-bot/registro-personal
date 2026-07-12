@@ -1,5 +1,5 @@
 {
-  "version": "3.3.2",
+  "version": "3.4.0",
   "fecha": "2026-07-11",
-  "notas": "Tarjetas mejoradas: cabeceras con degradado profundo y brillo, íconos en relieve, efecto 3D al interactuar."
+  "notas": "Login Premium Glass, esqueleto de carga al buscar, barra de progreso del formulario y resumen del día del usuario."
 }
