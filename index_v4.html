@@ -322,14 +322,15 @@ tr:hover td { background: #f8faff; }
    Bloque de overrides: no modifica ninguna regla anterior
    ═══════════════════════════════════════════════════════ */
 
-/* Fondo con degradado y brillos corporativos suaves */
-body { background: linear-gradient(165deg, #e7edf7 0%, #eef1f6 45%, #e9eef8 100%); }
+/* Fondo con degradado y brillos corporativos (intensificado v3.3.1) */
+body { background: linear-gradient(160deg, #cfdcf2 0%, #e2e9f4 38%, #d3dff2 72%, #dcdcee 100%); }
 body::before {
   content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
   background:
-    radial-gradient(520px 380px at 88% -60px, rgba(26,60,110,0.14), transparent 70%),
-    radial-gradient(420px 320px at -60px 30%, rgba(200,16,46,0.07), transparent 70%),
-    radial-gradient(560px 420px at 50% 110%, rgba(20,46,84,0.10), transparent 70%);
+    radial-gradient(640px 460px at 90% -80px, rgba(26,60,110,0.34), transparent 70%),
+    radial-gradient(500px 380px at -80px 28%, rgba(200,16,46,0.16), transparent 70%),
+    radial-gradient(680px 500px at 50% 112%, rgba(20,46,84,0.30), transparent 70%),
+    radial-gradient(360px 280px at 20% -40px, rgba(200,16,46,0.10), transparent 70%);
 }
 
 /* Header y tabs con efecto vidrio */
@@ -340,15 +341,16 @@ body::before {
 
 /* Tarjetas flotantes semitransparentes (glassmorphism) */
 .card, .stat-box, .stat-card {
-  background: rgba(255,255,255,0.80);
-  backdrop-filter: blur(14px) saturate(1.3);
-  -webkit-backdrop-filter: blur(14px) saturate(1.3);
-  border: 1px solid rgba(255,255,255,0.65);
-  box-shadow: 0 8px 30px rgba(26,60,110,0.13), 0 2px 8px rgba(26,60,110,0.06);
+  background: rgba(255,255,255,0.68);
+  backdrop-filter: blur(18px) saturate(1.5);
+  -webkit-backdrop-filter: blur(18px) saturate(1.5);
+  border: 1.5px solid rgba(255,255,255,0.85);
+  box-shadow: 0 14px 40px rgba(26,60,110,0.22), 0 3px 10px rgba(26,60,110,0.10);
 }
 .card { transition: box-shadow .3s ease; }
-.card:hover { box-shadow: 0 14px 44px rgba(26,60,110,0.18), 0 4px 12px rgba(26,60,110,0.08); }
-.section-body { background: rgba(250,251,253,0.6); }
+.card:hover { box-shadow: 0 20px 55px rgba(26,60,110,0.28), 0 5px 14px rgba(26,60,110,0.12); }
+.section-body { background: rgba(250,251,253,0.5); }
+.card-header { box-shadow: inset 0 -3px 0 var(--accent); }
 
 /* Brillo diagonal fijo en cabeceras de tarjeta */
 .card-header { position: relative; overflow: hidden; }
@@ -1822,7 +1824,7 @@ function incrementarContadorFirebase() {
 // ════════════════════════════════
 //  CONTROL DE VERSIÓN / ACTUALIZACIÓN AUTOMÁTICA
 // ════════════════════════════════
-const VERSION_ACTUAL = '3.3.0'; // ⚠️ Este número debe coincidir con version.json
+const VERSION_ACTUAL = '3.3.1'; // ⚠️ Este número debe coincidir con version.json
 
 // Mostrar la versión real en todos los lugares de la interfaz (footer, Acerca, etc.)
 document.addEventListener('DOMContentLoaded', () => {
