@@ -1875,7 +1875,7 @@ function incrementarContadorFirebase() {
 // ════════════════════════════════
 //  CONTROL DE VERSIÓN / ACTUALIZACIÓN AUTOMÁTICA
 // ════════════════════════════════
-const VERSION_ACTUAL = '3.4.0'; // ⚠️ Este número debe coincidir con version.json
+const VERSION_ACTUAL = '3.4.1'; // ⚠️ Este número debe coincidir con version.json
 
 // Mostrar la versión real en todos los lugares de la interfaz (footer, Acerca, etc.)
 document.addEventListener('DOMContentLoaded', () => {
@@ -2037,7 +2037,9 @@ function mostrarPantallaBienvenida(data, callback) {
   overlay.id = 'welcomeOverlay';
   overlay.style.cssText = `
     position: fixed; inset: 0; z-index: 99999;
-    background: linear-gradient(135deg, #1a3c6e 0%, #c8102e 100%);
+    background: radial-gradient(700px 500px at 85% 12%, rgba(200,16,46,0.35), transparent 70%),
+                radial-gradient(600px 460px at 10% 90%, rgba(90,140,210,0.28), transparent 70%),
+                linear-gradient(150deg, #0d1f3d 0%, #1a3c6e 55%, #142e54 100%);
     display: flex; align-items: center; justify-content: center;
     flex-direction: column; padding: 20px; text-align: center;
     font-family: 'Tahoma', sans-serif; color: white;
@@ -2048,11 +2050,16 @@ function mostrarPantallaBienvenida(data, callback) {
     <style>
       @keyframes fadeInOverlay { from { opacity:0; } to { opacity:1; } }
       @keyframes fadeOutOverlay { from { opacity:1; } to { opacity:0; } }
-      @keyframes spinEmoji { 0% { transform: rotate(0deg) scale(1); } 50% { transform: rotate(180deg) scale(1.15); } 100% { transform: rotate(360deg) scale(1); } }
+      @keyframes spinRing { to { transform: rotate(360deg); } }
+      @keyframes corePulse { 0%,100% { transform: scale(0.78); opacity: 0.7; } 50% { transform: scale(1); opacity: 1; } }
       @keyframes pulseText { 0%, 100% { opacity: 0.85; } 50% { opacity: 1; } }
       @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
       @keyframes progressBar { from { width: 0%; } to { width: 100%; } }
-      .welcome-emoji { font-size: 80px; animation: spinEmoji 1.5s linear infinite; display: inline-block; margin-bottom: 20px; }
+      .welcome-loader { position: relative; width: 96px; height: 96px; margin-bottom: 22px; }
+      .welcome-ring { position: absolute; inset: 0; border-radius: 50%; border: 3px solid transparent; border-top-color: #ffffff; border-right-color: rgba(255,255,255,0.25); animation: spinRing 1.1s linear infinite; }
+      .welcome-ring.r2 { inset: 11px; border-top-color: #ff5a73; border-right-color: rgba(255,90,115,0.2); animation: spinRing 1.7s linear infinite reverse; }
+      .welcome-ring.r3 { inset: 22px; border-top-color: rgba(255,255,255,0.55); animation: spinRing 2.3s linear infinite; }
+      .welcome-core { position: absolute; inset: 36px; border-radius: 50%; background: #ffffff; box-shadow: 0 0 22px rgba(255,255,255,0.65); animation: corePulse 1.5s ease-in-out infinite; }
       .welcome-title { font-size: 26px; font-weight: 800; margin-bottom: 8px; animation: slideUp 0.6s ease-out 0.2s both; }
       .welcome-sub   { font-size: 15px; opacity: 0.95; margin-bottom: 6px; animation: slideUp 0.6s ease-out 0.4s both; }
       .welcome-creator { font-size: 13px; opacity: 0.85; margin-bottom: 22px; padding: 10px 18px; background: rgba(255,255,255,0.12); border-radius: 10px; animation: slideUp 0.6s ease-out 0.6s both; line-height: 1.5; }
@@ -2060,7 +2067,12 @@ function mostrarPantallaBienvenida(data, callback) {
       .progress-track { width: 220px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden; margin-top: 16px; }
       .progress-fill { height: 100%; background: white; border-radius: 4px; animation: progressBar 1.2s ease-out forwards; }
     </style>
-    <div class="welcome-emoji">⚙️</div>
+    <div class="welcome-loader">
+      <div class="welcome-ring"></div>
+      <div class="welcome-ring r2"></div>
+      <div class="welcome-ring r3"></div>
+      <div class="welcome-core"></div>
+    </div>
     <div class="welcome-title">${saludo}, ${primerNombre}</div>
     <div class="welcome-sub">Bienvenido al Sistema de Registro de Personal</div>
     <div class="welcome-creator">
