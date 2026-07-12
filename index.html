@@ -12,6 +12,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Registro Personal">
+<!-- Firebase: contador de grupo en tiempo real (los registros siguen en Google Sheets) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -1644,6 +1647,7 @@ function _sesionExpirada(data) {
     }).then(() => {
       sesion = null;
       sesionActiva = null;
+      desuscribirContadorFirebase();
       try { localStorage.removeItem('sesion_activa'); } catch(e){}
       document.getElementById('appScreen').style.display = 'none';
       document.getElementById('loginScreen').style.display = 'flex';
@@ -1658,9 +1662,70 @@ const hoy = new Date().toDateString();
 if(hoyDate !== hoy) { hoyCount=0; localStorage.setItem('hoy_date',hoy); localStorage.setItem('hoy_count','0'); }
 
 // ════════════════════════════════
+//  FIREBASE — CONTADOR EN TIEMPO REAL
+//  (solo números de contadores; los datos de trabajadores van a Google Sheets)
+// ════════════════════════════════
+let fbDB = null;
+let fbContadorRef = null;
+let fbConectado = false;
+try {
+  firebase.initializeApp({
+    apiKey: "AIzaSyCp4Klz8ELoIEGQuBLzs64UlXuf6SUFOcw",
+    authDomain: "registro-personal-7fe60.firebaseapp.com",
+    databaseURL: "https://registro-personal-7fe60-default-rtdb.firebaseio.com",
+    projectId: "registro-personal-7fe60",
+    storageBucket: "registro-personal-7fe60.firebasestorage.app",
+    messagingSenderId: "74806068541",
+    appId: "1:74806068541:web:aeaeb6e9b484d1aec8b154"
+  });
+  fbDB = firebase.database();
+} catch(e) { fbDB = null; }
+
+// Clave segura para Firebase a partir de código + grupo (sin caracteres prohibidos)
+function _fbKeyGrupo() {
+  if(!sesionActiva) return null;
+  const raw = String(sesionActiva.codigo||'') + '_' + String(sesionActiva.sector||'');
+  return raw.replace(/[.#$\[\]\/\s]/g, '-') || null;
+}
+
+// Escuchar el contador del grupo en tiempo real
+function suscribirContadorFirebase() {
+  desuscribirContadorFirebase();
+  if(!fbDB || !sesionActiva || sesionActiva.libre) return;
+  const key = _fbKeyGrupo();
+  if(!key) return;
+  try {
+    fbContadorRef = fbDB.ref('contadores/' + key);
+    fbContadorRef.on('value', (snap) => {
+      const v = snap.val();
+      fbConectado = true;
+      if(typeof v === 'number' && sesionActiva && !sesionActiva.libre) {
+        sesionActiva.registrados = v;
+        actualizarContador();
+      }
+    }, () => { fbConectado = false; });
+  } catch(e) { fbConectado = false; }
+}
+
+function desuscribirContadorFirebase() {
+  try { if(fbContadorRef) { fbContadorRef.off(); fbContadorRef = null; } } catch(e){}
+  fbConectado = false;
+}
+
+// Sumar 1 al contador compartido (transacción segura entre varios usuarios)
+function incrementarContadorFirebase() {
+  if(!fbDB || !sesionActiva || sesionActiva.libre) return;
+  const key = _fbKeyGrupo();
+  if(!key) return;
+  try {
+    fbDB.ref('contadores/' + key).transaction(v => (typeof v === 'number' ? v : 0) + 1);
+  } catch(e){}
+}
+
+// ════════════════════════════════
 //  CONTROL DE VERSIÓN / ACTUALIZACIÓN AUTOMÁTICA
 // ════════════════════════════════
-const VERSION_ACTUAL = '3.0.0'; // ⚠️ Este número debe coincidir con version.json
+const VERSION_ACTUAL = '3.1.0'; // ⚠️ Este número debe coincidir con version.json
 
 // Mostrar la versión real en todos los lugares de la interfaz (footer, Acerca, etc.)
 document.addEventListener('DOMContentLoaded', () => {
@@ -1992,6 +2057,7 @@ async function cerrarSesion() {
   });
   if(!ok) return;
   if(intervaloContador) { clearInterval(intervaloContador); intervaloContador = null; }
+  desuscribirContadorFirebase();
   sesion = null;
   sesionActiva = null;
   try { localStorage.removeItem('sesion_activa'); } catch(e){}
@@ -2157,6 +2223,11 @@ async function sincronizarContadorGrupo() {
     if(typeof r.count === 'number') {
       sesionActiva.registrados = r.count;
       actualizarContador();
+      // Google Sheets es la fuente oficial: corregir Firebase si está desfasado
+      if(fbDB && !sesionActiva.libre) {
+        const key = _fbKeyGrupo();
+        if(key) { try { fbDB.ref('contadores/' + key).set(r.count); } catch(e){} }
+      }
     }
   } catch(e) {}
 }
@@ -2165,10 +2236,23 @@ async function sincronizarContadorGrupo() {
 let intervaloContador = null;
 function iniciarAutoContador() {
   if(intervaloContador) clearInterval(intervaloContador);
+  suscribirContadorFirebase(); // tiempo real: el contador se actualiza al instante
+  // 30 seg + desfase aleatorio: evita que todos los usuarios consulten al servidor a la vez
+  const desfase = Math.floor(Math.random() * 8000);
+  let _tick = 0;
   intervaloContador = setInterval(() => {
-    if(sesionActiva) sincronizarContadorGrupo();
-  }, 20000); // 20 seg: optimizado para varios usuarios simultáneos
+    if(!sesionActiva || document.visibilityState !== 'visible') return;
+    _tick++;
+    // Con Firebase en tiempo real, Sheets solo se consulta 1 de cada 4 ciclos (verificación)
+    if(fbConectado && _tick % 4 !== 0) return;
+    sincronizarContadorGrupo();
+  }, 30000 + desfase);
 }
+
+// Al volver a la app (cambio de app en el celular), sincronizar el contador de inmediato
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'visible' && sesionActiva) sincronizarContadorGrupo();
+});
 
 // ════════════════════════════════
 //  ESTADÍSTICAS
@@ -3037,6 +3121,7 @@ async function _continuarGuardado(datos) {
   if(sesionActiva && !sesionActiva.libre) {
     sesionActiva.registrados++;
     actualizarContador();
+    incrementarContadorFirebase(); // el contador de todos los usuarios sube al instante
     setTimeout(() => sincronizarContadorGrupo(), 3000);
   }
   limpiarFormulario();

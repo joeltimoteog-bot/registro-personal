@@ -1,5 +1,5 @@
 {
-  "version": "3.0.0",
-  "fecha": "2026-07-09",
-  "notas": "Rediseño completo: nueva pantalla de ingreso ejecutiva con la marca Unifrutti, diseño corporativo premium en todo el sistema."
+  "version": "3.1.0",
+  "fecha": "2026-07-11",
+  "notas": "Contador de grupo en TIEMPO REAL: ahora todos los usuarios ven el conteo actualizado al instante, y el sistema responde más rápido con varios usuarios a la vez."
 }
