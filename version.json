@@ -1,5 +1,5 @@
 {
-  "version": "3.4.1",
+  "version": "3.4.2",
   "fecha": "2026-07-11",
-  "notas": "Pantalla de bienvenida renovada: loader de anillos profesional en lugar del engranaje."
+  "notas": "Indicadores profesionales: stats con número degradado, contador con barra animada, banners rediseñados y barras con brillo."
 }
