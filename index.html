@@ -1521,10 +1521,15 @@ function migrarPasswords() {
 </div>
 
 </div><!-- /main -->
-<!-- MENSAJE BIENVENIDA -->
-<div style="text-align:center;padding:18px 20px 8px;font-size:10pt;font-family:Tahoma,sans-serif;color:#6b7280;line-height:1.7;">
+<!-- MENSAJE BIENVENIDA (usuarios) / CREDENCIAL (creador) -->
+<div id="msgUsuarios" style="text-align:center;padding:18px 20px 8px;font-size:10pt;font-family:Tahoma,sans-serif;color:#6b7280;line-height:1.7;">
   <strong style="color:#1a1f36;">¡Hola! Te saluda Joel Timoteo.</strong><br>
   Si tienes alguna duda del sistema por favor me comentas por interno. Saludos. 🙂
+</div>
+<div id="msgCreador" style="display:none;text-align:center;padding:18px 20px 8px;font-size:10pt;font-family:Tahoma,sans-serif;color:#6b7280;line-height:1.7;">
+  <strong style="color:#1a3c6e;">👑 Sesión de Creador</strong><br>
+  <strong style="color:#c8102e;">Joel Timoteo Gonza</strong> — Autor único y desarrollador del Sistema de Registro de Personal.<br>
+  <span style="font-size:8.5pt;color:#9ca3af;">Propiedad intelectual protegida · Todos los derechos reservados © 2026</span>
 </div>
 <div style="text-align:center;padding:4px 20px 18px;font-size:9pt;color:#9ca3af;font-family:Tahoma,sans-serif;border-top:1px solid #f3f4f6;margin-top:8px;padding-top:14px;">
   Sistema de Registro de Personal v<span class="ver-dinamica">--</span> · © 2026 Unifrutti<br>
@@ -1725,7 +1730,7 @@ function incrementarContadorFirebase() {
 // ════════════════════════════════
 //  CONTROL DE VERSIÓN / ACTUALIZACIÓN AUTOMÁTICA
 // ════════════════════════════════
-const VERSION_ACTUAL = '3.1.0'; // ⚠️ Este número debe coincidir con version.json
+const VERSION_ACTUAL = '3.1.1'; // ⚠️ Este número debe coincidir con version.json
 
 // Mostrar la versión real en todos los lugares de la interfaz (footer, Acerca, etc.)
 document.addEventListener('DOMContentLoaded', () => {
@@ -2018,6 +2023,12 @@ function _setSesion(data) {
   const autorizado = _puedeExportar();
   if(expAut)  expAut.style.display  = autorizado ? '' : 'none';
   if(expBloq) expBloq.style.display = autorizado ? 'none' : '';
+
+  // El creador no ve el saludo (es para los demás usuarios): ve su credencial de autor
+  const msgU = document.getElementById('msgUsuarios');
+  const msgC = document.getElementById('msgCreador');
+  if(msgU) msgU.style.display = isCreador ? 'none' : '';
+  if(msgC) msgC.style.display = isCreador ? '' : 'none';
 
   // Configuración sensible (URL + código) solo para el creador (jtimoteo)
   const configSensible = document.getElementById('configSensible');

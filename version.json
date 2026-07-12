@@ -1,5 +1,5 @@
 {
-  "version": "3.1.0",
+  "version": "3.1.1",
   "fecha": "2026-07-11",
-  "notas": "Contador de grupo en TIEMPO REAL: ahora todos los usuarios ven el conteo actualizado al instante, y el sistema responde más rápido con varios usuarios a la vez."
+  "notas": "Mejoras internas y contador en tiempo real."
 }
