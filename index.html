@@ -316,6 +316,98 @@ tr:hover td { background: #f8faff; }
 .stat-bar-track { flex:1;height:6px;background:var(--bg);border-radius:3px;overflow:hidden; }
 .stat-bar-fill { height:100%;border-radius:3px;transition:width 0.5s ease; }
 .stat-bar-val { font-size:11px;font-weight:700;color:var(--text);min-width:24px;text-align:right; }
+
+/* ═══════════════════════════════════════════════════════
+   DISEÑO 3.3 "PREMIUM GLASS" (v3.3.0) — SOLO ESTÉTICA
+   Bloque de overrides: no modifica ninguna regla anterior
+   ═══════════════════════════════════════════════════════ */
+
+/* Fondo con degradado y brillos corporativos suaves */
+body { background: linear-gradient(165deg, #e7edf7 0%, #eef1f6 45%, #e9eef8 100%); }
+body::before {
+  content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(520px 380px at 88% -60px, rgba(26,60,110,0.14), transparent 70%),
+    radial-gradient(420px 320px at -60px 30%, rgba(200,16,46,0.07), transparent 70%),
+    radial-gradient(560px 420px at 50% 110%, rgba(20,46,84,0.10), transparent 70%);
+}
+
+/* Header y tabs con efecto vidrio */
+.header { background: rgba(255,255,255,0.86); backdrop-filter: blur(12px) saturate(1.4); -webkit-backdrop-filter: blur(12px) saturate(1.4); }
+.tabs { background: rgba(255,255,255,0.72); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.tab { transition: all 0.25s cubic-bezier(.16,1,.3,1); }
+.tab.active { box-shadow: 0 5px 16px rgba(26,60,110,0.35); }
+
+/* Tarjetas flotantes semitransparentes (glassmorphism) */
+.card, .stat-box, .stat-card {
+  background: rgba(255,255,255,0.80);
+  backdrop-filter: blur(14px) saturate(1.3);
+  -webkit-backdrop-filter: blur(14px) saturate(1.3);
+  border: 1px solid rgba(255,255,255,0.65);
+  box-shadow: 0 8px 30px rgba(26,60,110,0.13), 0 2px 8px rgba(26,60,110,0.06);
+}
+.card { transition: box-shadow .3s ease; }
+.card:hover { box-shadow: 0 14px 44px rgba(26,60,110,0.18), 0 4px 12px rgba(26,60,110,0.08); }
+.section-body { background: rgba(250,251,253,0.6); }
+
+/* Brillo diagonal fijo en cabeceras de tarjeta */
+.card-header { position: relative; overflow: hidden; }
+.card-header::after {
+  content:''; position:absolute; top:-60%; left:-30%; width:60%; height:220%;
+  background: linear-gradient(105deg, transparent, rgba(255,255,255,0.16), transparent);
+  transform: rotate(8deg); pointer-events:none;
+}
+
+/* Entrada escalonada de tarjetas al cambiar de página */
+@keyframes cardIn { from { opacity:0; transform: translateY(14px) scale(.985); } to { opacity:1; transform:none; } }
+.page.active .card, .page.active .stat-box, .page.active .stat-card,
+.page.active .contador-card, .page.active .worker-card {
+  animation: cardIn .5s cubic-bezier(.16,1,.3,1) both;
+}
+.page.active .card:nth-of-type(2) { animation-delay:.07s; }
+.page.active .card:nth-of-type(3) { animation-delay:.14s; }
+.page.active .card:nth-of-type(4) { animation-delay:.21s; }
+
+/* Botones: elevación al pasar y pulsación al tocar */
+.btn { transition: transform .18s cubic-bezier(.16,1,.3,1), box-shadow .18s ease, background .18s ease; }
+.btn:active { transform: scale(.96); }
+.btn-primary { background: linear-gradient(135deg, #d6183a, var(--accent-dark)); }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(200,16,46,0.42); }
+.btn-success { background: linear-gradient(135deg, var(--blue), var(--blue-dark)); }
+.btn-outline { background: rgba(255,255,255,0.85); }
+.btn-outline:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(26,60,110,0.10); }
+
+/* Inputs con foco luminoso */
+.input-field { transition: border-color .25s, box-shadow .25s, background .25s; }
+.input-field:focus { box-shadow: 0 0 0 4px rgba(26,60,110,0.14), 0 4px 14px rgba(26,60,110,0.10); }
+
+/* Tarjeta del trabajador y contador: vidrio profundo + destello animado */
+.worker-card, .contador-card { position:relative; overflow:hidden; border:1px solid rgba(255,255,255,0.18); box-shadow: 0 10px 34px rgba(20,46,84,0.35); }
+.worker-card::after, .contador-card::after {
+  content:''; position:absolute; top:0; left:-80%; width:50%; height:100%;
+  background: linear-gradient(105deg, transparent, rgba(255,255,255,0.14), transparent);
+  animation: shine 3.4s ease-in-out infinite; pointer-events:none;
+}
+@keyframes shine { 0%{left:-80%;} 55%{left:130%;} 100%{left:130%;} }
+.contador-num { text-shadow: 0 2px 12px rgba(0,0,0,0.25); }
+
+/* Tablas, modales y toast en vidrio */
+.table-wrap { background: rgba(255,255,255,0.7); }
+thead { background: rgba(238,241,246,0.85); }
+tr:hover td { background: rgba(232,238,247,0.55); }
+.modal, .sesion-modal { background: rgba(255,255,255,0.93); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.7); }
+.modal-overlay { background: rgba(13,25,48,0.45); backdrop-filter: blur(8px); }
+.toast { background: rgba(26,31,54,0.92); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.12); }
+
+/* Barra de sesión y píldora de usuario */
+.sesion-bar { background: rgba(246,248,251,0.8); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.user-pill { background: rgba(255,255,255,0.7); }
+.user-pill:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(26,60,110,0.12); }
+
+/* Accesibilidad: respetar animaciones reducidas del sistema */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
 </style>
 </head>
 <body>
@@ -1730,7 +1822,7 @@ function incrementarContadorFirebase() {
 // ════════════════════════════════
 //  CONTROL DE VERSIÓN / ACTUALIZACIÓN AUTOMÁTICA
 // ════════════════════════════════
-const VERSION_ACTUAL = '3.2.0'; // ⚠️ Este número debe coincidir con version.json
+const VERSION_ACTUAL = '3.3.0'; // ⚠️ Este número debe coincidir con version.json
 
 // Mostrar la versión real en todos los lugares de la interfaz (footer, Acerca, etc.)
 document.addEventListener('DOMContentLoaded', () => {
