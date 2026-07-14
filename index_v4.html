@@ -1207,6 +1207,18 @@ tr:hover td { background: rgba(232,238,247,0.55); }
             </div>
           </div>
           <div class="input-group">
+            <label class="input-label">Nombre y Apellidos</label>
+            <input type="text" id="nu-nombre" class="input-field" placeholder="ej: JUAN PEREZ GARCIA" style="text-transform:uppercase;">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Sexo</label>
+            <select id="nu-sexo" class="input-field">
+              <option value="">— Seleccionar —</option>
+              <option value="M">👨 M — Hombre</option>
+              <option value="F">👩 F — Mujer</option>
+            </select>
+          </div>
+          <div class="input-group">
             <label class="input-label">Cargo</label>
             <input type="text" id="nu-cargo" class="input-field" placeholder="ej: Asistente de RR.HH.">
           </div>
@@ -1294,7 +1306,8 @@ function handleRequest(d) {
         var almacenada = String(rows[i][3]).trim();
         // Acepta hash o (por compatibilidad) texto plano la primera vez
         if (almacenada === passHash || almacenada === String(d.password).trim()) {
-          return JSON.stringify({ok:true, usuario:rows[i][0], cargo:rows[i][1], estado:rows[i][2]});
+          return JSON.stringify({ok:true, usuario:rows[i][0], cargo:rows[i][1], estado:rows[i][2],
+            nombre:String(rows[i][4]||''), sexo:String(rows[i][5]||'')}); // v3.6.0: columnas E y F
         }
         return JSON.stringify({ok:false, msg:'Usuario o contraseña incorrectos'});
       }
@@ -1478,7 +1491,8 @@ function handleRequest(d) {
     var rows = sh.getDataRange().getValues();
     var lista = [];
     for (var i = 1; i < rows.length; i++) {
-      if (rows[i][0]) lista.push({usuario:rows[i][0], cargo:rows[i][1], estado:rows[i][2]});
+      if (rows[i][0]) lista.push({usuario:rows[i][0], cargo:rows[i][1], estado:rows[i][2],
+        nombre:String(rows[i][4]||''), sexo:String(rows[i][5]||'')}); // v3.6.0: columnas E y F
     }
     return JSON.stringify({usuarios:lista});
   }
@@ -1487,7 +1501,8 @@ function handleRequest(d) {
   if (accion === 'agregarUsuario') {
     var sh = ss.getSheetByName('Usuarios');
     if (!sh) return JSON.stringify({ok:false, msg:'Hoja Usuarios no encontrada'});
-    sh.appendRow([d.usuario, d.cargo, d.estado, hashPassword(String(d.password).trim())]);
+    sh.appendRow([d.usuario, d.cargo, d.estado, hashPassword(String(d.password).trim()),
+      d.nombre||'', d.sexo||'']); // v3.6.0: columnas E (nombre) y F (sexo)
     return JSON.stringify({ok:true});
   }
 
@@ -1934,7 +1949,7 @@ function incrementarContadorFirebase() {
 // ════════════════════════════════
 //  CONTROL DE VERSIÓN / ACTUALIZACIÓN AUTOMÁTICA
 // ════════════════════════════════
-const VERSION_ACTUAL = '3.5.0'; // ⚠️ Este número debe coincidir con version.json
+const VERSION_ACTUAL = '3.6.0'; // ⚠️ Este número debe coincidir con version.json
 
 // Mostrar la versión real en todos los lugares de la interfaz (footer, Acerca, etc.)
 document.addEventListener('DOMContentLoaded', () => {
@@ -2083,8 +2098,20 @@ async function iniciarSesion() {
   }
 }
 
+// ── v3.6.0: nombre completo (columna E) y emoji según sexo (columna F) de la hoja Usuarios ──
+function emojiSexo(s) {
+  s = String(s||'').trim().toUpperCase().charAt(0);
+  return s === 'M' ? '👨' : (s === 'F' ? '👩' : '👤');
+}
+function _primerNombre(data) {
+  const n = String(data.nombre||'').trim();
+  if(n) { const p = n.split(/\s+/)[0]; return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase(); }
+  return data.usuario.charAt(0).toUpperCase() + data.usuario.slice(1);
+}
+function _esMujer(data) { return String(data.sexo||'').trim().toUpperCase().charAt(0) === 'F'; }
+
 function mostrarPantallaBienvenida(data, callback) {
-  const primerNombre = data.usuario.charAt(0).toUpperCase() + data.usuario.slice(1);
+  const primerNombre = emojiSexo(data.sexo) + ' ' + _primerNombre(data);
   const hora = new Date().getHours();
   let saludo = 'Hola';
   if(hora >= 5 && hora < 12)       saludo = 'Buenos días';
@@ -2133,7 +2160,7 @@ function mostrarPantallaBienvenida(data, callback) {
       <div class="welcome-core"></div>
     </div>
     <div class="welcome-title">${saludo}, ${primerNombre}</div>
-    <div class="welcome-sub">Bienvenido al Sistema de Registro de Personal</div>
+    <div class="welcome-sub">${_esMujer(data)?'Bienvenida':'Bienvenido'} al Sistema de Registro de Personal</div>
     <div class="welcome-creator">
       <img src="data:image/jpeg;base64,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" alt="JTG" style="width:44px;height:44px;border-radius:10px;display:block;margin:0 auto 8px;">
       ¡Hola! Te saluda <strong>Joel Timoteo Gonza</strong>,<br>
@@ -2201,6 +2228,7 @@ function _setSesion(data) {
   try {
     localStorage.setItem('sesion_activa', JSON.stringify({
       usuario: data.usuario, cargo: data.cargo, estado: data.estado,
+      nombre: data.nombre||'', sexo: data.sexo||'', // v3.6.0
       token: data.token, guardadaEn: Date.now()
     }));
   } catch(e){}
@@ -2211,7 +2239,10 @@ function _setSesion(data) {
 
   // Header
   document.getElementById('userAvatar').textContent      = data.usuario.charAt(0).toUpperCase();
-  document.getElementById('userNameDisplay').textContent  = data.usuario;
+  // v3.6.0: mostrar nombre completo con emoji si existe (columnas E/F de Usuarios)
+  document.getElementById('userNameDisplay').textContent  = String(data.nombre||'').trim()
+    ? emojiSexo(data.sexo) + ' ' + String(data.nombre).trim()
+    : data.usuario;
   document.getElementById('userRoleDisplay').textContent  = data.estado;
 
   // Tabs según rol
@@ -2256,13 +2287,13 @@ function _setSesion(data) {
   actualizarStats();
   if(isAdmin) cargarUsuarios();
   // Mensaje de bienvenida con saludo según hora del día
-  const primerNombre = data.usuario.charAt(0).toUpperCase() + data.usuario.slice(1);
+  const primerNombre = emojiSexo(data.sexo) + ' ' + _primerNombre(data); // v3.6.0
   const hora = new Date().getHours();
   let saludo = 'Hola';
   if(hora >= 5 && hora < 12)       saludo = '☀️ Buenos días';
   else if(hora >= 12 && hora < 19) saludo = '🌤️ Buenas tardes';
   else                              saludo = '🌙 Buenas noches';
-  const mensaje = saludo + ' ' + primerNombre + ', bienvenido al sistema.';
+  const mensaje = saludo + ' ' + primerNombre + (_esMujer(data)?', bienvenida':', bienvenido') + ' al sistema.';
   setTimeout(() => mostrarBannerBienvenida(mensaje, data.estado), 300);
 
   if(!isAdmin) setTimeout(() => abrirSesionModal(), 1200);
@@ -3578,11 +3609,12 @@ async function cargarUsuarios() {
     const data = JSON.parse(m ? m[1] : txt);
     const usuarios = data.usuarios || [];
     if(!usuarios.length) { cont.innerHTML=`<div class="empty-state"><div class="empty-icon">👥</div><h3>Sin usuarios</h3></div>`; return; }
-    let html=`<div class="table-wrap"><table><thead><tr><th>Usuario</th><th>Cargo</th><th>Rol</th><th>Acción</th></tr></thead><tbody>`;
+    let html=`<div class="table-wrap"><table><thead><tr><th>Usuario</th><th>Nombre y Apellidos</th><th>Cargo</th><th>Rol</th><th>Acción</th></tr></thead><tbody>`;
     usuarios.forEach(u => {
       const isAdmin = u.estado==='Administrador';
       html+=`<tr class="${isAdmin?'user-row-admin':''}">
         <td><strong>${u.usuario}</strong></td>
+        <td style="font-size:12px;max-width:170px;white-space:normal;">${emojiSexo(u.sexo)} ${u.nombre||'-'}</td>
         <td style="font-size:12px;max-width:150px;white-space:normal;">${u.cargo||'-'}</td>
         <td><span class="badge ${isAdmin?'badge-admin':'badge-usuario'}">${u.estado||'usuario'}</span></td>
         <td><button class="btn btn-sm btn-danger" onclick="confirmarEliminarUsuario('${u.usuario}')">🗑</button></td>
@@ -3596,12 +3628,14 @@ async function cargarUsuarios() {
 async function agregarUsuario() {
   const user  = document.getElementById('nu-user').value.trim();
   const pass  = document.getElementById('nu-pass').value.trim();
+  const nombre= document.getElementById('nu-nombre').value.trim().toUpperCase(); // v3.6.0
+  const sexo  = document.getElementById('nu-sexo').value;                        // v3.6.0
   const cargo = document.getElementById('nu-cargo').value.trim();
   const estado= document.getElementById('nu-estado').value;
-  if(!user||!pass||!cargo) { showToast('Completa todos los campos','error'); return; }
+  if(!user||!pass||!cargo||!nombre||!sexo) { showToast('Completa todos los campos (incluye nombre y sexo)','error'); return; }
   if(!gsConfig.habilitado||!gsConfig.webhookUrl) { showToast('Sin conexión Google Sheets','error'); return; }
   try {
-    const payload = {accion:'agregarUsuario', token:_token(), usuario:user, cargo, estado, password:pass};
+    const payload = {accion:'agregarUsuario', token:_token(), usuario:user, cargo, estado, password:pass, nombre, sexo};
     const url = gsConfig.webhookUrl+'?data='+encodeURIComponent(JSON.stringify(payload));
     const resp = await fetch(url);
     const txt  = await resp.text();
@@ -3611,6 +3645,8 @@ async function agregarUsuario() {
       showToast('✅ Usuario agregado correctamente','success');
       document.getElementById('nu-user').value='';
       document.getElementById('nu-pass').value='';
+      document.getElementById('nu-nombre').value='';
+      document.getElementById('nu-sexo').value='';
       document.getElementById('nu-cargo').value='';
       document.getElementById('nu-estado').value='usuario';
       cargarUsuarios();

@@ -1,5 +1,5 @@
 {
-  "version": "3.5.0",
-  "fecha": "2026-07-13",
-  "notas": "Detector de conexión con banner y protección al guardar, mostrar/ocultar contraseña en login, y gráfico de registros por día (últimos 14 días) en estadísticas."
+  "version": "3.6.0",
+  "fecha": "2026-07-14",
+  "notas": "Nombre completo del usuario (columna E de Usuarios) con emoji según sexo (columna F) en bienvenida, saludo, header y gestión de usuarios. Requiere redesplegar Apps Script."
 }
