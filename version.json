@@ -1,5 +1,5 @@
 {
-  "version": "3.4.2",
-  "fecha": "2026-07-11",
-  "notas": "Indicadores profesionales: stats con número degradado, contador con barra animada, banners rediseñados y barras con brillo."
+  "version": "3.5.0",
+  "fecha": "2026-07-13",
+  "notas": "Detector de conexión con banner y protección al guardar, mostrar/ocultar contraseña en login, y gráfico de registros por día (últimos 14 días) en estadísticas."
 }

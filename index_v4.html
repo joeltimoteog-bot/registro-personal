@@ -496,9 +496,23 @@ tr:hover td { background: rgba(232,238,247,0.55); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
+/* ── v3.5.0: Banner sin conexión ── */
+.banner-offline { position:fixed; top:0; left:0; right:0; z-index:9999; background:linear-gradient(90deg,#7f1d1d,#b91c1c); color:#fff; text-align:center; font-size:12.5px; font-weight:700; padding:9px 14px; letter-spacing:0.3px; box-shadow:0 4px 14px rgba(0,0,0,0.35); animation: bannerDown .3s ease; }
+@keyframes bannerDown { from { transform:translateY(-100%); } to { transform:translateY(0); } }
+
+/* ── v3.5.0: Tendencia últimos 14 días ── */
+.tendencia-grid { display:flex; align-items:flex-end; gap:4px; padding:6px 0 4px; }
+.tend-col { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; min-width:0; }
+.tend-num { font-size:9.5px; font-weight:700; color:var(--blue); font-family:'JetBrains Mono',monospace; height:12px; }
+.tend-bar { width:100%; max-width:22px; border-radius:4px 4px 2px 2px; transition:height .4s ease; }
+.tend-dia { font-size:8.5px; color:var(--muted); white-space:nowrap; transform:scale(.9); }
+.tend-dia.hoy { color:var(--red); font-weight:700; }
 </style>
 </head>
 <body>
+
+<!-- v3.5.0: Banner de estado de conexión (visible en toda pantalla) -->
+<div id="bannerOffline" class="banner-offline" style="display:none;">⚠️ Sin conexión a internet — no guardes registros hasta recuperar la señal</div>
 
 <!-- ══════════ PANTALLA QR (registro trabajador) ══════════ -->
 <div id="qrScreen" style="display:none;min-height:100vh;align-items:flex-start;justify-content:center;background:linear-gradient(145deg,#0d1f3c 0%,#1a3c6e 40%,#c8102e 100%);padding:20px;">
@@ -629,7 +643,10 @@ tr:hover td { background: rgba(232,238,247,0.55); }
       </div>
       <div class="login-field">
         <label class="login-label">Contraseña</label>
-        <input type="password" id="loginPass" class="login-input" placeholder="Ingresa tu contraseña" autocomplete="current-password">
+        <div style="position:relative;">
+          <input type="password" id="loginPass" class="login-input" placeholder="Ingresa tu contraseña" autocomplete="current-password" style="padding-right:44px;width:100%;">
+          <button type="button" id="btnVerPass" onclick="toggleVerPass()" aria-label="Mostrar contraseña" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:17px;padding:4px;line-height:1;opacity:.65;">👁️</button>
+        </div>
       </div>
       <button class="login-btn" onclick="iniciarSesion()" id="loginBtn">Ingresar</button>
       <div class="login-loading" id="loginLoading">🔄 Verificando...</div>
@@ -1126,6 +1143,13 @@ tr:hover td { background: rgba(232,238,247,0.55); }
     <div class="stats-grid" id="statsTop">
       <div class="stat-box"><div class="stat-num" id="st-total">0</div><div class="stat-label" id="st-total-label">Total del día</div></div>
       <div class="stat-box"><div class="stat-num" id="st-tardios">0</div><div class="stat-label">Personal tardío</div></div>
+    </div>
+    <!-- v3.5.0: Tendencia de registros por día -->
+    <div class="card">
+      <div class="card-body" style="padding-bottom:10px;">
+        <div class="stat-card-title">📈 Registros por día (últimos 14 días)</div>
+        <div id="stats-tendencia" class="tendencia-grid"></div>
+      </div>
     </div>
     <div class="card">
       <div class="card-body" style="padding-bottom:6px;">
@@ -1910,7 +1934,7 @@ function incrementarContadorFirebase() {
 // ════════════════════════════════
 //  CONTROL DE VERSIÓN / ACTUALIZACIÓN AUTOMÁTICA
 // ════════════════════════════════
-const VERSION_ACTUAL = '3.4.2'; // ⚠️ Este número debe coincidir con version.json
+const VERSION_ACTUAL = '3.5.0'; // ⚠️ Este número debe coincidir con version.json
 
 // Mostrar la versión real en todos los lugares de la interfaz (footer, Acerca, etc.)
 document.addEventListener('DOMContentLoaded', () => {
@@ -2547,6 +2571,43 @@ function _renderStatsDesdeDatos() {
     .slice(0, 10)
     .reduce((acc,[k,v]) => { acc[k]=v; return acc; }, {});
   document.getElementById('stats-ruta').innerHTML = renderBars(rutasTop, total, ['#c8102e','#1a3c6e','#374151']);
+
+  // v3.5.0: Tendencia últimos 14 días (siempre sobre todos los registros, sin filtro de vista)
+  _renderTendencia14(datosStatsCache);
+}
+
+// v3.5.0: Gráfico de barras verticales con los registros de los últimos 14 días
+function _renderTendencia14(todos) {
+  const cont = document.getElementById('stats-tendencia');
+  if(!cont) return;
+  // Contar registros por fecha (formato es-PE dd/mm/yyyy; puede venir con hora después)
+  const porDia = {};
+  (todos||[]).forEach(t => {
+    const f = String(t.fecha||'').trim().split(/[ ,]/)[0];
+    if(f) porDia[f] = (porDia[f]||0)+1;
+  });
+  const dias = [];
+  let max = 0;
+  for(let i = 13; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate()-i);
+    const clave = d.toLocaleDateString('es-PE');
+    const n = porDia[clave]||0;
+    if(n > max) max = n;
+    dias.push({ dia: d.getDate(), mes: d.getMonth()+1, n: n, esHoy: i===0 });
+  }
+  if(max === 0) {
+    cont.innerHTML = '<p style="font-size:12px;color:var(--muted2);padding:8px 0;">Sin registros en los últimos 14 días</p>';
+    return;
+  }
+  cont.innerHTML = dias.map(d => {
+    const h = Math.max(4, Math.round((d.n/max)*70));
+    const col = d.esHoy ? 'var(--red)' : 'var(--blue)';
+    return `<div class="tend-col" title="${d.dia}/${d.mes}: ${d.n} registro(s)">
+      <div class="tend-num">${d.n||''}</div>
+      <div class="tend-bar" style="height:${h}px;background:${col};"></div>
+      <div class="tend-dia${d.esHoy?' hoy':''}">${d.dia}/${d.mes}</div>
+    </div>`;
+  }).join('');
 }
 
 function renderBars(obj, total, colors) {
@@ -3205,6 +3266,12 @@ let _guardandoEnProceso = false; // Bandera global para evitar doble guardado
 
 async function guardarRegistro() {
   if(!sesionActiva && !modoEditar) { showToast('⚠️ Primero inicia un registro con el botón "Nuevo registro"','error'); abrirSesionModal(); return; }
+
+  // v3.5.0: No intentar guardar sin conexión (los datos del formulario quedan intactos)
+  if(!navigator.onLine) {
+    showToast('📡 Sin conexión a internet. Tus datos NO se perdieron: recupera la señal y vuelve a presionar Guardar.','error');
+    return;
+  }
 
   // Protección global: si ya hay un guardado en proceso, ignorar
   if(_guardandoEnProceso) { return; }
@@ -4135,6 +4202,31 @@ actualizarEstadoConexion();
 // Verificar versión del sistema al cargar y cada 2 minutos
 verificarVersion();
 setInterval(verificarVersion, 120000); // cada 2 minutos
+
+// ── v3.5.0: MOSTRAR/OCULTAR CONTRASEÑA EN LOGIN ──
+function toggleVerPass() {
+  const inp = document.getElementById('loginPass');
+  const btn = document.getElementById('btnVerPass');
+  const ver = inp.type === 'password';
+  inp.type = ver ? 'text' : 'password';
+  btn.textContent = ver ? '🙈' : '👁️';
+  btn.style.opacity = ver ? '1' : '.65';
+  btn.setAttribute('aria-label', ver ? 'Ocultar contraseña' : 'Mostrar contraseña');
+  inp.focus();
+}
+
+// ── v3.5.0: DETECTOR DE CONEXIÓN (banner + avisos) ──
+function _actualizarBannerConexion(online, avisar) {
+  const b = document.getElementById('bannerOffline');
+  if(b) b.style.display = online ? 'none' : 'block';
+  if(avisar) {
+    if(online) showToast('✅ Conexión a internet recuperada','success');
+    else showToast('📡 Se perdió la conexión a internet','error');
+  }
+}
+window.addEventListener('online',  () => _actualizarBannerConexion(true, true));
+window.addEventListener('offline', () => _actualizarBannerConexion(false, true));
+_actualizarBannerConexion(navigator.onLine, false); // estado inicial, sin aviso
 
 // Registrar Service Worker (permite instalar el sistema como app en el celular)
 if('serviceWorker' in navigator) {
