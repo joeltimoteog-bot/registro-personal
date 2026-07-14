@@ -1,5 +1,5 @@
 {
-  "version": "3.6.0",
+  "version": "3.6.1",
   "fecha": "2026-07-14",
-  "notas": "Nombre completo del usuario (columna E de Usuarios) con emoji según sexo (columna F) en bienvenida, saludo, header y gestión de usuarios. Requiere redesplegar Apps Script."
+  "notas": "Fotos de perfil de usuarios: avatar con foto en el header, pantalla de bienvenida y gestión de usuarios. Primera foto: cberru (Shyrley Berru)."
 }
