@@ -1832,6 +1832,26 @@ function migrarPasswords() {
   </div>
 </div>
 
+<!-- ANUNCIO DE MEJORAS (v3.7.2) — se muestra una sola vez por usuario -->
+<div class="modal-overlay" id="anuncioOverlay">
+  <div class="modal" style="max-width:440px;text-align:left;">
+    <div style="text-align:center;margin-bottom:6px;">
+      <div style="display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg,var(--blue),var(--blue-deep));box-shadow:inset 0 -3px 0 var(--accent);font-size:26px;">✨</div>
+    </div>
+    <div class="modal-title" style="text-align:center;font-size:17px;color:var(--blue-dark);">¡El sistema se actualizó pensando en ustedes!</div>
+    <div class="modal-body" style="line-height:1.6;">
+      <p style="margin-bottom:10px;">Estimado equipo:</p>
+      <p style="margin-bottom:10px;">Hemos incorporado varias mejoras al Sistema de Registro de Personal: una interfaz más clara y moderna, mayor seguridad para la información que registran, y un funcionamiento más rápido y fluido, especialmente en las horas de mayor movimiento.</p>
+      <p style="margin-bottom:10px;">Quiero agradecerles de corazón por cada sugerencia y observación que me comparten. Son precisamente ustedes, con su experiencia usando el sistema día a día, quienes lo hacen crecer y mejorar. Ha sido —y sigue siendo— un enorme gusto trabajar junto a ustedes.</p>
+      <p style="margin-bottom:12px;"><strong style="color:var(--blue-dark);">Esto no para aquí: seguimos mejorando.</strong> Cualquier idea o detalle que noten, escríbanme con toda confianza.</p>
+      <p style="font-size:12px;color:var(--muted);border-top:1px solid var(--border);padding-top:10px;margin-top:4px;">— Joel Timoteo Gonza · Coordinador de Relaciones Laborales</p>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary btn-full" id="anuncioCerrar">Entendido, ¡gracias! 🙌</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ════════════════════════════════
 //  DATA & SESSION
@@ -2010,7 +2030,7 @@ function incrementarContadorFirebase() {
 // ════════════════════════════════
 //  CONTROL DE VERSIÓN / ACTUALIZACIÓN AUTOMÁTICA
 // ════════════════════════════════
-const VERSION_ACTUAL = '3.7.1'; // ⚠️ Este número debe coincidir con version.json
+const VERSION_ACTUAL = '3.7.2'; // ⚠️ Este número debe coincidir con version.json
 
 // Mostrar la versión real en todos los lugares de la interfaz (footer, Acerca, etc.)
 document.addEventListener('DOMContentLoaded', () => {
@@ -2374,9 +2394,28 @@ function _setSesion(data) {
   const mensaje = saludo + ' ' + primerNombre + (_esMujer(data)?', bienvenida':', bienvenido') + ' al sistema.';
   setTimeout(() => mostrarBannerBienvenida(mensaje, data.estado), 300);
 
-  if(!isAdmin) setTimeout(() => abrirSesionModal(), 1200);
+  // v3.7.2: anuncio de mejoras (una sola vez por usuario). Al cerrarlo, el modal de sesión sigue el flujo normal.
+  setTimeout(() => {
+    mostrarAnuncioMejoras(() => { if(!isAdmin) abrirSesionModal(); });
+  }, 700);
   document.getElementById('loginBtn').disabled = false;
   document.getElementById('loginLoading').style.display = 'none';
+}
+
+// v3.7.2: muestra el anuncio de mejoras una sola vez por usuario; al cerrarlo ejecuta onClose.
+function mostrarAnuncioMejoras(onClose) {
+  const KEY = 'anuncio_visto_v3.7.2';
+  let visto = false;
+  try { visto = !!localStorage.getItem(KEY); } catch(e) {}
+  if(visto) { if(onClose) onClose(); return; }
+  const ov = document.getElementById('anuncioOverlay');
+  if(!ov) { if(onClose) onClose(); return; }
+  ov.classList.add('open');
+  document.getElementById('anuncioCerrar').onclick = () => {
+    ov.classList.remove('open');
+    try { localStorage.setItem(KEY, '1'); } catch(e) {}
+    if(onClose) onClose();
+  };
 }
 
 async function cerrarSesion() {

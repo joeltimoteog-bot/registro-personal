@@ -1,5 +1,5 @@
 {
-  "version": "3.7.1",
+  "version": "3.7.2",
   "fecha": "2026-07-29",
-  "notas": "Rendimiento hora pico: buscadores con debounce (250ms) y limite de 150 filas visibles en las tablas para evitar tirones en el celular. Sin cambios de datos ni funciones de registro."
+  "notas": "Anuncio de mejoras: ventana de bienvenida (una sola vez por usuario) con agradecimiento por sus sugerencias. Sin cambios en funciones de registro."
 }
