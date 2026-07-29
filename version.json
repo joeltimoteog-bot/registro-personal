@@ -1,5 +1,5 @@
 {
-  "version": "3.6.1",
-  "fecha": "2026-07-14",
-  "notas": "Fotos de perfil de usuarios: avatar con foto en el header, pantalla de bienvenida y gestión de usuarios. Primera foto: cberru (Shyrley Berru)."
+  "version": "3.7.0",
+  "fecha": "2026-07-29",
+  "notas": "Evolucion visual v4: paleta rojo/azul/blanco refinada, acento tricolor en cabecera, tarjetas mas legibles y botones con degradado. Cambio 100% estetico y aditivo, sin tocar funciones."
 }
