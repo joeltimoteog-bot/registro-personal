@@ -2030,7 +2030,7 @@ function incrementarContadorFirebase() {
 // ════════════════════════════════
 //  CONTROL DE VERSIÓN / ACTUALIZACIÓN AUTOMÁTICA
 // ════════════════════════════════
-const VERSION_ACTUAL = '3.7.2'; // ⚠️ Este número debe coincidir con version.json
+const VERSION_ACTUAL = '3.7.3'; // ⚠️ Este número debe coincidir con version.json
 
 // Mostrar la versión real en todos los lugares de la interfaz (footer, Acerca, etc.)
 document.addEventListener('DOMContentLoaded', () => {
@@ -2169,6 +2169,20 @@ async function iniciarSesion() {
       });
     } else {
       errEl.textContent = data.msg || 'Usuario o contraseña incorrectos';
+      // v3.7.3: el aviso de horario se muestra en azul amable (no rojo de error)
+      if(data.horario) {
+        errEl.style.background = '#eaf0f9';
+        errEl.style.borderColor = '#c2d4ee';
+        errEl.style.color = '#122c54';
+        errEl.style.textAlign = 'left';
+        errEl.style.lineHeight = '1.5';
+      } else {
+        errEl.style.background = '';
+        errEl.style.borderColor = '';
+        errEl.style.color = '';
+        errEl.style.textAlign = '';
+        errEl.style.lineHeight = '';
+      }
       errEl.style.display = 'block';
       btn.disabled = false; load.style.display = 'none';
     }

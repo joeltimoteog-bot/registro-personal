@@ -1,5 +1,5 @@
 {
-  "version": "3.7.2",
+  "version": "3.7.3",
   "fecha": "2026-07-29",
-  "notas": "Anuncio de mejoras: ventana de bienvenida (una sola vez por usuario) con agradecimiento por sus sugerencias. Sin cambios en funciones de registro."
+  "notas": "Aviso de horario personalizado y en estilo amable (azul) cuando el acceso esta fuera de horario. Complementa el corte por horario del Apps Script v2.9."
 }
