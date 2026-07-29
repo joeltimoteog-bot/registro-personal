@@ -1,5 +1,5 @@
 {
-  "version": "3.7.0",
+  "version": "3.7.1",
   "fecha": "2026-07-29",
-  "notas": "Evolucion visual v4: paleta rojo/azul/blanco refinada, acento tricolor en cabecera, tarjetas mas legibles y botones con degradado. Cambio 100% estetico y aditivo, sin tocar funciones."
+  "notas": "Rendimiento hora pico: buscadores con debounce (250ms) y limite de 150 filas visibles en las tablas para evitar tirones en el celular. Sin cambios de datos ni funciones de registro."
 }

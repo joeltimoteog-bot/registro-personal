@@ -1103,7 +1103,7 @@ th{ color:var(--blue-dark); border-bottom-color:#c9d8ee; }
         <button class="btn btn-primary btn-sm" style="margin-left:auto;" onclick="cargarTodosRegistros()">🔄 Cargar todos</button>
       </div>
       <div class="card-body" style="padding-bottom:10px;">
-        <input type="text" class="input-field" id="filterAdminInput" placeholder="Buscar en todos los registros..." oninput="renderTodosRegistros()">
+        <input type="text" class="input-field" id="filterAdminInput" placeholder="Buscar en todos los registros..." oninput="debouncedRenderTodos()">
       </div>
       <div id="adminTableContainer">
         <div class="empty-state"><div class="empty-icon">🌐</div><h3>Presiona "Cargar todos"</h3><p>Verás todos los registros de BB.REGISTRO</p></div>
@@ -1112,7 +1112,7 @@ th{ color:var(--blue-dark); border-bottom-color:#c9d8ee; }
     <div class="card">
       <div class="card-body" style="padding-bottom:10px;">
         <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px;">📋 Mis registros locales</div>
-        <input type="text" class="input-field" id="filterInput" placeholder="Buscar por nombre o DNI..." oninput="filtrarLista()">
+        <input type="text" class="input-field" id="filterInput" placeholder="Buscar por nombre o DNI..." oninput="debouncedFiltrarLista()">
       </div>
       <div id="tableContainer">
         <div class="empty-state"><div class="empty-icon">📋</div><h3>Sin registros</h3><p>Los registros locales aparecerán aquí</p></div>
@@ -2010,7 +2010,7 @@ function incrementarContadorFirebase() {
 // ════════════════════════════════
 //  CONTROL DE VERSIÓN / ACTUALIZACIÓN AUTOMÁTICA
 // ════════════════════════════════
-const VERSION_ACTUAL = '3.7.0'; // ⚠️ Este número debe coincidir con version.json
+const VERSION_ACTUAL = '3.7.1'; // ⚠️ Este número debe coincidir con version.json
 
 // Mostrar la versión real en todos los lugares de la interfaz (footer, Acerca, etc.)
 document.addEventListener('DOMContentLoaded', () => {
@@ -3593,6 +3593,7 @@ async function registrarEnBBRegistro(datos) {
 // ════════════════════════════════
 //  LISTA
 // ════════════════════════════════
+const MAX_FILAS_TABLA = 150; // v3.7.1: máximo de filas a dibujar (evita armar miles de filas en móvil)
 function renderLista() {
   actualizarStats();
   const q = document.getElementById('filterInput').value.toLowerCase();
@@ -3601,8 +3602,9 @@ function renderLista() {
     (t.ap||'').toLowerCase().includes(q)||(t.am||'').toLowerCase().includes(q));
   const cont = document.getElementById('tableContainer');
   if(!f.length) { cont.innerHTML=`<div class="empty-state"><div class="empty-icon">📋</div><h3>Sin registros</h3><p>No se encontraron trabajadores</p></div>`; return; }
+  const visibles = f.slice(0, MAX_FILAS_TABLA); // v3.7.1: límite de filas visibles
   let html=`<div class="table-wrap"><table><thead><tr><th>DNI</th><th>Nombre</th><th>E.Civil</th><th>Acción</th></tr></thead><tbody>`;
-  f.forEach(t => {
+  visibles.forEach(t => {
     html+=`<tr><td><strong style="font-family:'JetBrains Mono',monospace;font-size:12px;">${t.dni}</strong></td>
     <td>${t.nombres||''} ${t.ap||''} ${t.am||''}</td>
     <td><span class="badge badge-blue">${t.ec||'-'}</span></td>
@@ -3612,8 +3614,12 @@ function renderLista() {
     </div></td></tr>`;
   });
   html+='</tbody></table></div>';
+  if(f.length > MAX_FILAS_TABLA) html += `<div style="text-align:center;font-size:12px;color:var(--muted);padding:10px;">Mostrando ${MAX_FILAS_TABLA} de ${f.length} · refina tu búsqueda para ver más</div>`;
   cont.innerHTML=html;
 }
+// v3.7.1: helper de debounce — evita filtrar/redibujar en cada tecla
+function _debounce(fn, ms){ let t; return function(){ clearTimeout(t); t=setTimeout(fn, ms); }; }
+const debouncedFiltrarLista = _debounce(renderLista, 250);
 function filtrarLista() { renderLista(); }
 
 // ── CAMBIO 08: Admin ve TODOS los registros de BB.REGISTRO ──
@@ -3644,8 +3650,9 @@ function renderTodosRegistros() {
     (t.sector||'').toLowerCase().includes(q));
   const cont = document.getElementById('adminTableContainer');
   if(!f.length) { cont.innerHTML = '<div class="empty-state"><div class="empty-icon">🌐</div><h3>Sin registros</h3></div>'; return; }
+  const visibles = f.slice(0, MAX_FILAS_TABLA); // v3.7.1: límite de filas visibles
   let html = '<div class="table-wrap"><table><thead><tr><th>DNI</th><th>Nombre</th><th>Grupo</th><th>Tipo</th><th>Usuario</th><th>Fecha</th><th>Editar</th></tr></thead><tbody>';
-  f.forEach(t => {
+  visibles.forEach(t => {
     const tardioBadge = String(t.tardio||'').toUpperCase() === 'SI' ? ' <span class="badge" style="background:#fff3cd;color:#8a6500;">⏰ Tardío</span>' : '';
     html += '<tr><td><strong style="font-family:JetBrains Mono,monospace;font-size:12px;">'+t.dni+'</strong></td>'+
       '<td>'+(t.nombres||'')+' '+(t.ap||'')+' '+(t.am||'')+tardioBadge+'</td>'+
@@ -3656,8 +3663,11 @@ function renderTodosRegistros() {
       '<td><button class="btn btn-outline btn-sm" onclick="editarRegistroBB(\''+t.dni+'\')">✏️</button></td></tr>';
   });
   html += '</tbody></table></div>';
+  if(f.length > MAX_FILAS_TABLA) html += '<div style="text-align:center;font-size:12px;color:var(--muted);padding:10px;">Mostrando '+MAX_FILAS_TABLA+' de '+f.length+' · refina tu búsqueda para ver más</div>';
   cont.innerHTML = html;
 }
+// v3.7.1: versión con debounce para el buscador (evita redibujar en cada tecla)
+const debouncedRenderTodos = _debounce(renderTodosRegistros, 250);
 function actualizarStats() { document.getElementById('statTotal').textContent=trabajadores.length; document.getElementById('statHoy').textContent=hoyCount; }
 function editarDesdeTabla(dni) {
   document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));
