@@ -1880,6 +1880,27 @@ let sesion       = null; // { usuario, cargo, estado, token }
 // Helper: devuelve el token de sesión para acciones sensibles del Apps Script
 function _token() { return sesion && sesion.token ? sesion.token : ''; }
 
+// v3.7.6: fetch al Apps Script con reintento (Google a veces responde 404 pasajero en script.googleusercontent.com)
+async function _fetchJsonReintento(url, intentos = 3, esperaMs = 1500) {
+  let ultimoError = null;
+  for(let i = 1; i <= intentos; i++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 20000);
+      const resp = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if(!resp.ok) throw new Error('HTTP ' + resp.status);
+      const txt = await resp.text();
+      const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
+      return JSON.parse(m ? m[1] : txt);
+    } catch(e) {
+      ultimoError = e;
+      if(i < intentos) await new Promise(res => setTimeout(res, esperaMs));
+    }
+  }
+  throw ultimoError || new Error('Sin respuesta');
+}
+
 // ── EXPORTACIÓN RESTRINGIDA ──
 // Solo estos usuarios pueden exportar la base de datos (datos sensibles)
 const EXPORT_AUTORIZADOS = ['jtimoteo', 'jsiancas', 'javendano'];
@@ -2097,7 +2118,7 @@ function incrementarContadorFirebase() {
 // ════════════════════════════════
 //  CONTROL DE VERSIÓN / ACTUALIZACIÓN AUTOMÁTICA
 // ════════════════════════════════
-const VERSION_ACTUAL = '3.7.5'; // ⚠️ Este número debe coincidir con version.json
+const VERSION_ACTUAL = '3.7.6'; // ⚠️ Este número debe coincidir con version.json
 
 // Mostrar la versión real en todos los lugares de la interfaz (footer, Acerca, etc.)
 document.addEventListener('DOMContentLoaded', () => {
@@ -3821,10 +3842,8 @@ async function cargarUsuarios() {
   }
   try {
     const url = gsConfig.webhookUrl+'?accion=listarUsuarios&token=' + encodeURIComponent(_token());
-    const resp = await fetch(url);
-    const txt  = await resp.text();
-    const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
-    const data = JSON.parse(m ? m[1] : txt);
+    const data = await _fetchJsonReintento(url); // v3.7.6: reintenta ante 404 pasajero
+    if(_sesionExpirada(data)) return;
     const usuarios = data.usuarios || [];
     if(!usuarios.length) { cont.innerHTML=`<div class="empty-state"><div class="empty-icon">👥</div><h3>Sin usuarios</h3></div>`; return; }
     let html=`<div class="table-wrap"><table><thead><tr><th>Usuario</th><th>Nombre y Apellidos</th><th>Cargo</th><th>Rol</th><th>Módulos</th><th>Acción</th></tr></thead><tbody>`;
@@ -3845,7 +3864,7 @@ async function cargarUsuarios() {
     });
     html+='</tbody></table></div>';
     cont.innerHTML=html;
-  } catch(e) { cont.innerHTML=`<div class="empty-state"><div class="empty-icon">❌</div><h3>Error al cargar</h3></div>`; }
+  } catch(e) { cont.innerHTML=`<div class="empty-state"><div class="empty-icon">❌</div><h3>Error al cargar</h3><p>No hubo respuesta tras 3 intentos. Revisa tu internet y presiona 🔄 Actualizar.</p><button class="btn btn-sm btn-primary" style="margin-top:10px;" onclick="cargarUsuarios()">🔄 Reintentar</button></div>`; }
 }
 
 async function agregarUsuario() {
@@ -3913,10 +3932,7 @@ async function guardarModulos(usuario) {
   try {
     const payload = {accion:'actualizarModulos', token:_token(), usuario, modulos};
     const url = gsConfig.webhookUrl+'?data='+encodeURIComponent(JSON.stringify(payload));
-    const resp = await fetch(url);
-    const txt  = await resp.text();
-    const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
-    const r = JSON.parse(m ? m[1] : txt);
+    const r = await _fetchJsonReintento(url); // v3.7.6
     if(_sesionExpirada(r)) return;
     if(r.ok) {
       showToast('✅ Módulos de ' + usuario + ' actualizados (aplican en su próximo ingreso)','success');

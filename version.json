@@ -1,5 +1,5 @@
 {
-  "version": "3.7.5",
+  "version": "3.7.6",
   "fecha": "2026-09-12",
-  "notas": "Panel de modulos por usuario: el creador configura desde la pestana Usuarios (boton 🧩) que modulos puede usar cada persona (Buscar, Lista, Excel, Stats, Acerca, Distribucion, Exportar, Personal tardio, Editar). Si no se configura nada, todo sigue igual segun el rol. Incluye la correccion de sesion de la 3.7.4. Requiere Apps Script v3.4."
+  "notas": "La carga de usuarios y el guardado de modulos reintentan automaticamente (3 intentos) cuando Google responde un error pasajero, en vez de mostrar 'Error al cargar'. Incluye el panel de modulos por usuario (3.7.5) y la correccion de sesion (3.7.4). Requiere Apps Script v3.4."
 }
