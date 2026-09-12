@@ -1,5 +1,5 @@
 {
-  "version": "3.7.4",
+  "version": "3.7.5",
   "fecha": "2026-09-12",
-  "notas": "Correccion de sesion: el sistema avisa al volver a la app o antes de Guardar cuando la sesion supera las 20 horas, en vez de expulsar al login a mitad del formulario. Compatible con Apps Script v3.2 (no requiere redespliegue)."
+  "notas": "Panel de modulos por usuario: el creador configura desde la pestana Usuarios (boton 🧩) que modulos puede usar cada persona (Buscar, Lista, Excel, Stats, Acerca, Distribucion, Exportar, Personal tardio, Editar). Si no se configura nada, todo sigue igual segun el rol. Incluye la correccion de sesion de la 3.7.4. Requiere Apps Script v3.4."
 }

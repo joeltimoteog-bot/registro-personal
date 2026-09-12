@@ -1884,8 +1884,61 @@ function _token() { return sesion && sesion.token ? sesion.token : ''; }
 // Solo estos usuarios pueden exportar la base de datos (datos sensibles)
 const EXPORT_AUTORIZADOS = ['jtimoteo', 'jsiancas', 'javendano'];
 
+// ── v3.7.5: MÓDULOS POR USUARIO (columna H "Modulos" de la hoja Usuarios; requiere Apps Script v3.4) ──
+const MODULOS_DEF = [
+  { k:'buscar',       n:'🔍 Buscar / Registrar' },
+  { k:'lista',        n:'📋 Lista' },
+  { k:'excel',        n:'📊 Excel' },
+  { k:'stats',        n:'📊 Stats' },
+  { k:'acerca',       n:'ℹ️ Acerca' },
+  { k:'distribucion', n:'🚌 Distribución' },
+  { k:'exportar',     n:'📥 Exportar BB.REGISTRO' },
+  { k:'tardio',       n:'⏰ Personal tardío' },
+  { k:'editar',       n:'✏️ Editar registro' }
+];
+// Comportamiento cuando la columna está vacía (igual que siempre, según rol)
+const MODULOS_DEFAULT_USUARIO = ['buscar','lista','excel','acerca','tardio','editar'];
+const MODULOS_DEFAULT_ADMIN   = MODULOS_DEF.map(m => m.k).filter(k => k !== 'exportar');
+const PAGINA_MODULO = { buscar:'buscar', lista:'lista', excel:'excel', estadisticas:'stats', acerca:'acerca', distribucion:'distribucion' };
+
+function _esCreador() { return sesion && String(sesion.usuario||'').toLowerCase() === 'jtimoteo'; }
+function _modulosEfectivos() {
+  if(!sesion) return [];
+  if(_esCreador()) return MODULOS_DEF.map(m => m.k);
+  const cfg = Array.isArray(sesion.modulos) ? sesion.modulos : [];
+  if(cfg.length) return cfg;
+  const base = sesion.estado === 'Administrador' ? MODULOS_DEFAULT_ADMIN.slice() : MODULOS_DEFAULT_USUARIO.slice();
+  if(EXPORT_AUTORIZADOS.includes(String(sesion.usuario||'').toLowerCase())) base.push('exportar');
+  return base;
+}
+function _tieneModulo(k) { return _modulosEfectivos().includes(k); }
+
 function _puedeExportar() {
-  return sesion && EXPORT_AUTORIZADOS.includes(String(sesion.usuario||'').toLowerCase());
+  return !!sesion && _tieneModulo('exportar');
+}
+
+// Aplica los módulos a la interfaz (solo OCULTA; nunca muestra algo que el rol no permitía)
+function aplicarModulosUI() {
+  if(!sesion) return;
+  document.querySelectorAll('.tab').forEach(t => {
+    const m = (t.getAttribute('onclick')||'').match(/showPage\('([a-zA-Z]+)'/);
+    if(!m) return;
+    const k = PAGINA_MODULO[m[1]];
+    if(!k) return;
+    if(!_tieneModulo(k)) { t.style.display = 'none'; return; }
+    // Permitido: volver a mostrar solo las pestañas comunes (las admin-tab/dist-tab ya las decidió el rol)
+    if(!t.classList.contains('admin-tab') && !t.classList.contains('dist-tab')) t.style.display = '';
+  });
+  const bT = document.querySelector('button[onclick="iniciarPersonalTardio()"]');
+  const bE = document.querySelector('button[onclick="abrirModalEditar()"]');
+  if(bT) bT.style.display = _tieneModulo('tardio') ? '' : 'none';
+  if(bE) bE.style.display = _tieneModulo('editar') ? '' : 'none';
+  // Si la pestaña activa quedó oculta, ir a la primera visible
+  const activa = document.querySelector('.tab.active');
+  if(!activa || activa.style.display === 'none') {
+    const primera = Array.from(document.querySelectorAll('.tab')).find(t => t.style.display !== 'none');
+    if(primera) { const m = (primera.getAttribute('onclick')||'').match(/showPage\('([a-zA-Z]+)'/); if(m) showPage(m[1], primera); }
+  }
 }
 
 // Aviso de confidencialidad que debe aceptarse antes de cada exportación
@@ -2044,7 +2097,7 @@ function incrementarContadorFirebase() {
 // ════════════════════════════════
 //  CONTROL DE VERSIÓN / ACTUALIZACIÓN AUTOMÁTICA
 // ════════════════════════════════
-const VERSION_ACTUAL = '3.7.4'; // ⚠️ Este número debe coincidir con version.json
+const VERSION_ACTUAL = '3.7.5'; // ⚠️ Este número debe coincidir con version.json
 
 // Mostrar la versión real en todos los lugares de la interfaz (footer, Acerca, etc.)
 document.addEventListener('DOMContentLoaded', () => {
@@ -2347,6 +2400,7 @@ function _setSesion(data) {
     localStorage.setItem('sesion_activa', JSON.stringify({
       usuario: data.usuario, cargo: data.cargo, estado: data.estado,
       nombre: data.nombre||'', sexo: data.sexo||'', // v3.6.0
+      modulos: Array.isArray(data.modulos) ? data.modulos : [], // v3.7.5
       token: data.token, guardadaEn: sesion.guardadaEn // v3.7.4
     }));
   } catch(e){}
@@ -2412,6 +2466,7 @@ function _setSesion(data) {
   if(configSensible)  configSensible.style.display  = isCreador ? '' : 'none';
   if(configBloqueado) configBloqueado.style.display = isCreador ? 'none' : '';
 
+  aplicarModulosUI(); // v3.7.5: módulos por usuario
   actualizarEstadoConexion();
   actualizarStats();
   if(isAdmin) cargarUsuarios();
@@ -2808,6 +2863,7 @@ function renderBars(obj, total, colors) {
 //  NAV
 // ════════════════════════════════
 function showPage(p, btn) {
+  if(sesion && PAGINA_MODULO[p] && !_tieneModulo(PAGINA_MODULO[p])) { showToast('🔒 No tienes habilitado este módulo','error'); return; } // v3.7.5
   document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
   document.getElementById('page-'+p).classList.add('active');
@@ -3771,14 +3827,19 @@ async function cargarUsuarios() {
     const data = JSON.parse(m ? m[1] : txt);
     const usuarios = data.usuarios || [];
     if(!usuarios.length) { cont.innerHTML=`<div class="empty-state"><div class="empty-icon">👥</div><h3>Sin usuarios</h3></div>`; return; }
-    let html=`<div class="table-wrap"><table><thead><tr><th>Usuario</th><th>Nombre y Apellidos</th><th>Cargo</th><th>Rol</th><th>Acción</th></tr></thead><tbody>`;
+    let html=`<div class="table-wrap"><table><thead><tr><th>Usuario</th><th>Nombre y Apellidos</th><th>Cargo</th><th>Rol</th><th>Módulos</th><th>Acción</th></tr></thead><tbody>`;
     usuarios.forEach(u => {
       const isAdmin = u.estado==='Administrador';
+      const mods = Array.isArray(u.modulos) ? u.modulos : [];
+      const esCre = String(u.usuario||'').toLowerCase() === 'jtimoteo';
+      const modsTxt = esCre ? '👑 Todos' : (mods.length ? mods.length + ' de ' + MODULOS_DEF.length : '<span style="color:var(--muted);">Por rol</span>');
+      const modsBtn = esCre ? '' : ` <button class="btn btn-sm btn-outline" title="Configurar módulos" onclick="abrirModalModulos('${u.usuario}', '${mods.join(',')}')">🧩</button>`;
       html+=`<tr class="${isAdmin?'user-row-admin':''}">
         <td><strong>${u.usuario}</strong></td>
         <td style="font-size:12px;max-width:170px;white-space:normal;">${fotoUsuario(u.usuario) ? `<img src="${fotoUsuario(u.usuario)}" alt="" style="width:26px;height:26px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:6px;border:1.5px solid #b8cce4;">` : emojiSexo(u.sexo)+' '}${u.nombre||'-'}</td>
         <td style="font-size:12px;max-width:150px;white-space:normal;">${u.cargo||'-'}</td>
         <td><span class="badge ${isAdmin?'badge-admin':'badge-usuario'}">${u.estado||'usuario'}</span></td>
+        <td style="font-size:12px;white-space:nowrap;">${modsTxt}${modsBtn}</td>
         <td><button class="btn btn-sm btn-danger" onclick="confirmarEliminarUsuario('${u.usuario}')">🗑</button></td>
       </tr>`;
     });
@@ -3814,6 +3875,61 @@ async function agregarUsuario() {
       cargarUsuarios();
     } else { showToast(r.msg||'Error al agregar','error'); }
   } catch(e) { showToast('Error de conexión','error'); }
+}
+
+// ── v3.7.5: modal para configurar los módulos de un usuario (solo el creador; validado también en servidor) ──
+function abrirModalModulos(usuario, csv) {
+  if(!_esCreador()) { showToast('🔒 Solo el creador puede configurar módulos','error'); return; }
+  const actuales = String(csv||'').split(',').map(x => x.trim()).filter(Boolean);
+  let ov = document.getElementById('modulosOverlay');
+  if(ov) ov.remove();
+  ov = document.createElement('div');
+  ov.id = 'modulosOverlay';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:99998;background:rgba(15,23,42,0.6);display:flex;align-items:center;justify-content:center;padding:16px;font-family:Tahoma,sans-serif;';
+  ov.innerHTML = `
+    <div style="background:white;border-radius:16px;max-width:420px;width:100%;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.35);">
+      <div style="background:linear-gradient(135deg,#1a3c6e,#142e54);color:white;padding:16px 18px;">
+        <div style="font-size:16px;font-weight:800;">🧩 Módulos de ${usuario}</div>
+        <div style="font-size:11px;opacity:0.85;margin-top:3px;">Marca lo que este usuario puede usar. Si no marcas nada, se aplica el comportamiento por rol.</div>
+      </div>
+      <div style="padding:14px 18px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        ${MODULOS_DEF.map(m => `<label style="display:flex;align-items:center;gap:8px;font-size:13px;padding:8px 10px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;">
+          <input type="checkbox" class="chk-modulo" value="${m.k}" ${actuales.includes(m.k)?'checked':''} style="width:16px;height:16px;"> ${m.n}</label>`).join('')}
+      </div>
+      <div style="display:flex;gap:8px;padding:0 18px 16px;">
+        <button class="btn btn-outline" style="flex:1;" onclick="document.getElementById('modulosOverlay').remove()">✖ Cancelar</button>
+        <button class="btn btn-outline" style="flex:1;" onclick="document.querySelectorAll('.chk-modulo').forEach(c=>c.checked=false)">🧹 Limpiar (por rol)</button>
+        <button class="btn btn-primary" style="flex:1;" id="btnGuardarModulos" onclick="guardarModulos('${usuario}')">💾 Guardar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+}
+
+async function guardarModulos(usuario) {
+  const btn = document.getElementById('btnGuardarModulos');
+  const modulos = Array.from(document.querySelectorAll('.chk-modulo:checked')).map(c => c.value);
+  if(!gsConfig.habilitado||!gsConfig.webhookUrl) { showToast('Sin conexión Google Sheets','error'); return; }
+  if(btn) { btn.disabled = true; btn.textContent = '⏳ Guardando...'; }
+  try {
+    const payload = {accion:'actualizarModulos', token:_token(), usuario, modulos};
+    const url = gsConfig.webhookUrl+'?data='+encodeURIComponent(JSON.stringify(payload));
+    const resp = await fetch(url);
+    const txt  = await resp.text();
+    const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
+    const r = JSON.parse(m ? m[1] : txt);
+    if(_sesionExpirada(r)) return;
+    if(r.ok) {
+      showToast('✅ Módulos de ' + usuario + ' actualizados (aplican en su próximo ingreso)','success');
+      const ov = document.getElementById('modulosOverlay'); if(ov) ov.remove();
+      cargarUsuarios();
+    } else {
+      showToast(r.msg||'No se pudo guardar','error');
+      if(btn) { btn.disabled = false; btn.textContent = '💾 Guardar'; }
+    }
+  } catch(e) {
+    showToast('Error de conexión','error');
+    if(btn) { btn.disabled = false; btn.textContent = '💾 Guardar'; }
+  }
 }
 
 function confirmarEliminarUsuario(usuario) {
