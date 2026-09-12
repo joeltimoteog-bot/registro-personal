@@ -506,6 +506,77 @@ tbody tr:hover td { background: #FCFCFD; }
   .login-btn { height: 52px; font-size: 15px; }
 }
 
+/* ══════════════════════════ ESTADÍSTICAS v4.1 ══════════════════════════ */
+.st-toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; padding: 14px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; margin-bottom: 16px; }
+.st-toolbar .input-group { flex: 1 1 150px; min-width: 140px; }
+.st-toolbar .input-field { min-height: 40px; padding: 6px 12px; font-size: 13px; }
+.st-toolbar .input-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); }
+.st-toolbar-actions { display: flex; gap: 8px; align-items: center; }
+.st-filtros-toggle { display: none; }
+.st-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: -6px 0 14px; }
+.st-chip { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 999px; background: #EEF3FA; color: var(--primary); font-size: 12px; font-weight: 600; border: none; }
+.st-chip-x { background: var(--surface); border: 1px solid var(--border-strong); color: var(--text-secondary); cursor: pointer; font-family: inherit; }
+.st-chip-x:hover { color: var(--accent); border-color: var(--accent); }
+.st-status { font-size: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.st-spin { width: 12px; height: 12px; border: 2px solid #D0D5DD; border-top-color: var(--primary); border-radius: 50%; animation: stSpin .8s linear infinite; display: inline-block; }
+@keyframes stSpin { to { transform: rotate(360deg); } }
+.st-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 16px; }
+.st-grid > .card { margin-bottom: 0; }
+.st-col-8 { grid-column: span 8; } .st-col-6 { grid-column: span 6; } .st-col-4 { grid-column: span 4; } .st-col-12 { grid-column: span 12; }
+.st-delta { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; }
+.st-delta.up { color: #16A34A; } .st-delta.down { color: var(--accent); } .st-delta.flat { color: var(--text-secondary); }
+.kpi-icon.red { background: var(--accent-light); color: var(--accent); }
+.seg-group { display: inline-flex; background: var(--background); border: 1px solid var(--border); border-radius: 8px; padding: 3px; gap: 2px; }
+.seg { border: none; background: transparent; padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; color: var(--text-secondary); cursor: pointer; font-family: inherit; }
+.seg.active { background: var(--surface); color: var(--primary); box-shadow: var(--shadow-sm); }
+.st-chart { width: 100%; height: 220px; display: block; }
+.st-bar rect { transition: opacity .15s; } .st-bar:hover rect { opacity: .8; }
+.st-legend { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; font-size: 12px; color: var(--text-secondary); margin-top: 10px; }
+.st-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.st-legend-tot { margin-left: auto; font-weight: 600; color: var(--text-primary); }
+.st-donut-wrap { display: flex; align-items: center; gap: 18px; }
+.st-donut { width: 150px; height: 150px; flex-shrink: 0; }
+.st-donut-list { flex: 1; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.st-donut-item { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto auto; gap: 8px; align-items: center; font-size: 13px; }
+.st-donut-item i { width: 10px; height: 10px; border-radius: 3px; display: block; }
+.st-donut-k { white-space: normal; line-height: 1.25; }
+.st-donut-v { font-weight: 700; } .st-donut-p { color: var(--text-secondary); font-size: 12px; min-width: 48px; text-align: right; }
+.st-alert { display: flex; align-items: center; gap: 14px; padding: 14px 18px; background: var(--warning-light); border: 1px solid #FEDF89; border-radius: 14px; margin-bottom: 16px; flex-wrap: wrap; }
+.st-alert-ic { width: 38px; height: 38px; border-radius: 10px; background: #FEF0C7; color: #B54708; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.st-alert-txt { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 2px; }
+.st-alert-txt strong { color: #93370D; font-size: 14px; } .st-alert-txt span { font-size: 12.5px; color: #B54708; }
+.st-row { display: flex; flex-direction: column; gap: 6px; padding: 8px 0; border-bottom: 1px solid #F2F4F7; }
+.st-row:last-of-type { border-bottom: none; }
+.st-row-top { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; }
+.st-row-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.st-row-val { font-weight: 700; white-space: nowrap; } .st-row-val em { font-style: normal; font-weight: 500; color: var(--text-secondary); }
+.st-track { height: 8px; border-radius: 4px; background: #F2F4F7; overflow: hidden; }
+.st-fill { height: 100%; border-radius: 4px; background: var(--primary-2); transition: width .3s ease; }
+.st-more { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; border: none; background: transparent; color: var(--primary-2); font-weight: 600; font-size: 13px; cursor: pointer; font-family: inherit; padding: 4px 0; }
+.st-more:hover { color: var(--primary); }
+.st-empty { display: flex; align-items: center; gap: 14px; padding: 28px 12px; color: var(--text-secondary); }
+.st-empty .ic { width: 32px; height: 32px; color: #98A2B3; }
+.st-empty strong { display: block; color: var(--text-primary); font-size: 14px; } .st-empty p { font-size: 12.5px; margin-top: 2px; }
+.st-empty.small { padding: 16px 0; }
+.st-table-tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-left: auto; }
+.st-table-tools .input-field { min-height: 38px; padding: 6px 12px; font-size: 13px; width: 220px; }
+.st-tabla-foot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; padding: 12px 20px; border-top: 1px solid var(--border); font-size: 13px; color: var(--text-secondary); }
+.st-tabla-foot > div:last-child { display: flex; align-items: center; gap: 10px; }
+.st-td-name { font-weight: 600; } .st-td-sub { font-size: 11.5px; color: var(--text-secondary); font-family: var(--mono); }
+.st-muted { color: #98A2B3; }
+#statsDash.is-loading .st-grid, #statsDash.is-loading .kpi-grid { opacity: .45; pointer-events: none; }
+@media (max-width: 1199px) { .st-col-8, .st-col-4, .st-col-6 { grid-column: span 12; } .st-col-6.st-half { grid-column: span 6; } }
+@media (max-width: 767px) {
+  .st-filtros-toggle { display: inline-flex; }
+  .st-toolbar { display: none; }
+  .st-toolbar.open { display: flex; flex-direction: column; align-items: stretch; }
+  .st-toolbar .input-group { flex: 1 1 auto; }
+  .st-col-6.st-half { grid-column: span 12; }
+  .st-donut-wrap { flex-direction: column; }
+  .st-table-tools { margin-left: 0; width: 100%; } .st-table-tools .input-field { width: 100%; }
+  .st-chart { height: 180px; }
+}
+
 </style>
 </head>
 <body>
@@ -1204,56 +1275,71 @@ tbody tr:hover td { background: #FCFCFD; }
 
 <!-- ═══ ESTADÍSTICAS ═══ -->
 <div id="page-estadisticas" class="page">
-  <div style="margin-top:14px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-      <div style="font-size:14px;font-weight:700;color:var(--text);">📊 Indicadores de registro</div>
-      <div style="display:flex;gap:6px;">
-        <button class="btn btn-sm btn-outline" onclick="enviarReporteWhatsApp()" style="background:#dcfce7;border-color:#16a34a;color:#15803d;">📤 Enviar reporte</button>
-        <button class="btn btn-sm btn-outline" onclick="renderEstadisticas()">🔄 Actualizar</button>
-      </div>
+  <div class="page-header">
+    <div><div class="page-title">Estadísticas</div><div class="page-desc">Indicadores de registro de personal · <span class="st-status" id="statsEstado" style="display:inline-flex;"></span></div></div>
+    <div class="page-actions">
+      <button class="btn btn-outline st-filtros-toggle" onclick="statsToggleFiltros()"><svg class="ic ic-sm"><use href="#i-list"></use></svg> Filtros</button>
+      <button class="btn btn-outline" onclick="enviarReporteWhatsApp()"><svg class="ic ic-sm"><use href="#i-activity"></use></svg> Enviar reporte</button>
+      <button class="btn btn-primary" id="statsBtnActualizar" onclick="statsActualizar()"><svg class="ic ic-sm"><use href="#i-download"></use></svg> Actualizar</button>
+    </div>
+  </div>
+  <div id="statsDash">
+    <div class="st-toolbar" id="statsFiltros">
+      <div class="input-group"><label class="input-label">Periodo</label>
+        <select id="stF-periodo" class="input-field" onchange="statsFiltro('periodo', this.value)"><option value="todo">Todo el historial</option><option value="hoy">Hoy</option><option value="7">Últimos 7 días</option><option value="30">Últimos 30 días</option><option value="mes">Este mes</option></select></div>
+      <div class="input-group"><label class="input-label">Grupo</label><select id="stF-grupo" class="input-field" onchange="statsFiltro('grupo', this.value)"><option value="">Todos los grupos</option></select></div>
+      <div class="input-group"><label class="input-label">Tipo</label><select id="stF-tipo" class="input-field" onchange="statsFiltro('tipo', this.value)"><option value="">Todos los tipos</option></select></div>
+      <div class="input-group"><label class="input-label">Usuario</label><select id="stF-usuario" class="input-field" onchange="statsFiltro('usuario', this.value)"><option value="">Todos los usuarios</option></select></div>
+      <div class="input-group"><label class="input-label">Ruta / Código</label><select id="stF-ruta" class="input-field" onchange="statsFiltro('ruta', this.value)"><option value="">Todas las rutas</option></select></div>
+      <div class="st-toolbar-actions"><button class="btn btn-outline" id="statsBtnLimpiar" onclick="statsLimpiar()" style="display:none;">Limpiar filtros</button></div>
+    </div>
+    <div class="st-chips" id="statsChips"></div>
+
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="kpi-top"><div class="kpi-label">Total registros</div><div class="kpi-icon blue"><svg class="ic"><use href="#i-users"></use></svg></div></div><div class="kpi-value" id="stK-total">0</div><div class="kpi-sub" id="stK-total-d"></div></div>
+      <div class="kpi-card"><div class="kpi-top"><div class="kpi-label">Personal tardío</div><div class="kpi-icon amber"><svg class="ic"><use href="#i-clock"></use></svg></div></div><div class="kpi-value" id="stK-tardio">0</div><div class="kpi-sub" id="stK-tardio-d"></div></div>
+      <div class="kpi-card"><div class="kpi-top"><div class="kpi-label">% de personal tardío</div><div class="kpi-icon red"><svg class="ic"><use href="#i-activity"></use></svg></div></div><div class="kpi-value" id="stK-pct">0 %</div><div class="kpi-sub" id="stK-pct-d"></div></div>
+      <div class="kpi-card"><div class="kpi-top"><div class="kpi-label">Registros hoy</div><div class="kpi-icon green"><svg class="ic"><use href="#i-user-plus"></use></svg></div></div><div class="kpi-value" id="stK-hoy">0</div><div class="kpi-sub" id="stK-hoy-d"></div></div>
     </div>
 
-    <!-- Toggle entre HOY y GENERAL -->
-    <div style="display:flex;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:4px;margin-bottom:14px;">
-      <button id="btnVistaHoy" onclick="cambiarVistaStats('hoy')" style="flex:1;padding:9px;border:none;border-radius:7px;background:white;font-weight:700;font-size:12px;cursor:pointer;box-shadow:var(--shadow-sm);color:var(--red);">📅 Hoy</button>
-      <button id="btnVistaGeneral" onclick="cambiarVistaStats('general')" style="flex:1;padding:9px;border:none;border-radius:7px;background:transparent;font-weight:700;font-size:12px;cursor:pointer;color:var(--muted);">🌐 Total general</button>
-    </div>
+    <div id="stSinGrupo" style="display:none;"></div>
 
-    <div class="stats-grid" id="statsTop">
-      <div class="stat-box"><div class="stat-num" id="st-total">0</div><div class="stat-label" id="st-total-label">Total del día</div></div>
-      <div class="stat-box"><div class="stat-num" id="st-tardios">0</div><div class="stat-label">Personal tardío</div></div>
-    </div>
-    <!-- v3.5.0: Tendencia de registros por día -->
-    <div class="card">
-      <div class="card-body" style="padding-bottom:10px;">
-        <div class="stat-card-title">📈 Registros por día (últimos 14 días)</div>
-        <div id="stats-tendencia" class="tendencia-grid"></div>
+    <div class="st-grid">
+      <div class="card st-col-8">
+        <div class="card-header"><div><div class="card-title">Registros por día</div><div class="card-sub">Evolución diaria · rojo = hoy</div></div>
+          <div class="seg-group" id="stTendRango" style="margin-left:auto;"><button class="seg" data-n="7" onclick="statsRangoTend(7)">7 días</button><button class="seg active" data-n="14" onclick="statsRangoTend(14)">14 días</button><button class="seg" data-n="30" onclick="statsRangoTend(30)">30 días</button></div></div>
+        <div class="card-body" id="stTendencia"></div>
+      </div>
+      <div class="card st-col-4">
+        <div class="card-header"><div><div class="card-title">Distribución por tipo</div><div class="card-sub">Bus Completo · Complemento</div></div></div>
+        <div class="card-body" id="stDonut"></div>
+      </div>
+      <div class="card st-col-6 st-half">
+        <div class="card-header"><div><div class="card-title">Top grupos</div><div class="card-sub">Grupos que concentran más personal</div></div></div>
+        <div class="card-body" id="stGrupos"></div>
+      </div>
+      <div class="card st-col-6 st-half">
+        <div class="card-header"><div><div class="card-title">Top usuarios por registros</div><div class="card-sub">Quién registra más</div></div></div>
+        <div class="card-body" id="stUsuarios"></div>
+      </div>
+      <div class="card st-col-6 st-half">
+        <div class="card-header"><div><div class="card-title">Top rutas / códigos</div><div class="card-sub">Rutas con mayor movimiento</div></div></div>
+        <div class="card-body" id="stRutas"></div>
+      </div>
+      <div class="card st-col-12" id="stTablaCard">
+        <div class="card-header"><div><div class="card-title">Detalle de registros</div><div class="card-sub">Respeta los filtros de arriba</div></div>
+          <div class="st-table-tools"><input type="search" id="stTablaQ" class="input-field" placeholder="Buscar DNI, nombre, usuario, ruta…" oninput="statsTablaQ(this.value)"><select class="input-field" style="width:auto;" onchange="statsTablaPorPag(this.value)"><option value="25">25 por página</option><option value="50">50 por página</option><option value="100">100 por página</option></select></div></div>
+        <div class="table-wrap" style="border:none;border-radius:0;"><table><thead><tr><th>Fecha</th><th>Trabajador</th><th>Usuario</th><th>Grupo</th><th>Ruta</th><th>Código</th><th>Tipo</th><th>Personal tardío</th></tr></thead><tbody id="stTablaBody"></tbody></table></div>
+        <div class="st-tabla-foot"><div id="stTablaInfo"></div><div id="stTablaPag"></div></div>
       </div>
     </div>
-    <div class="card">
-      <div class="card-body" style="padding-bottom:6px;">
-        <div class="stat-card-title">👥 Por Grupo</div>
-        <div id="stats-sector"></div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-body" style="padding-bottom:6px;">
-        <div class="stat-card-title">🚌 Por Tipo (Bus Completo / Complemento)</div>
-        <div id="stats-tipo"></div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-body" style="padding-bottom:6px;">
-        <div class="stat-card-title">👤 Por Usuario</div>
-        <div id="stats-usuario"></div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-body" style="padding-bottom:6px;">
-        <div class="stat-card-title">🛣️ Por Ruta / Código</div>
-        <div id="stats-ruta"></div>
-      </div>
-    </div>
+  </div>
+
+  <!-- Indicadores heredados (ocultos): los usan funciones existentes como el reporte por WhatsApp -->
+  <div id="statsLegacy" style="display:none;" aria-hidden="true">
+    <button id="btnVistaHoy" onclick="cambiarVistaStats('hoy')"></button><button id="btnVistaGeneral" onclick="cambiarVistaStats('general')"></button>
+    <span id="st-total">0</span><span id="st-total-label"></span><span id="st-tardios">0</span>
+    <div id="stats-tendencia"></div><div id="stats-sector"></div><div id="stats-tipo"></div><div id="stats-usuario"></div><div id="stats-ruta"></div>
   </div>
 </div>
 
@@ -1860,7 +1946,7 @@ function incrementarContadorFirebase() {
 // ════════════════════════════════
 //  CONTROL DE VERSIÓN / ACTUALIZACIÓN AUTOMÁTICA
 // ════════════════════════════════
-const VERSION_ACTUAL = '4.0.0'; // ⚠️ Este número debe coincidir con version.json
+const VERSION_ACTUAL = '4.1.0'; // ⚠️ Este número debe coincidir con version.json
 
 // Mostrar la versión real en todos los lugares de la interfaz (footer, Acerca, etc.)
 document.addEventListener('DOMContentLoaded', () => {
@@ -4678,6 +4764,269 @@ document.addEventListener('keypress', function(e) {
   if(typeof sesion !== 'undefined' && sesion) {
     showPage('inicio', document.querySelector('.sidebar .tab[data-page="inicio"]'));
   }
+})();
+
+// ═══════════════════════════════════════════════════════════
+//  v4.1 — ESTADÍSTICAS: dashboard ejecutivo
+//  Aditivo: usa listarBBRegistro (misma acción, mismos datos),
+//  envuelve renderEstadisticas() para cachear y no toca el backend.
+// ═══════════════════════════════════════════════════════════
+(function(){
+  const $ = (id) => document.getElementById(id);
+  const svg = (n, cls) => '<svg class="' + (cls || 'ic') + '"><use href="#i-' + n + '"></use></svg>';
+  const esc = (s) => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const fmt = (n) => Number(n || 0).toLocaleString('es-PE');
+  const pct = (a, b) => b ? (a / b * 100) : 0;
+  const CACHE_KEY = 'stats_cache_v4';
+  const CACHE_MIN = 10;              // minutos de vigencia del caché local
+  const AZUL = '#12335B', AZUL2 = '#2456A6', ROJO = '#C8102E', GRIS = '#98A2B3', GRIS2 = '#CFD8E6';
+
+  // ── Estado ──
+  const F = { periodo: 'todo', grupo: '', tipo: '', usuario: '', ruta: '' };
+  let rangoTend = 14, verTodos = { grupos: false, usuarios: false, rutas: false };
+  let tabla = { q: '', pag: 1, porPag: 25, soloSinGrupo: false };
+  let REGS = [];        // registros normalizados
+  let ultimaCarga = null;
+
+  // ── Normalización de fechas (dd/mm/yyyy, dd/mm/yyyy hh:mm o ISO) ──
+  function parseFecha(v) {
+    if(!v) return null;
+    if(v instanceof Date) return isNaN(v) ? null : new Date(v.getFullYear(), v.getMonth(), v.getDate());
+    const s = String(v).trim();
+    let m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+    if(m) return new Date(+m[3], +m[2]-1, +m[1]);
+    m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if(m) { const d = new Date(s); if(!isNaN(d)) return new Date(d.getFullYear(), d.getMonth(), d.getDate()); return new Date(+m[1], +m[2]-1, +m[3]); }
+    const d = new Date(s); return isNaN(d) ? null : new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  }
+  const claveDia = (d) => d ? d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0') : '';
+  const fmtDia = (d) => d ? String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear() : '—';
+  const hoy0 = () => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), d.getDate()); };
+  const addDias = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+
+  function normalizar(lista) {
+    return (lista || []).map(t => {
+      const d = parseFecha(t.fecha);
+      let u = String(t.registradoPor || '').trim(); if(!u || /^\d+$/.test(u)) u = '';
+      const ruta = String(t.ruta || '').trim(), codigo = String(t.codigo || '').trim();
+      return {
+        dni: String(t.dni || ''), nombre: ((t.ap||'') + ' ' + (t.am||'') + ', ' + (t.nombres||'')).replace(/^ ,|, $/g,'').trim(),
+        d: d, k: claveDia(d), fechaTxt: fmtDia(d),
+        grupo: String(t.sector || '').trim(), tipo: String(t.tipo || '').trim() || 'Sin tipo',
+        usuario: u, ruta: ruta, codigo: codigo, rutaCod: (ruta || codigo) ? (ruta + (codigo ? ' · ' + codigo : '')) : '',
+        tardio: String(t.tardio || '').toUpperCase() === 'SI'
+      };
+    });
+  }
+
+  // ── Caché local (acelera la carga; el servidor no cambia) ──
+  function leerCache() { try { const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null'); return c && Array.isArray(c.registros) ? c : null; } catch(e) { return null; } }
+  function guardarCache(regs) { try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), registros: regs })); } catch(e) { /* sin espacio: seguimos sin caché */ } }
+
+  // ── Carga (envuelve la función original: misma acción listarBBRegistro) ──
+  let cargando = false;
+  const _renderEstadisticas_orig = renderEstadisticas;
+  renderEstadisticas = async function(forzar){
+    if(!$('statsDash')) return _renderEstadisticas_orig();
+    const cache = leerCache();
+    const fresco = cache && (Date.now() - cache.ts) < CACHE_MIN * 60000;
+    if(cache && !datosStatsCache) { datosStatsCache = cache.registros; REGS = normalizar(datosStatsCache); ultimaCarga = new Date(cache.ts); }
+    if(REGS.length) { poblarFiltros(); pintarTodo(); }
+    if(fresco && !forzar && REGS.length) { estadoCarga('ok'); return; }
+    if(cargando) return; cargando = true;
+    estadoCarga('cargando');
+    try {
+      if(gsConfig.habilitado && gsConfig.webhookUrl) {
+        const url = gsConfig.webhookUrl + '?accion=listarBBRegistro&token=' + encodeURIComponent(_token());
+        const data = await _fetchJsonReintento(url, 2, 1500);
+        if(_sesionExpirada(data)) { cargando = false; return; }
+        datosStatsCache = data.registros || [];
+        guardarCache(datosStatsCache);
+      } else { datosStatsCache = trabajadores; }
+      ultimaCarga = new Date();
+      REGS = normalizar(datosStatsCache);
+      poblarFiltros(); pintarTodo(); estadoCarga('ok');
+      try { _renderStatsDesdeDatos(); } catch(e) {}   // mantiene vivos los indicadores heredados (reporte WhatsApp)
+    } catch(e) {
+      estadoCarga(REGS.length ? 'ok' : 'error');
+      if(!REGS.length) showToast('No se pudieron cargar las estadísticas. Revisa tu conexión.', 'error');
+    }
+    cargando = false;
+  };
+  window.statsActualizar = () => renderEstadisticas(true);
+
+  function estadoCarga(e) {
+    const el = $('statsEstado'); if(!el) return;
+    if(e === 'cargando') el.innerHTML = '<span class="st-spin"></span> Actualizando datos…';
+    else if(e === 'error') el.innerHTML = '<span style="color:var(--error);">Sin conexión</span>';
+    else el.textContent = ultimaCarga ? 'Actualizado ' + ultimaCarga.toLocaleTimeString('es-PE', {hour:'2-digit', minute:'2-digit'}) : '';
+    const b = $('statsBtnActualizar'); if(b) b.disabled = (e === 'cargando');
+    if(e === 'cargando' && !REGS.length) $('statsDash').classList.add('is-loading'); else $('statsDash').classList.remove('is-loading');
+  }
+
+  // ── Filtros ──
+  function rangoPeriodo(p) {
+    const h = hoy0();
+    if(p === 'hoy')  return { ini: h, fin: h, prevIni: addDias(h,-1), prevFin: addDias(h,-1) };
+    if(p === '7')    return { ini: addDias(h,-6), fin: h, prevIni: addDias(h,-13), prevFin: addDias(h,-7) };
+    if(p === '30')   return { ini: addDias(h,-29), fin: h, prevIni: addDias(h,-59), prevFin: addDias(h,-30) };
+    if(p === 'mes')  { const ini = new Date(h.getFullYear(), h.getMonth(), 1); const pIni = new Date(h.getFullYear(), h.getMonth()-1, 1); const pFin = addDias(ini,-1); return { ini, fin: h, prevIni: pIni, prevFin: pFin }; }
+    return null;
+  }
+  const enRango = (r, ini, fin) => r.d && r.d >= ini && r.d <= fin;
+  function pasaDim(r) {
+    if(F.grupo && (F.grupo === '__sin__' ? r.grupo !== '' : r.grupo !== F.grupo)) return false;
+    if(F.tipo && r.tipo !== F.tipo) return false;
+    if(F.usuario && r.usuario !== F.usuario) return false;
+    if(F.ruta && r.rutaCod !== F.ruta) return false;
+    return true;
+  }
+  function filtrados() {
+    const rg = rangoPeriodo(F.periodo);
+    return REGS.filter(r => pasaDim(r) && (!rg || enRango(r, rg.ini, rg.fin)));
+  }
+  function poblarFiltros() {
+    const opts = (arr, ph) => '<option value="">' + ph + '</option>' + arr.map(v => '<option value="' + esc(v) + '">' + esc(v) + '</option>').join('');
+    const uniq = (fn) => Array.from(new Set(REGS.map(fn).filter(Boolean))).sort((a,b) => a.localeCompare(b, 'es', {numeric:true}));
+    const setSel = (id, html, val) => { const el = $(id); if(!el) return; el.innerHTML = html; el.value = val; if(el.value !== val) el.value = ''; };
+    setSel('stF-grupo', '<option value="">Todos los grupos</option><option value="__sin__">Sin grupo</option>' + uniq(r => r.grupo).map(v => '<option value="' + esc(v) + '">Grupo ' + esc(v) + '</option>').join(''), F.grupo);
+    setSel('stF-tipo', opts(uniq(r => r.tipo), 'Todos los tipos'), F.tipo);
+    setSel('stF-usuario', opts(uniq(r => r.usuario), 'Todos los usuarios'), F.usuario);
+    setSel('stF-ruta', opts(uniq(r => r.rutaCod), 'Todas las rutas'), F.ruta);
+  }
+  window.statsFiltro = function(k, v) { F[k] = v; tabla.pag = 1; tabla.soloSinGrupo = false; pintarTodo(); };
+  window.statsLimpiar = function() {
+    F.periodo = 'todo'; F.grupo = F.tipo = F.usuario = F.ruta = ''; tabla = { q: '', pag: 1, porPag: 25, soloSinGrupo: false };
+    ['stF-periodo','stF-grupo','stF-tipo','stF-usuario','stF-ruta'].forEach(id => { const el = $(id); if(el) el.value = id === 'stF-periodo' ? 'todo' : ''; });
+    const q = $('stTablaQ'); if(q) q.value = '';
+    pintarTodo();
+  };
+  window.statsToggleFiltros = function() { $('statsFiltros').classList.toggle('open'); };
+  window.statsRangoTend = function(n) { rangoTend = n; document.querySelectorAll('#stTendRango .seg').forEach(b => b.classList.toggle('active', +b.dataset.n === n)); pintarTendencia(); };
+  window.statsVerTodos = function(k) { verTodos[k] = !verTodos[k]; pintarTops(); };
+  window.statsRevisarSinGrupo = function() { tabla.soloSinGrupo = true; tabla.pag = 1; pintarTabla(); $('stTablaCard').scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+  window.statsTablaQ = function(v) { tabla.q = v.trim().toLowerCase(); tabla.pag = 1; pintarTabla(); };
+  window.statsTablaPag = function(d) { tabla.pag += d; pintarTabla(); };
+  window.statsTablaPorPag = function(n) { tabla.porPag = +n; tabla.pag = 1; pintarTabla(); };
+
+  // ── Pintado ──
+  function pintarTodo() { pintarChips(); pintarKPIs(); pintarTendencia(); pintarDonut(); pintarSinGrupo(); pintarTops(); pintarTabla(); }
+
+  function pintarChips() {
+    const chips = [];
+    const nombresPeriodo = { hoy: 'Hoy', '7': 'Últimos 7 días', '30': 'Últimos 30 días', mes: 'Este mes' };
+    if(F.periodo !== 'todo') chips.push(nombresPeriodo[F.periodo]);
+    if(F.grupo) chips.push(F.grupo === '__sin__' ? 'Sin grupo' : 'Grupo ' + F.grupo);
+    if(F.tipo) chips.push(F.tipo); if(F.usuario) chips.push(F.usuario); if(F.ruta) chips.push(F.ruta);
+    const el = $('statsChips'); if(!el) return;
+    el.innerHTML = chips.length ? chips.map(c => '<span class="st-chip">' + esc(c) + '</span>').join('') + '<button class="st-chip st-chip-x" onclick="statsLimpiar()">Limpiar filtros</button>' : '';
+    const lim = $('statsBtnLimpiar'); if(lim) lim.style.display = chips.length ? '' : 'none';
+  }
+
+  function tendenciaTxt(actual, previo) {
+    if(previo == null) return '';
+    if(previo === 0) return actual > 0 ? '<span class="st-delta up">' + svg('arrow-right','ic ic-sm') + ' Nuevo vs. periodo anterior (0)</span>' : '<span class="st-delta flat">Sin cambios vs. periodo anterior</span>';
+    const v = (actual - previo) / previo * 100;
+    const cls = v > 0 ? 'up' : (v < 0 ? 'down' : 'flat');
+    const flecha = v > 0 ? '↑' : (v < 0 ? '↓' : '=');
+    return '<span class="st-delta ' + cls + '">' + flecha + ' ' + Math.abs(v).toFixed(1).replace('.', ',') + ' % vs. periodo anterior (' + fmt(previo) + ')</span>';
+  }
+  function pintarKPIs() {
+    const datos = filtrados();
+    const rg = rangoPeriodo(F.periodo);
+    const prev = rg ? REGS.filter(r => pasaDim(r) && enRango(r, rg.prevIni, rg.prevFin)) : null;
+    const total = datos.length, tard = datos.filter(r => r.tardio).length;
+    const prevTotal = prev ? prev.length : null, prevTard = prev ? prev.filter(r => r.tardio).length : null;
+    const h = hoy0(); const hoyN = REGS.filter(r => pasaDim(r) && enRango(r, h, h)).length;
+    const ayer = addDias(h, -1); const ayerN = REGS.filter(r => pasaDim(r) && enRango(r, ayer, ayer)).length;
+    $('stK-total').textContent = fmt(total); $('stK-total-d').innerHTML = tendenciaTxt(total, prevTotal) || (F.periodo === 'todo' ? 'Todos los registros' : '');
+    $('stK-tardio').textContent = fmt(tard); $('stK-tardio-d').innerHTML = tendenciaTxt(tard, prevTard) || 'Registrados como personal tardío';
+    $('stK-pct').textContent = total ? pct(tard, total).toFixed(1).replace('.', ',') + ' %' : '0 %';
+    $('stK-pct-d').innerHTML = prev ? tendenciaTxt(+pct(tard, total).toFixed(1), +pct(prevTard, prevTotal).toFixed(1)) : 'Del total de registros';
+    $('stK-hoy').textContent = fmt(hoyN); $('stK-hoy-d').innerHTML = ayerN || hoyN ? tendenciaTxt(hoyN, ayerN).replace('periodo anterior', 'ayer') : 'Aún sin registros hoy';
+  }
+
+  function pintarTendencia() {
+    const cont = $('stTendencia'); if(!cont) return;
+    const h = hoy0(); const ini = addDias(h, -(rangoTend - 1));
+    const base = REGS.filter(r => pasaDim(r) && enRango(r, ini, h));
+    const porDia = {}; base.forEach(r => { const o = porDia[r.k] || (porDia[r.k] = { n: 0, t: 0 }); o.n++; if(r.tardio) o.t++; });
+    const dias = []; let max = 0;
+    for(let i = rangoTend - 1; i >= 0; i--) { const d = addDias(h, -i); const k = claveDia(d); const o = porDia[k] || { n: 0, t: 0 }; if(o.n > max) max = o.n; dias.push({ d, n: o.n, t: o.t, hoy: i === 0 }); }
+    if(max === 0) { cont.innerHTML = '<div class="st-empty">' + svg('chart') + '<div><strong>Sin registros en los últimos ' + rangoTend + ' días</strong><p>Cuando haya movimiento verás aquí la evolución diaria.</p></div></div>'; return; }
+    const W = Math.max(320, cont.clientWidth || 800), H = W < 480 ? 180 : 220, padL = 36, padB = 26, padT = 12, innerW = W - padL - 8, innerH = H - padB - padT;
+    const bw = innerW / dias.length, barW = Math.max(6, Math.min(34, bw * 0.62));
+    const niceMax = Math.max(1, Math.ceil(max / 4) * 4);
+    let out = '<svg class="st-chart" viewBox="0 0 ' + W + ' ' + H + '" style="height:' + H + 'px" preserveAspectRatio="xMinYMin meet" aria-label="Registros por día">';
+    for(let g = 0; g <= 4; g++) { const y = padT + innerH - innerH * g / 4; out += '<line x1="' + padL + '" x2="' + (W-8) + '" y1="' + y + '" y2="' + y + '" stroke="#EAECF0" stroke-width="1"/><text x="' + (padL-8) + '" y="' + (y+4) + '" text-anchor="end" font-size="10" fill="#98A2B3">' + Math.round(niceMax * g / 4) + '</text>'; }
+    const paso = rangoTend > 14 ? (W < 480 ? 5 : 3) : (W < 480 && rangoTend > 7 ? 2 : 1);
+    dias.forEach((d, i) => {
+      const x = padL + bw * i + (bw - barW) / 2; const hh = innerH * d.n / niceMax; const y = padT + innerH - hh;
+      out += '<g class="st-bar"><rect x="' + x + '" y="' + y + '" width="' + barW + '" height="' + hh + '" rx="3" fill="' + (d.hoy ? ROJO : AZUL) + '"><title>' + fmtDia(d.d) + '\nTotal: ' + fmt(d.n) + '\nPersonal tardío: ' + fmt(d.t) + '</title></rect>';
+      if(i % paso === 0 || d.hoy) out += '<text x="' + (x + barW/2) + '" y="' + (H - 8) + '" text-anchor="middle" font-size="10" font-weight="' + (d.hoy ? '700' : '400') + '" fill="' + (d.hoy ? ROJO : '#667085') + '">' + d.d.getDate() + '/' + (d.d.getMonth()+1) + '</text>';
+      out += '</g>';
+    });
+    out += '</svg>';
+    const tot = base.length, tardT = base.filter(r => r.tardio).length;
+    cont.innerHTML = out + '<div class="st-legend"><span><i style="background:' + AZUL + '"></i>Días anteriores</span><span><i style="background:' + ROJO + '"></i>Hoy</span><span class="st-legend-tot">' + fmt(tot) + ' registros · ' + fmt(tardT) + ' tardíos en el periodo</span></div>';
+  }
+
+  function pintarDonut() {
+    const cont = $('stDonut'); if(!cont) return;
+    const datos = filtrados(); const total = datos.length;
+    const m = {}; datos.forEach(r => { m[r.tipo] = (m[r.tipo] || 0) + 1; });
+    const items = Object.entries(m).sort((a,b) => b[1]-a[1]);
+    if(!total) { cont.innerHTML = '<div class="st-empty">' + svg('bus') + '<div><strong>Sin registros</strong><p>No hay datos para los filtros elegidos.</p></div></div>'; return; }
+    const colores = [AZUL, AZUL2, GRIS, GRIS2, '#667085'];
+    const R = 54, C = 2 * Math.PI * R; let acc = 0;
+    let arcs = '';
+    items.forEach(([k, v], i) => { const len = C * v / total; arcs += '<circle r="' + R + '" cx="70" cy="70" fill="none" stroke="' + colores[i % colores.length] + '" stroke-width="18" stroke-dasharray="' + len + ' ' + (C - len) + '" stroke-dashoffset="' + (-acc) + '" transform="rotate(-90 70 70)"><title>' + esc(k) + ': ' + fmt(v) + ' (' + pct(v,total).toFixed(1) + ' %)</title></circle>'; acc += len; });
+    cont.innerHTML = '<div class="st-donut-wrap"><svg viewBox="0 0 140 140" class="st-donut">' + arcs + '<text x="70" y="66" text-anchor="middle" font-size="18" font-weight="800" fill="#101828">' + fmt(total) + '</text><text x="70" y="82" text-anchor="middle" font-size="8" font-weight="700" fill="#667085" letter-spacing="0.08em">TOTAL REGISTROS</text></svg>' +
+      '<div class="st-donut-list">' + items.map(([k, v], i) => '<div class="st-donut-item"><i style="background:' + colores[i % colores.length] + '"></i><span class="st-donut-k">' + esc(k) + '</span><span class="st-donut-v">' + fmt(v) + '</span><span class="st-donut-p">' + pct(v,total).toFixed(1).replace('.', ',') + ' %</span></div>').join('') + '</div></div>';
+  }
+
+  function pintarSinGrupo() {
+    const el = $('stSinGrupo'); if(!el) return;
+    const datos = filtrados(); const n = datos.filter(r => !r.grupo).length;
+    if(!n) { el.style.display = 'none'; return; }
+    el.style.display = '';
+    el.innerHTML = '<div class="st-alert"><div class="st-alert-ic">' + svg('info') + '</div><div class="st-alert-txt"><strong>' + fmt(n) + ' registros sin grupo asignado</strong><span>' + pct(n, datos.length).toFixed(1).replace('.', ',') + ' % del total filtrado tiene la información incompleta. No se incluyen en el ranking de grupos.</span></div><button class="btn btn-sm btn-outline" onclick="statsRevisarSinGrupo()">Revisar registros ' + svg('arrow-right','ic ic-sm') + '</button></div>';
+  }
+
+  function barras(items, total, k, labelFn) {
+    if(!items.length) return '<div class="st-empty small"><p>Sin datos para los filtros elegidos.</p></div>';
+    const max = items[0][1];
+    const lista = verTodos[k] ? items : items.slice(0, 5);
+    let html = lista.map(([nombre, v], i) => '<div class="st-row"><div class="st-row-top"><span class="st-row-name">' + labelFn(nombre) + '</span><span class="st-row-val">' + fmt(v) + ' <em>· ' + pct(v, total).toFixed(1).replace('.', ',') + ' %</em></span></div><div class="st-track"><div class="st-fill" style="width:' + (v / max * 100) + '%;' + (i === 0 ? 'background:' + AZUL + ';' : '') + '"></div></div></div>').join('');
+    if(items.length > 5) html += '<button class="st-more" onclick="statsVerTodos(\'' + k + '\')">' + (verTodos[k] ? 'Ver menos' : 'Ver todos (' + items.length + ')') + ' ' + svg('arrow-right','ic ic-sm') + '</button>';
+    return html;
+  }
+  function pintarTops() {
+    const datos = filtrados(); const total = datos.length;
+    const agg = (fn) => { const m = {}; datos.forEach(r => { const key = fn(r); if(key) m[key] = (m[key] || 0) + 1; }); return Object.entries(m).sort((a,b) => b[1]-a[1] || a[0].localeCompare(b[0], 'es', {numeric:true})); };
+    $('stGrupos').innerHTML = barras(agg(r => r.grupo), total, 'grupos', (g) => 'Grupo ' + esc(g));
+    $('stUsuarios').innerHTML = barras(agg(r => r.usuario), total, 'usuarios', esc);
+    $('stRutas').innerHTML = barras(agg(r => r.rutaCod), total, 'rutas', esc);
+  }
+
+  function pintarTabla() {
+    const cont = $('stTablaBody'); if(!cont) return;
+    let datos = filtrados();
+    if(tabla.soloSinGrupo) datos = datos.filter(r => !r.grupo);
+    if(tabla.q) datos = datos.filter(r => (r.dni + ' ' + r.nombre + ' ' + r.usuario + ' ' + r.rutaCod + ' ' + r.grupo).toLowerCase().indexOf(tabla.q) !== -1);
+    datos = datos.slice().sort((a,b) => (b.d ? b.d.getTime() : 0) - (a.d ? a.d.getTime() : 0));
+    const n = datos.length, pags = Math.max(1, Math.ceil(n / tabla.porPag));
+    if(tabla.pag > pags) tabla.pag = pags; if(tabla.pag < 1) tabla.pag = 1;
+    const ini = (tabla.pag - 1) * tabla.porPag; const pagina = datos.slice(ini, ini + tabla.porPag);
+    $('stTablaInfo').innerHTML = n ? 'Mostrando <strong>' + fmt(ini + 1) + '–' + fmt(Math.min(ini + tabla.porPag, n)) + '</strong> de <strong>' + fmt(n) + '</strong>' + (tabla.soloSinGrupo ? ' · <span class="st-chip">Solo sin grupo</span> <button class="st-chip st-chip-x" onclick="tabla_v4_quitarSinGrupo()">Quitar</button>' : '') : 'Sin registros';
+    window.tabla_v4_quitarSinGrupo = () => { tabla.soloSinGrupo = false; tabla.pag = 1; pintarTabla(); };
+    if(!n) { cont.innerHTML = '<tr><td colspan="8"><div class="st-empty small"><p>No hay registros que coincidan.</p></div></td></tr>'; }
+    else cont.innerHTML = pagina.map(r => '<tr><td style="white-space:nowrap;">' + r.fechaTxt + '</td><td><div class="st-td-name">' + esc(r.nombre || '—') + '</div><div class="st-td-sub">' + esc(r.dni) + '</div></td><td>' + (r.usuario ? esc(r.usuario) : '<span class="st-muted">—</span>') + '</td><td>' + (r.grupo ? esc(r.grupo) : '<span class="pill amber">Sin grupo</span>') + '</td><td>' + esc(r.ruta || '—') + '</td><td>' + esc(r.codigo || '—') + '</td><td>' + esc(r.tipo) + '</td><td>' + (r.tardio ? '<span class="pill amber">Tardío</span>' : '<span class="st-muted">No</span>') + '</td></tr>').join('');
+    $('stTablaPag').innerHTML = '<button class="btn btn-sm btn-outline" onclick="statsTablaPag(-1)" ' + (tabla.pag <= 1 ? 'disabled' : '') + '>Anterior</button><span>Página ' + tabla.pag + ' de ' + pags + '</span><button class="btn btn-sm btn-outline" onclick="statsTablaPag(1)" ' + (tabla.pag >= pags ? 'disabled' : '') + '>Siguiente</button>';
+  }
+
+  // ── Arranque: si la página está activa al cargar, pintar desde caché ──
+  let _rs = null; window.addEventListener('resize', () => { clearTimeout(_rs); _rs = setTimeout(() => { if($('page-estadisticas') && $('page-estadisticas').classList.contains('active') && REGS.length) pintarTendencia(); }, 200); });
 })();
 
 </script>

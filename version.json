@@ -1,5 +1,5 @@
 {
-  "version": "4.0.0",
+  "version": "4.1.0",
   "fecha": "2026-09-12",
-  "notas": "Nueva interfaz del sistema: menu lateral, barra superior, pagina de Inicio con tu resumen del dia, registro con pasos y panel de sesion. Todo funciona igual que antes (mismos usuarios, contrasenas y modulos). Si algo no se ve bien, cierra y vuelve a abrir la app."
+  "notas": "Estadisticas renovadas: filtros globales (periodo, grupo, tipo, usuario, ruta), KPIs con comparacion contra el periodo anterior, grafico de registros por dia (7/14/30), distribucion por tipo, alerta de registros sin grupo, top grupos/usuarios/rutas y tabla de detalle con buscador y paginacion. Carga mas rapida gracias a cache local."
 }
