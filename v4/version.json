@@ -1,0 +1,5 @@
+{
+  "version": "4.0.0-beta.1",
+  "fecha": "2026-09-12",
+  "notas": "Rediseño v4 (beta, carpeta /v4/): login a pantalla completa, app shell con sidebar y topbar, página de Inicio con KPIs y actividad, registro con stepper y panel lateral de sesión. Misma lógica y mismo Apps Script v3.4 que la 3.7.6."
+}
