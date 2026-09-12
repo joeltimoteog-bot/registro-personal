@@ -577,6 +577,131 @@ tbody tr:hover td { background: #FCFCFD; }
   .st-chart { height: 180px; }
 }
 
+/* ══════════════════════════ REGISTRO DE PERSONAL v4.2 ══════════════════════════ */
+.grid-registro { grid-template-columns: minmax(0, 8fr) minmax(300px, 4fr); }
+.rg-search-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+.rg-search-field { flex: 1 1 260px; }
+.rg-dni-wrap { position: relative; display: flex; align-items: center; }
+.rg-dni-wrap .ic { position: absolute; left: 14px; color: #98A2B3; pointer-events: none; }
+.rg-dni { min-height: 50px; font-size: 22px; letter-spacing: 4px; padding-left: 44px; }
+.rg-search-actions { display: flex; gap: 10px; }
+.rg-search-actions .btn { min-height: 50px; }
+.rg-hint { font-size: 12px; color: var(--text-secondary); margin-top: 10px; display: flex; align-items: center; gap: 6px; }
+/* Estados de búsqueda */
+.status-banner { align-items: center; padding: 10px 14px; gap: 10px; }
+.status-banner .ic { flex-shrink: 0; }
+.status-banner .st-b-txt { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.status-banner .st-b-txt strong { font-size: 13px; }
+.status-banner .st-b-txt span { font-size: 12px; font-weight: 400; opacity: .9; }
+/* Tarjeta del trabajador */
+.worker-card { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; padding: 16px 20px; border-left: 4px solid var(--primary); }
+.wc-avatar { width: 48px; height: 48px; border-radius: 12px; background: #EEF3FA; color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 800; flex-shrink: 0; }
+.wc-main { flex: 1 1 240px; min-width: 0; }
+.wc-name { font-size: 17px; font-weight: 800; letter-spacing: -0.01em; line-height: 1.2; }
+.wc-dni { font-size: 13px; color: var(--text-secondary); font-family: var(--mono); margin-top: 2px; }
+.wc-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px 18px; flex: 2 1 320px; }
+.wc-meta div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.wc-meta dt, .wc-k { font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; color: var(--text-secondary); text-transform: uppercase; }
+.wc-v { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wc-badge { flex: 0 0 auto; }
+.pill.red { background: var(--accent-light); color: #B42318; }
+/* Stepper */
+.stepper { gap: 4px; padding: 12px 16px; }
+.step { padding: 8px 12px; gap: 8px; }
+.step .step-num { font-size: 11px; }
+.step.done { color: #027A48; }
+.step.done .step-num { background: #16A34A; border-color: #16A34A; color: #fff; }
+.step.warn { color: #B54708; }
+.step.warn .step-num { background: var(--warning-light); border-color: #D97706; color: #B54708; }
+.step.active { color: var(--primary); background: #EEF3FA; }
+.step.active .step-num { background: var(--primary); border-color: var(--primary); color: #fff; }
+/* Progreso */
+.form-progress { padding: 14px 20px; }
+.form-progress-top { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+.form-progress-top #fpPct { font-size: 18px; font-weight: 800; letter-spacing: 0; }
+.form-progress-track { height: 8px; }
+.form-progress-missing { margin-top: 8px; }
+.fp-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.fp-list span { padding: 3px 9px; border-radius: 999px; background: var(--warning-light); color: #B54708; font-size: 11.5px; font-weight: 600; }
+.fp-ok { color: #027A48; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.fp-ok small { font-weight: 400; color: var(--text-secondary); }
+/* Secciones */
+.section-header { padding: 14px 20px; gap: 12px; transition: background .15s; }
+.section-ic { width: 34px; height: 34px; border-radius: 9px; background: #EEF3FA; color: var(--primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.section-txt { flex: 1; min-width: 0; }
+.section-state { font-size: 12px; color: var(--text-secondary); margin-top: 1px; display: flex; align-items: center; gap: 5px; }
+.form-section.is-done .section-ic { background: var(--success-light); color: #16A34A; }
+.form-section.is-done .section-state { color: #027A48; }
+.form-section.is-warn .section-ic { background: var(--warning-light); color: #D97706; }
+.form-section.is-warn .section-state { color: #B54708; }
+.section-body { transition: opacity .18s ease; }
+.rg-full { grid-column: 1 / -1; }
+.rg-subgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+#g-direccion.rg-subgrid, #g-edu-superior.rg-subgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.rg-help { font-size: 11.5px; color: var(--text-secondary); margin-top: 4px; display: block; }
+.rg-block { border: 1px solid var(--border); border-radius: 12px; padding: 14px; background: var(--surface); }
+.rg-block-title { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+/* Confirmación */
+.rg-confirm-body { padding: 4px 20px 18px; }
+.rg-confirm-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 18px; }
+.rg-confirm-grid div { display: flex; flex-direction: column; gap: 2px; }
+.rg-confirm-grid dt { font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; color: var(--text-secondary); text-transform: uppercase; }
+.rg-confirm-grid dd { font-size: 13.5px; font-weight: 600; margin: 0; }
+.rg-confirm-warn { display: flex; align-items: center; gap: 8px; margin-top: 14px; padding: 10px 12px; border-radius: 10px; background: var(--warning-light); border: 1px solid #FEDF89; color: #B54708; font-size: 13px; font-weight: 600; }
+/* Barra final */
+.rg-savebar { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; padding: 16px 20px; border-top: 1px solid var(--border); background: #FCFCFD; }
+.rg-savebar-msg { font-size: 13px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; }
+.rg-savebar-msg.warn { color: #B54708; } .rg-savebar-msg.ok { color: #027A48; }
+.rg-savebar-btns { display: flex; gap: 10px; margin-left: auto; }
+.rg-save { min-width: 280px; }
+#btnGuardarIcon { display: none; }
+.rg-save .ic { color: #fff; }
+.rg-save.is-incomplete { opacity: .55; }
+.rg-saving { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: stSpin .8s linear infinite; }
+/* Éxito */
+.rg-success { border: 1px solid #A6F4C5; background: var(--success-light); border-radius: 14px; padding: 18px 20px; margin-bottom: 16px; }
+.rg-success-top { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.rg-success-ic { width: 40px; height: 40px; border-radius: 10px; background: #16A34A; color: #fff; display: flex; align-items: center; justify-content: center; }
+.rg-success-top strong { font-size: 15px; color: #054F31; } .rg-success-top span { font-size: 12.5px; color: #027A48; display: block; }
+.rg-success-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px 16px; margin-bottom: 14px; }
+.rg-success-grid dt { font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; color: #027A48; text-transform: uppercase; }
+.rg-success-grid dd { font-size: 13.5px; font-weight: 600; color: #054F31; margin: 0; }
+.rg-success-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+/* Columna derecha */
+.rg-kv-k { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; color: var(--text-secondary); text-transform: uppercase; }
+.rg-kv-v { margin-left: auto; font-weight: 700; color: var(--text-primary); }
+.sesion-chip { justify-content: space-between; background: var(--surface); }
+.rg-sinsesion { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: var(--text-secondary); line-height: 1.45; }
+.rg-sinsesion .ic { flex-shrink: 0; color: #98A2B3; }
+.rg-sesion.is-active .card-header { background: #F6F9FE; }
+.rg-res-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 0; border-bottom: 1px solid #F2F4F7; font-size: 13px; }
+.rg-res-row:last-child { border-bottom: none; }
+.rg-res-k { color: var(--text-secondary); }
+.rg-res-total { margin-top: 10px; padding: 12px 14px; border-radius: 10px; background: var(--background); display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13px; }
+.rg-res-total.ok { background: var(--success-light); color: #027A48; }
+.rg-res-total.warn { background: var(--warning-light); color: #B54708; }
+.rg-quick { grid-template-columns: 1fr; gap: 8px; }
+.rg-quick .quick-card { flex-direction: row; align-items: center; padding: 10px 12px; gap: 12px; }
+.rg-quick .qc-icon { width: 34px; height: 34px; }
+/* Sticky móvil */
+.rg-sticky { display: none; }
+@media (max-width: 1199px) { .grid-registro { grid-template-columns: minmax(0, 1fr) 320px; } .rg-confirm-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 767px) {
+  .grid-registro { grid-template-columns: minmax(0, 1fr); }
+  .rg-search-actions { width: 100%; } .rg-search-actions .btn { flex: 1; }
+  .rg-dni { font-size: 20px; }
+  .worker-card { flex-direction: column; align-items: flex-start; }
+  .wc-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .rg-subgrid, #g-direccion.rg-subgrid, #g-edu-superior.rg-subgrid { grid-template-columns: minmax(0, 1fr); }
+  .rg-confirm-grid { grid-template-columns: minmax(0, 1fr); }
+  .rg-savebar-btns { width: 100%; } .rg-savebar-btns .btn { flex: 1; } .rg-save { min-width: 0; }
+  .rg-sticky { position: fixed; left: 0; right: 0; bottom: 0; z-index: 90; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: rgba(255,255,255,.96); border-top: 1px solid var(--border); box-shadow: 0 -4px 16px rgba(16,24,40,.06); }
+  .rg-sticky .btn { flex: 0 0 auto; min-width: 150px; }
+  .rg-sticky-txt { font-size: 12.5px; color: var(--text-secondary); font-weight: 600; }
+  body.rg-has-sticky .main { padding-bottom: 96px; }
+  .stepper { padding: 10px 12px; } .step { padding: 8px 10px; font-size: 12px; }
+}
+
 </style>
 </head>
 <body>
@@ -944,17 +1069,20 @@ tbody tr:hover td { background: #FCFCFD; }
   </div>
   <div class="grid-registro">
   <div class="col-main">
-  <div class="card">
-    <div class="card-header"><div class="card-icon"><svg class="ic"><use href="#i-search"></use></svg></div><div><div class="card-title">Buscar trabajador</div><div class="card-sub">Al escribir los 8 dígitos la búsqueda inicia sola</div></div></div>
+  <div class="card rg-search">
+    <div class="card-header"><div class="card-icon"><svg class="ic"><use href="#i-search"></use></svg></div><div><div class="card-title">Buscar trabajador</div><div class="card-sub">Ingresa o escanea el DNI del colaborador para iniciar el proceso.</div></div></div>
     <div class="card-body">
-      <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
-        <div class="input-group" style="flex:1;min-width:220px;">
+      <div class="rg-search-row">
+        <div class="input-group rg-search-field">
           <label class="input-label" for="dniSearch">DNI del trabajador</label>
-          <input type="tel" id="dniSearch" class="input-field input-mono input-xl" placeholder="00000000" maxlength="8" inputmode="numeric" autocomplete="off">
+          <div class="rg-dni-wrap"><svg class="ic"><use href="#i-user"></use></svg><input type="tel" id="dniSearch" class="input-field input-mono rg-dni" placeholder="00000000" maxlength="8" inputmode="numeric" autocomplete="off" aria-describedby="dniHint"></div>
         </div>
-        <button class="btn btn-outline btn-lg" onclick="abrirEscaner()" title="Escanear DNI con cámara"><svg class="ic"><use href="#i-camera"></use></svg> Escanear</button>
-        <button class="btn btn-primary btn-lg" onclick="buscarDNI()"><svg class="ic ic-sm"><use href="#i-search"></use></svg> Buscar</button>
+        <div class="rg-search-actions">
+          <button class="btn btn-outline btn-lg" onclick="abrirEscaner()" aria-label="Escanear DNI con la cámara"><svg class="ic"><use href="#i-camera"></use></svg> Escanear</button>
+          <button class="btn btn-primary btn-lg" onclick="buscarDNI()"><svg class="ic ic-sm"><use href="#i-search"></use></svg> Buscar</button>
+        </div>
       </div>
+      <div class="rg-hint" id="dniHint">La búsqueda inicia automáticamente al completar los 8 dígitos.</div>
       <div style="display:none;" aria-hidden="true">
         <button onclick="iniciarPersonalTardio()"></button>
         <button onclick="abrirModalEditar()"></button>
@@ -965,99 +1093,51 @@ tbody tr:hover td { background: #FCFCFD; }
   <div id="statusBanner"></div>
   <div id="workerCardWrap"></div>
 
-  <div id="formCard" class="card" style="display:none;">
+  <div id="formCard" class="card rg-form" style="display:none;">
     <!-- DATOS PERSONALES -->
-    <div class="form-section">
-      <div class="section-header" onclick="toggleSection('personal')">
-        <div class="section-dot blue"></div>
-        <div class="section-label-text">Datos Personales</div>
+    <div class="form-section" data-sec="personal">
+      <div class="section-header" onclick="toggleSection('personal')" role="button" tabindex="0" aria-controls="sec-personal">
+        <div class="section-ic"><svg class="ic"><use href="#i-user"></use></svg></div>
+        <div class="section-txt"><div class="section-label-text">Datos personales</div><div class="section-state" id="secst-personal">Pendiente</div></div>
         <span class="section-chev open" id="chev-personal">▼</span>
       </div>
       <div class="section-body" id="sec-personal">
-        <div class="input-group">
-          <label class="input-label">DNI *</label>
-          <input type="tel" id="f-dni" class="input-field input-mono" placeholder="00000000" maxlength="8" inputmode="numeric">
-        </div>
-        <div class="input-group">
-          <label class="input-label">Apellido Paterno *</label>
-          <input type="text" id="f-ap" class="input-field" placeholder="Apellido paterno">
-        </div>
-        <div class="input-group">
-          <label class="input-label">Apellido Materno</label>
-          <input type="text" id="f-am" class="input-field" placeholder="Apellido materno">
-        </div>
-        <div class="input-group">
-          <label class="input-label">Nombres *</label>
-          <input type="text" id="f-nom" class="input-field" placeholder="Nombres completos">
-        </div>
-        <div class="input-group">
-          <label class="input-label">Tiene Hijos</label>
-          <select id="f-hijos" class="input-field" onchange="avanzarSiguiente('f-hijos')">
-            <option value="">— Seleccionar —</option>
-            <option value="SI">SI</option>
-            <option value="NO">NO</option>
-          </select>
-        </div>
-
+        <div class="input-group"><label class="input-label" for="f-dni">DNI *</label><input type="tel" id="f-dni" class="input-field input-mono" placeholder="00000000" maxlength="8" inputmode="numeric"></div>
+        <div class="input-group"><label class="input-label" for="f-ap">Apellido paterno *</label><input type="text" id="f-ap" class="input-field" placeholder="Apellido paterno"></div>
+        <div class="input-group"><label class="input-label" for="f-am">Apellido materno</label><input type="text" id="f-am" class="input-field" placeholder="Apellido materno"></div>
+        <div class="input-group"><label class="input-label" for="f-nom">Nombres *</label><input type="text" id="f-nom" class="input-field" placeholder="Nombres completos"></div>
+        <div class="input-group"><label class="input-label" for="f-hijos">¿Tiene hijos? *</label>
+          <select id="f-hijos" class="input-field" onchange="avanzarSiguiente('f-hijos')"><option value="">— Seleccionar —</option><option value="SI">SI</option><option value="NO">NO</option></select></div>
       </div>
     </div>
     <!-- UBICACIÓN -->
-    <div class="form-section">
-      <div class="section-header" onclick="toggleSection('ubicacion')">
-        <div class="section-dot green"></div>
-        <div class="section-label-text">Ubicación y Contacto</div>
+    <div class="form-section" data-sec="ubicacion">
+      <div class="section-header" onclick="toggleSection('ubicacion')" role="button" tabindex="0" aria-controls="sec-ubicacion">
+        <div class="section-ic"><svg class="ic"><use href="#i-home"></use></svg></div>
+        <div class="section-txt"><div class="section-label-text">Ubicación y contacto</div><div class="section-state" id="secst-ubicacion">Pendiente</div></div>
         <span class="section-chev" id="chev-ubicacion">▼</span>
       </div>
       <div class="section-body hidden" id="sec-ubicacion">
-        <div class="input-group">
-          <label class="input-label">¿El colaborador sigue viviendo en su misma dirección?</label>
-          <select id="f-mismadir" class="input-field" onchange="toggleDireccion();avanzarSiguiente('f-mismadir');">
-            <option value="">— Seleccionar —</option>
-            <option value="SI">SI</option>
-            <option value="NO">NO</option>
-          </select>
+        <div class="input-group rg-full"><label class="input-label" for="f-mismadir">¿El colaborador sigue viviendo en la misma dirección? *</label>
+          <select id="f-mismadir" class="input-field" onchange="toggleDireccion();avanzarSiguiente('f-mismadir');"><option value="">— Seleccionar —</option><option value="SI">SI</option><option value="NO">NO</option></select></div>
+        <div id="g-direccion" class="rg-full rg-subgrid" style="display:none;">
+          <div class="input-group rg-full"><label class="input-label" for="f-dir">Dirección actual</label><input type="text" id="f-dir" class="input-field" placeholder="Av. / Jr. / Calle…"></div>
+          <div class="input-group"><label class="input-label" for="f-dep">Departamento</label><select id="f-dep" class="input-field" onchange="cargarProvincias()"><option value="">— Seleccionar —</option></select></div>
+          <div class="input-group"><label class="input-label" for="f-prov">Provincia</label><select id="f-prov" class="input-field" onchange="avanzarSiguiente('f-prov');"><option value="">— Seleccionar —</option></select></div>
+          <div class="input-group"><label class="input-label" for="f-dist">Distrito</label><div id="f-dist-wrap"><input type="text" id="f-dist" class="input-field" placeholder="Distrito"></div></div>
         </div>
-        <div id="g-direccion" style="display:none;gap:12px;">
-        <div class="input-group">
-          <label class="input-label">Dirección Actual</label>
-          <input type="text" id="f-dir" class="input-field" placeholder="Av. / Jr. / Calle...">
-        </div>
-        <div class="form-row-2">
-          <div class="input-group">
-            <label class="input-label">Departamento</label>
-            <select id="f-dep" class="input-field" onchange="cargarProvincias()">
-              <option value="">— Seleccionar —</option>
-            </select>
-          </div>
-          <div class="input-group">
-            <label class="input-label">Provincia</label>
-            <select id="f-prov" class="input-field" onchange="avanzarSiguiente('f-prov');">
-              <option value="">— Seleccionar —</option>
-            </select>
-          </div>
-        </div>
-        <div class="input-group">
-          <label class="input-label">Distrito</label>
-          <div id="f-dist-wrap"><input type="text" id="f-dist" class="input-field" placeholder="Distrito"></div>
-        </div>
-        </div>
-        <div class="input-group">
-          <label class="input-label">Teléfono 1</label>
-          <input type="tel" id="f-tel1" class="input-field" placeholder="Fijo (6) o Celular (9)" maxlength="9" inputmode="numeric" oninput="validarTelefono(this)">
-          <span style="font-size:11px;color:var(--muted);margin-top:3px;display:block;">📞 6 dígitos (fijo) o 9 dígitos (celular)</span>
-        </div>
+        <div class="input-group"><label class="input-label" for="f-tel1">Teléfono</label><input type="tel" id="f-tel1" class="input-field" placeholder="Fijo (6) o celular (9)" maxlength="9" inputmode="numeric" oninput="validarTelefono(this)"><span class="rg-help">6 dígitos (fijo) o 9 dígitos (celular)</span></div>
       </div>
     </div>
     <!-- EDUCACIÓN -->
-    <div class="form-section">
-      <div class="section-header" onclick="toggleSection('educacion')">
-        <div class="section-dot yellow"></div>
-        <div class="section-label-text">Educación</div>
+    <div class="form-section" data-sec="educacion">
+      <div class="section-header" onclick="toggleSection('educacion')" role="button" tabindex="0" aria-controls="sec-educacion">
+        <div class="section-ic"><svg class="ic"><use href="#i-sheet"></use></svg></div>
+        <div class="section-txt"><div class="section-label-text">Educación</div><div class="section-state" id="secst-educacion">Pendiente</div></div>
         <span class="section-chev" id="chev-educacion">▼</span>
       </div>
       <div class="section-body hidden" id="sec-educacion">
-        <div class="input-group">
-          <label class="input-label">Nivel Educativo</label>
+        <div class="input-group rg-full"><label class="input-label" for="f-edu">Nivel educativo *</label>
           <select id="f-edu" class="input-field" onchange="toggleEducacion();avanzarSiguiente('f-edu');">
             <option value="">— Seleccionar —</option>
             <option value="Educación técnica completa">Educación técnica completa</option>
@@ -1067,91 +1147,64 @@ tbody tr:hover td { background: #FCFCFD; }
             <option value="Secundaria Completa">Secundaria Completa</option>
             <option value="Secundaria incompleta">Secundaria incompleta</option>
             <option value="Sin educación formal">Sin educación formal</option>
-          </select>
-        </div>
-        <div id="g-edu-superior" style="display:none;gap:12px;">
-          <div class="input-group">
-            <label class="input-label">Nombre de Institución</label>
-            <input type="text" id="f-inst" class="input-field" placeholder="Nombre de institución">
-          </div>
-          <div class="input-group">
-            <label class="input-label">Carrera</label>
-            <input type="text" id="f-carrera" class="input-field" placeholder="Carrera o especialidad">
-          </div>
-          <div class="input-group">
-            <label class="input-label">Año de Egreso</label>
-            <input type="tel" id="f-egreso" class="input-field input-mono" placeholder="2020" maxlength="4" inputmode="numeric">
-          </div>
+          </select></div>
+        <div id="g-edu-superior" class="rg-full rg-subgrid" style="display:none;">
+          <div class="input-group"><label class="input-label" for="f-inst">Institución</label><input type="text" id="f-inst" class="input-field" placeholder="Nombre de institución"></div>
+          <div class="input-group"><label class="input-label" for="f-carrera">Carrera</label><input type="text" id="f-carrera" class="input-field" placeholder="Carrera o especialidad"></div>
+          <div class="input-group"><label class="input-label" for="f-egreso">Año de egreso</label><input type="tel" id="f-egreso" class="input-field input-mono" placeholder="2020" maxlength="4" inputmode="numeric"></div>
         </div>
       </div>
     </div>
     <!-- EMERGENCIA -->
-    <div class="form-section">
-      <div class="section-header" onclick="toggleSection('emergencia')">
-        <div class="section-dot red"></div>
-        <div class="section-label-text">Salud y Emergencia</div>
+    <div class="form-section" data-sec="emergencia">
+      <div class="section-header" onclick="toggleSection('emergencia')" role="button" tabindex="0" aria-controls="sec-emergencia">
+        <div class="section-ic"><svg class="ic"><use href="#i-activity"></use></svg></div>
+        <div class="section-txt"><div class="section-label-text">Salud y emergencia</div><div class="section-state" id="secst-emergencia">Pendiente</div></div>
         <span class="section-chev" id="chev-emergencia">▼</span>
       </div>
       <div class="section-body hidden" id="sec-emergencia">
-        <div class="input-group">
-          <label class="input-label">¿Tiene Discapacidad?</label>
-          <select id="f-incap" class="input-field" onchange="avanzarSiguiente('f-incap')">
-            <option value="">— Seleccionar —</option>
-            <option value="SI">SI</option>
-            <option value="NO">NO</option>
-          </select>
-        </div>
-        <div class="input-group">
-          <label class="input-label">Parentesco del Contacto de Referencia</label>
-          <select id="f-parentesco" class="input-field" onchange="toggleParentesco();avanzarSiguiente('f-parentesco');">
-            <option value="">— Seleccionar —</option>
-            <option value="Esposo(a)">Esposo(a)</option>
-            <option value="Hijo(a)">Hijo(a)</option>
-            <option value="Papá">Papá</option>
-            <option value="Mamá">Mamá</option>
-            <option value="Hermano(a)">Hermano(a)</option>
-            <option value="Tío(a)">Tío(a)</option>
-            <option value="Sobrino(a)">Sobrino(a)</option>
-            <option value="Primo(a)">Primo(a)</option>
-            <option value="Otros">Otros</option>
-          </select>
-        </div>
-        <div class="input-group" id="g-parentesco-otro" style="display:none;">
-          <label class="input-label">Especificar parentesco</label>
-          <input type="text" id="f-parentesco-otro" class="input-field" placeholder="Especifica el parentesco">
-        </div>
-        <div class="input-group">
-          <label class="input-label">Nombre completo del contacto</label>
-          <input type="text" id="f-cem" class="input-field" placeholder="Nombre completo">
-        </div>
-        <div class="input-group">
-          <label class="input-label">Teléfono / Celular de referencia</label>
-          <input type="tel" id="f-celcem" class="input-field" placeholder="Fijo (6) o Celular (9)" maxlength="9" inputmode="numeric" oninput="validarTelefono(this)">
-          <span style="font-size:11px;color:var(--muted);margin-top:3px;display:block;">📞 6 dígitos (fijo) o 9 dígitos (celular)</span>
+        <div class="input-group rg-full"><label class="input-label" for="f-incap">¿Tiene discapacidad? *</label>
+          <select id="f-incap" class="input-field" onchange="avanzarSiguiente('f-incap')"><option value="">— Seleccionar —</option><option value="SI">SI</option><option value="NO">NO</option></select></div>
+        <div class="rg-full rg-block">
+          <div class="rg-block-title"><svg class="ic ic-sm"><use href="#i-users"></use></svg> Contacto de emergencia</div>
+          <div class="rg-subgrid">
+            <div class="input-group"><label class="input-label" for="f-parentesco">Parentesco del contacto</label>
+              <select id="f-parentesco" class="input-field" onchange="toggleParentesco();avanzarSiguiente('f-parentesco');">
+                <option value="">— Seleccionar —</option><option value="Esposo(a)">Esposo(a)</option><option value="Hijo(a)">Hijo(a)</option><option value="Papá">Papá</option><option value="Mamá">Mamá</option><option value="Hermano(a)">Hermano(a)</option><option value="Tío(a)">Tío(a)</option><option value="Sobrino(a)">Sobrino(a)</option><option value="Primo(a)">Primo(a)</option><option value="Otros">Otros</option>
+              </select></div>
+            <div class="input-group" id="g-parentesco-otro" style="display:none;"><label class="input-label" for="f-parentesco-otro">Especificar parentesco</label><input type="text" id="f-parentesco-otro" class="input-field" placeholder="Especifica el parentesco"></div>
+            <div class="input-group"><label class="input-label" for="f-cem">Nombre completo del contacto</label><input type="text" id="f-cem" class="input-field" placeholder="Nombre completo"></div>
+            <div class="input-group"><label class="input-label" for="f-celcem">Teléfono del contacto</label><input type="tel" id="f-celcem" class="input-field" placeholder="Fijo (6) o celular (9)" maxlength="9" inputmode="numeric" oninput="validarTelefono(this)"><span class="rg-help">6 dígitos (fijo) o 9 dígitos (celular)</span></div>
+          </div>
         </div>
       </div>
     </div>
+    <!-- CONFIRMACIÓN -->
+    <div class="form-section rg-confirm" id="rgConfirm" style="display:none;">
+      <div class="section-header" style="cursor:default;"><div class="section-ic"><svg class="ic"><use href="#i-check"></use></svg></div><div class="section-txt"><div class="section-label-text">Confirmación</div><div class="section-state">Revisa la información antes de registrar.</div></div></div>
+      <div class="rg-confirm-body" id="rgConfirmBody"></div>
+    </div>
     <!-- SAVE -->
-    <div style="padding:15px 17px;display:flex;gap:10px;">
-      <button class="btn btn-success" style="flex:1;justify-content:center;" onclick="guardarRegistro()">
-        <span id="btnGuardarIcon">💾</span>
-        <span id="btnGuardarText">Registrar en BB.REGISTRO</span>
-      </button>
-      <button class="btn btn-outline btn-sm" onclick="limpiarFormulario()">✕</button>
+    <div class="rg-savebar">
+      <div class="rg-savebar-msg" id="rgSaveMsg"></div>
+      <div class="rg-savebar-btns">
+        <button class="btn btn-outline" onclick="limpiarFormulario()" aria-label="Limpiar formulario">Limpiar</button>
+        <button class="btn btn-success btn-lg rg-save" onclick="guardarRegistro()"><span id="btnGuardarIcon">💾</span><span id="btnGuardarText">Registrar en BB.REGISTRO</span></button>
+      </div>
     </div>
   </div>
   </div><!-- /col-main -->
   <aside class="col-side">
-    <div class="card">
-      <div class="card-header"><div class="card-icon"><svg class="ic"><use href="#i-bus"></use></svg></div><div><div class="card-title">Sesión de registro</div><div class="card-sub">Ruta, código y grupo activos</div></div></div>
+    <div class="card rg-sesion">
+      <div class="card-header"><div class="card-icon"><svg class="ic"><use href="#i-bus"></use></svg></div><div><div class="card-title">Sesión de registro</div><div class="card-sub" id="rgSesionEstado">Sin registro activo</div></div><span class="pill gray" id="rgSesionPill" style="margin-left:auto;">Inactiva</span></div>
       <div class="card-body">
         <div class="sesion-bar" id="sesionBar">
-          <div class="sesion-chip" id="sb-wrap-tipo" style="display:none;"><svg class="ic ic-sm"><use href="#i-bus"></use></svg> <span id="sb-tipo">—</span></div>
-          <div class="sesion-chip" id="sb-wrap-ruta" style="display:none;">Ruta: <span id="sb-ruta">—</span></div>
-          <div class="sesion-chip" id="sb-wrap-codigo" style="display:none;">Código: <span id="sb-codigo">—</span></div>
-          <div class="sesion-chip green" id="sb-wrap-sector" style="display:none;">Grupo <span id="sb-sector">—</span></div>
-          <div class="sesion-chip yellow" id="sb-wrap-cont" style="display:none;"><span id="sb-contador">0</span>&nbsp;/&nbsp;<span id="sb-cantidad">0</span> registrados</div>
-          <span id="sb-sinsesion">Sin registro activo. Presiona <strong>Nuevo registro</strong> para iniciar.</span>
+          <div class="sesion-chip" id="sb-wrap-tipo" style="display:none;"><span class="rg-kv-k">Tipo</span><span class="rg-kv-v" id="sb-tipo">—</span></div>
+          <div class="sesion-chip" id="sb-wrap-ruta" style="display:none;"><span class="rg-kv-k">Ruta</span><span class="rg-kv-v" id="sb-ruta">—</span></div>
+          <div class="sesion-chip" id="sb-wrap-codigo" style="display:none;"><span class="rg-kv-k">Código</span><span class="rg-kv-v" id="sb-codigo">—</span></div>
+          <div class="sesion-chip" id="sb-wrap-sector" style="display:none;"><span class="rg-kv-k">Grupo</span><span class="rg-kv-v" id="sb-sector">—</span></div>
+          <div class="sesion-chip" id="sb-wrap-cont" style="display:none;"><span class="rg-kv-k">Registrados</span><span class="rg-kv-v"><span id="sb-contador">0</span> / <span id="sb-cantidad">0</span></span></div>
+          <div id="sb-sinsesion" class="rg-sinsesion"><svg class="ic"><use href="#i-info"></use></svg> Sin registro activo. Inicia una sesión para comenzar a registrar.</div>
         </div>
         <div id="contadorCard" style="display:none;margin-top:14px;">
           <div class="contador-card">
@@ -1162,14 +1215,20 @@ tbody tr:hover td { background: #FCFCFD; }
             </div>
           </div>
         </div>
+        <button class="btn btn-outline btn-full" style="margin-top:14px;" id="rgBtnSesion" onclick="abrirSesionModal()"><svg class="ic ic-sm"><use href="#i-bus"></use></svg> Iniciar sesión de registro</button>
       </div>
+    </div>
+    <div class="card rg-resumen">
+      <div class="card-header"><div class="card-icon"><svg class="ic"><use href="#i-shield"></use></svg></div><div><div class="card-title">Resumen del registro</div><div class="card-sub">Estado de cada bloque</div></div></div>
+      <div class="card-body" id="rgResumen"></div>
     </div>
     <div class="card">
       <div class="card-header"><div><div class="card-title">Acciones rápidas</div><div class="card-sub">Según tus módulos habilitados</div></div></div>
-      <div class="card-body"><div class="quick-grid" id="registroAcciones" style="grid-template-columns:1fr;"></div></div>
+      <div class="card-body"><div class="quick-grid rg-quick" id="registroAcciones"></div></div>
     </div>
   </aside>
   </div><!-- /grid-registro -->
+  <div class="rg-sticky" id="rgSticky" style="display:none;"><div class="rg-sticky-txt" id="rgStickyTxt">Progreso 0 %</div><button class="btn btn-success btn-lg" onclick="guardarRegistro()">Registrar</button></div>
 </div>
 
 <!-- ═══ LISTA ═══ -->
@@ -1946,7 +2005,7 @@ function incrementarContadorFirebase() {
 // ════════════════════════════════
 //  CONTROL DE VERSIÓN / ACTUALIZACIÓN AUTOMÁTICA
 // ════════════════════════════════
-const VERSION_ACTUAL = '4.1.0'; // ⚠️ Este número debe coincidir con version.json
+const VERSION_ACTUAL = '4.2.0'; // ⚠️ Este número debe coincidir con version.json
 
 // Mostrar la versión real en todos los lugares de la interfaz (footer, Acerca, etc.)
 document.addEventListener('DOMContentLoaded', () => {
@@ -5027,6 +5086,231 @@ document.addEventListener('keypress', function(e) {
 
   // ── Arranque: si la página está activa al cargar, pintar desde caché ──
   let _rs = null; window.addEventListener('resize', () => { clearTimeout(_rs); _rs = setTimeout(() => { if($('page-estadisticas') && $('page-estadisticas').classList.contains('active') && REGS.length) pintarTendencia(); }, 200); });
+})();
+
+// ═══════════════════════════════════════════════════════════
+//  v4.2 — REGISTRO DE PERSONAL: flujo guiado (UX/UI)
+//  Aditivo: envuelve funciones existentes; IDs, lógica y backend intactos.
+// ═══════════════════════════════════════════════════════════
+(function(){
+  const $ = (id) => document.getElementById(id);
+  const svg = (n, cls) => '<svg class="' + (cls || 'ic') + '"><use href="#i-' + n + '"></use></svg>';
+  const esc = (s) => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const val = (id) => { const el = $(id); return el ? String(el.value || '').trim() : ''; };
+  let ultimoResultado = null;     // último resultado de búsqueda (para la tarjeta)
+  let ultimoDNI = '';
+
+  // ── Campos obligatorios por sección (mismos que valida guardarRegistro) ──
+  const SECS = {
+    personal:   { titulo: 'Datos personales',     oblig: [['f-dni','DNI'],['f-ap','Apellido paterno'],['f-nom','Nombres'],['f-hijos','¿Tiene hijos?']], opc: ['f-am'] },
+    ubicacion:  { titulo: 'Ubicación y contacto', oblig: [['f-mismadir','Misma dirección']], opc: ['f-dir','f-dep','f-prov','f-dist','f-tel1'] },
+    educacion:  { titulo: 'Educación',            oblig: [['f-edu','Nivel educativo']], opc: ['f-inst','f-carrera','f-egreso'] },
+    emergencia: { titulo: 'Salud y emergencia',   oblig: [['f-incap','¿Tiene discapacidad?']], opc: ['f-parentesco','f-cem','f-celcem'] }
+  };
+  const campoOk = (id) => id === 'f-dni' ? /^\d{8}$/.test(val(id)) : val(id) !== '';
+  function estadoSeccion(k) {
+    const s = SECS[k]; const faltan = s.oblig.filter(p => !campoOk(p[0])).map(p => p[1]);
+    const algo = s.oblig.some(p => campoOk(p[0])) || s.opc.some(id => val(id) !== '');
+    return { estado: faltan.length === 0 ? 'done' : (algo ? 'warn' : 'pending'), faltan };
+  }
+
+  // ── Estados visuales: secciones + stepper + resumen + barra final ──
+  function pintarEstados() {
+    const form = $('formCard'); if(!form) return;
+    let totalFaltan = [];
+    Object.keys(SECS).forEach(k => {
+      const e = estadoSeccion(k); totalFaltan = totalFaltan.concat(e.faltan);
+      const sec = form.querySelector('.form-section[data-sec="' + k + '"]');
+      if(sec) { sec.classList.toggle('is-done', e.estado === 'done'); sec.classList.toggle('is-warn', e.estado === 'warn'); }
+      const st = $('secst-' + k);
+      if(st) st.innerHTML = e.estado === 'done' ? svg('check','ic ic-sm') + ' Completo' : (e.estado === 'warn' ? svg('info','ic ic-sm') + ' Falta información' : 'Pendiente');
+      const step = document.querySelector('#formStepper .step[data-sec="' + k + '"]');
+      if(step) { step.classList.toggle('done', e.estado === 'done'); step.classList.toggle('warn', e.estado === 'warn'); const num = step.querySelector('.step-num'); if(num) num.innerHTML = e.estado === 'done' ? svg('check','ic ic-sm') : (e.estado === 'warn' ? '!' : '0' + (Object.keys(SECS).indexOf(k) + 1)); }
+    });
+    const completo = totalFaltan.length === 0;
+    // Barra de progreso (enriquece la existente)
+    const miss = $('fpMissing');
+    if(miss) miss.innerHTML = completo
+      ? '<div class="fp-ok">' + svg('check','ic ic-sm') + ' Información completa. <small>El registro está listo para guardar.</small></div>'
+      : 'Falta' + (totalFaltan.length === 1 ? ' 1 campo' : 'n ' + totalFaltan.length + ' campos') + ' para completar el registro.<div class="fp-list">' + totalFaltan.slice(0,3).map(f => '<span>' + esc(f) + '</span>').join('') + (totalFaltan.length > 3 ? '<span>+' + (totalFaltan.length - 3) + ' más</span>' : '') + '</div>';
+    // Barra final
+    const btn = form.querySelector('.rg-save'); const msg = $('rgSaveMsg');
+    if(btn && !_guardandoEnProceso) { btn.classList.toggle('is-incomplete', !completo); btn.setAttribute('aria-disabled', String(!completo)); }
+    if(msg) msg.innerHTML = completo ? '<span class="ok">' + svg('check','ic ic-sm') + ' Todo listo para registrar</span>' : '<span class="warn">' + svg('info','ic ic-sm') + ' Completa los campos obligatorios.</span>';
+    if(msg) msg.className = 'rg-savebar-msg ' + (completo ? 'ok' : 'warn');
+    const sticky = $('rgStickyTxt'); if(sticky) sticky.textContent = completo ? 'Listo para registrar' : 'Progreso ' + ($('fpPct') ? $('fpPct').textContent : '');
+    pintarResumen(completo);
+    pintarBadgeTrabajador(completo);
+    if($('rgConfirm') && $('rgConfirm').style.display !== 'none') pintarConfirmacion();
+  }
+  const _actualizarProgresoForm_v42 = _actualizarProgresoForm;
+  _actualizarProgresoForm = function(){ _actualizarProgresoForm_v42(); pintarEstados(); };
+  // El formulario ya dispara la barra original en input/change; aquí se actualizan los estados nuevos
+  if($('formCard')) { $('formCard').addEventListener('input', pintarEstados); $('formCard').addEventListener('change', pintarEstados); }
+  function primeraPendiente() { return Object.keys(SECS).find(k => estadoSeccion(k).estado !== 'done') || 'personal'; }
+
+  // ── Resumen del registro (columna derecha) ──
+  function pintarResumen(completo) {
+    const el = $('rgResumen'); if(!el) return;
+    const visible = $('formCard') && $('formCard').style.display !== 'none';
+    if(!visible) { el.innerHTML = '<div class="rg-sinsesion">' + svg('search') + ' Busca un trabajador para ver el estado del registro.</div>'; return; }
+    const est = (k) => { const e = estadoSeccion(k).estado; return e === 'done' ? '<span class="pill green">Completo</span>' : (e === 'warn' ? '<span class="pill amber">Incompleto</span>' : '<span class="pill gray">Pendiente</span>'); };
+    const trab = modoEditar ? '<span class="pill blue">Editando</span>' : (ultimoResultado && ultimoResultado.encontrado ? '<span class="pill green">Encontrado</span>' : '<span class="pill blue">Nuevo</span>');
+    el.innerHTML =
+      '<div class="rg-res-row"><span class="rg-res-k">Trabajador</span>' + trab + '</div>' +
+      '<div class="rg-res-row"><span class="rg-res-k">DNI</span>' + (campoOk('f-dni') ? '<span class="pill green">Válido</span>' : '<span class="pill amber">Pendiente</span>') + '</div>' +
+      '<div class="rg-res-row"><span class="rg-res-k">Datos personales</span>' + est('personal') + '</div>' +
+      '<div class="rg-res-row"><span class="rg-res-k">Contacto</span>' + est('ubicacion') + '</div>' +
+      '<div class="rg-res-row"><span class="rg-res-k">Educación</span>' + est('educacion') + '</div>' +
+      '<div class="rg-res-row"><span class="rg-res-k">Emergencia</span>' + est('emergencia') + '</div>' +
+      '<div class="rg-res-total ' + (completo ? 'ok' : 'warn') + '">' + svg(completo ? 'check' : 'info','ic ic-sm') + (completo ? ' Listo para registrar' : ' Faltan datos') + '</div>';
+  }
+
+  // ── Sesión de registro (columna derecha) ──
+  const _actualizarSesionBar_v42 = actualizarSesionBar;
+  actualizarSesionBar = function(){ _actualizarSesionBar_v42(); pintarSesion(); };
+  function pintarSesion() {
+    const card = document.querySelector('.rg-sesion'); if(!card) return;
+    const activa = !!sesionActiva; card.classList.toggle('is-active', activa);
+    const pill = $('rgSesionPill'), est = $('rgSesionEstado'), btn = $('rgBtnSesion');
+    if(pill) { pill.className = 'pill ' + (activa ? 'green' : 'gray'); pill.textContent = activa ? 'Sesión activa' : 'Inactiva'; pill.style.marginLeft = 'auto'; }
+    if(est) est.textContent = activa ? (sesionActiva.libre ? 'Modo Complemento · registro libre' : 'Bus completo · ' + (sesionActiva.ruta || '') + ' · ' + (sesionActiva.codigo || '')) : 'Sin registro activo';
+    if(btn) btn.innerHTML = svg('bus','ic ic-sm') + (activa ? ' Cambiar sesión de registro' : ' Iniciar sesión de registro');
+    const sin = $('sb-sinsesion'); if(sin) sin.style.display = activa ? 'none' : '';
+  }
+
+  // ── Estados de búsqueda (envoltura de mostrarStatus) ──
+  const TEXTOS = {
+    searching: ['search', 'Buscando trabajador…', 'Consultando BB.REGISTRO, Rapel y Verfrut.'],
+    notfound:  ['user-plus', 'No encontramos información previa.', 'Completa los datos para registrar al colaborador.'],
+    error:     ['info', 'Se produjo un problema al consultar la información.', ''],
+  };
+  const _mostrarStatus_v42 = mostrarStatus;
+  mostrarStatus = function(tipo, msg){
+    const plano = String(msg || '').replace(/<[^>]+>/g, '').replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]️?/gu, '').trim();
+    const datosPrevios = _ultimoDatosForm;                      // se captura antes de que el resumen del día lo consuma
+    _mostrarStatus_v42(tipo, msg);
+    const cont = $('statusBanner'); if(!cont) return;
+    let icono, titulo, detalle = '';
+    if(tipo === 'found') {
+      if(modoEditar) { icono = 'pencil'; titulo = 'Editando un registro existente.'; detalle = 'Modifica los campos necesarios y guarda para actualizar.'; }
+      else if(ultimoResultado && ultimoResultado._yaRegistrado) { icono = 'info'; titulo = 'El trabajador ya cuenta con un registro anterior' + (ultimoResultado._fechaAnterior ? ' (' + esc(ultimoResultado._fechaAnterior) + ').' : '.'); detalle = 'Sus datos fueron cargados automáticamente. Verifica la información antes de registrar nuevamente.'; }
+      else { icono = 'check'; titulo = 'Trabajador encontrado correctamente.'; detalle = 'Sus datos fueron cargados. Completa lo que falte y confirma.'; }
+    } else if(tipo === 'success') {
+      cont.innerHTML = panelExito(datosPrevios, plano); pintarEstados(); setTimeout(() => cont.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60); return;
+    } else if(TEXTOS[tipo]) { icono = TEXTOS[tipo][0]; titulo = TEXTOS[tipo][1]; detalle = TEXTOS[tipo][2] || (tipo === 'error' ? plano : ''); }
+    else return;
+    const clase = { searching:'status-searching', found:'status-found', notfound:'status-notfound', error:'status-error' }[tipo];
+    cont.innerHTML = '<div class="status-banner ' + clase + '" role="status">' + svg(icono) + '<div class="st-b-txt"><strong>' + titulo + '</strong>' + (detalle ? '<span>' + detalle + '</span>' : '') + '</div></div>';
+    if(tipo === 'notfound') pintarTarjeta(null, ultimoDNI);
+    if(tipo === 'error') pintarEstados();
+  };
+
+  // ── Tarjeta del trabajador (envoltura de mostrarWorkerCard + casos nuevo/edición) ──
+  function iniciales(n) { const p = String(n || '').trim().split(/\s+/); return ((p[0]||'')[0] || '') + ((p[1]||'')[0] || ''); }
+  function pintarTarjeta(t, dni) {
+    const wrap = $('workerCardWrap'); if(!wrap) return;
+    const nombre = t ? [t.nombres, t.ap, t.am].filter(Boolean).join(' ') : (val('f-nom') ? [val('f-nom'), val('f-ap'), val('f-am')].filter(Boolean).join(' ') : 'Nuevo colaborador');
+    const emp = t ? (t._empresa || t.empresa || empresaEncontrada || '') : (empresaEncontrada || '');
+    const ses = sesionActiva && !sesionActiva.libre ? sesionActiva : null;
+    const meta = [
+      ['Empresa', emp || '—'], ['Grupo', ses ? ses.sector : (sesionActiva && sesionActiva.libre ? 'Complemento' : '—')],
+      ['Ruta', ses ? ses.ruta : '—'], ['Código', ses ? ses.codigo : '—'],
+      ['Último registro', t && t._fechaAnterior ? t._fechaAnterior : 'Sin registro previo']
+    ];
+    wrap.innerHTML = '<div class="worker-card" id="rgWorkerCard"><div class="wc-avatar">' + esc(iniciales(nombre)) + '</div><div class="wc-main"><div class="wc-name">' + esc(nombre) + '</div><div class="wc-dni">DNI: ' + esc(dni || (t && t.dni) || val('f-dni')) + '</div></div>' +
+      '<dl class="wc-meta">' + meta.map(m => '<div><dt class="wc-k">' + m[0] + '</dt><dd class="wc-v">' + esc(m[1]) + '</dd></div>').join('') + '</dl><div class="wc-badge" id="rgWorkerBadge"></div></div>';
+    pintarBadgeTrabajador();
+  }
+  function pintarBadgeTrabajador(completo) {
+    const b = $('rgWorkerBadge'); if(!b) return;
+    if(completo === undefined) completo = Object.keys(SECS).every(k => estadoSeccion(k).estado === 'done');
+    let cls = 'blue', txt = 'NUEVO';
+    if(modoEditar) { cls = 'blue'; txt = 'EDITANDO'; }
+    else if(completo) { cls = 'green'; txt = 'LISTO PARA REGISTRAR'; }
+    else if(ultimoResultado && ultimoResultado._yaRegistrado) { cls = 'amber'; txt = 'REGISTRO PREVIO'; }
+    else if(ultimoResultado && ultimoResultado.encontrado) { cls = 'blue'; txt = 'ENCONTRADO'; }
+    b.innerHTML = '<span class="pill ' + cls + '">' + txt + '</span>';
+  }
+  const _mostrarWorkerCard_v42 = mostrarWorkerCard;
+  mostrarWorkerCard = function(t, empresa){ _mostrarWorkerCard_v42(t, empresa); pintarTarjeta(Object.assign({}, t, { _empresa: empresa }), t && t.dni); };
+  const _procesarResultado_v42 = _procesarResultado;
+  _procesarResultado = function(res, dni){
+    ultimoResultado = res || null; ultimoDNI = dni || '';
+    _procesarResultado_v42(res, dni);
+    if(res && res.encontrado) pintarTarjeta(res, dni);
+    pintarEstados(); mostrarStickyMovil();
+    setTimeout(() => { if(typeof irPaso === 'function' && $('formStepper')) irPaso(primeraPendiente()); }, 50);
+  };
+  const _buscarDNI_v42 = buscarDNI;
+  buscarDNI = function(){ ultimoDNI = val('dniSearch'); ultimoResultado = null; _buscarDNI_v42(); };
+  const _cargarDatos_v42 = cargarDatos;
+  cargarDatos = function(r){ _cargarDatos_v42(r); if(modoEditar) { ultimoResultado = Object.assign({ encontrado: true }, r); pintarTarjeta(Object.assign({}, r, { _fechaAnterior: r.fecha }), r.dni); } pintarEstados(); mostrarStickyMovil(); };
+  const _limpiarFormulario_v42 = limpiarFormulario;
+  limpiarFormulario = function(){ _limpiarFormulario_v42(); ultimoResultado = null; const c = $('rgConfirm'); if(c) c.style.display = 'none'; pintarEstados(); mostrarStickyMovil(); };
+
+  // ── Paso 05 · Confirmación (resumen real de lo que se va a registrar) ──
+  function pintarConfirmacion() {
+    const body = $('rgConfirmBody'); if(!body) return;
+    const ses = sesionActiva && !sesionActiva.libre ? sesionActiva : null;
+    const edu = val('f-edu') + (val('f-inst') ? ' · ' + val('f-inst') : '');
+    const cem = [val('f-cem'), val('f-parentesco') === 'Otros' ? val('f-parentesco-otro') : val('f-parentesco'), val('f-celcem')].filter(Boolean).join(' · ');
+    const filas = [['Trabajador', [val('f-ap'), val('f-am'), val('f-nom')].filter(Boolean).join(' ')], ['DNI', val('f-dni')], ['Empresa', empresaEncontrada || '—'],
+      ['Ruta', ses ? ses.ruta : '—'], ['Código', ses ? ses.codigo : '—'], ['Grupo', ses ? ses.sector : (sesionActiva && sesionActiva.libre ? 'Complemento' : '—')],
+      ['Teléfono', val('f-tel1') || '—'], ['Nivel educativo', edu || '—'], ['Contacto de emergencia', cem || '—']];
+    const completo = Object.keys(SECS).every(k => estadoSeccion(k).estado === 'done');
+    body.innerHTML = '<dl class="rg-confirm-grid">' + filas.map(f => '<div><dt>' + f[0] + '</dt><dd>' + esc(f[1] || '—') + '</dd></div>').join('') + '</dl>' +
+      '<div class="rg-confirm-warn">' + svg('info','ic ic-sm') + (completo ? ' Revisa la información antes de registrar.' : ' Aún faltan campos obligatorios. Complétalos antes de confirmar.') + '</div>' +
+      '<button class="btn btn-success btn-lg btn-full" style="margin-top:14px;" onclick="guardarRegistro()">' + svg('check','ic ic-sm') + ' CONFIRMAR Y REGISTRAR</button>';
+  }
+  const _irPaso_v42 = irPaso;
+  irPaso = function(id){
+    const c = $('rgConfirm');
+    if(id === 'confirmar') { if(c) { c.style.display = ''; pintarConfirmacion(); c.scrollIntoView({ behavior: 'smooth', block: 'start' }); } document.querySelectorAll('#formStepper .step').forEach(b => b.classList.toggle('active', b.getAttribute('data-sec') === 'confirmar')); return; }
+    if(c) c.style.display = 'none';
+    _irPaso_v42(id);
+  };
+
+  // ── Guardado: spinner y protección de doble clic (envoltura) ──
+  const _guardarRegistro_v42 = guardarRegistro;
+  guardarRegistro = async function(){
+    const btns = document.querySelectorAll('button[onclick="guardarRegistro()"]');
+    const completo = Object.keys(SECS).every(k => estadoSeccion(k).estado === 'done');
+    if(!completo && $('formCard') && $('formCard').style.display !== 'none') { const primera = Object.keys(SECS).find(k => estadoSeccion(k).estado !== 'done'); if(primera) irPaso(primera); }
+    if(_guardandoEnProceso) return;
+    const txt = $('btnGuardarText'); const antes = txt ? txt.innerHTML : '';
+    btns.forEach(b => { b.disabled = true; });
+    if(txt) txt.innerHTML = '<span class="rg-saving"></span> Registrando…';
+    try { await _guardarRegistro_v42(); }
+    finally { btns.forEach(b => { b.disabled = false; b.style.opacity = ''; b.style.cursor = ''; }); if(txt && txt.innerHTML.indexOf('rg-saving') !== -1) txt.innerHTML = antes; pintarEstados(); mostrarStickyMovil(); }
+  };
+
+  // ── Panel de éxito ──
+  function panelExito(datos, msgPlano) {
+    const hora = new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
+    const nombre = datos ? [datos.ap, datos.am, datos.nombres].filter(Boolean).join(' ') : '';
+    const dni = datos ? datos.dni : '';
+    showToast('✓ ' + (msgPlano.indexOf('actualizado') !== -1 ? 'Registro actualizado correctamente.' : 'Trabajador registrado correctamente.'), 'success');
+    return '<div class="rg-success" role="status"><div class="rg-success-top"><div class="rg-success-ic">' + svg('check') + '</div><div><strong>' + (msgPlano.indexOf('actualizado') !== -1 ? 'Registro actualizado correctamente' : 'Trabajador registrado correctamente') + '</strong><span>' + esc(msgPlano) + '</span></div></div>' +
+      (datos ? '<dl class="rg-success-grid"><div><dt>Nombre</dt><dd>' + esc(nombre) + '</dd></div><div><dt>DNI</dt><dd>' + esc(dni) + '</dd></div><div><dt>Hora de registro</dt><dd>' + hora + '</dd></div><div><dt>Registrado por</dt><dd>' + esc(sesion ? sesion.usuario : '') + '</dd></div></dl>' : '') +
+      '<div class="rg-success-actions"><button class="btn btn-primary" onclick="rgNuevoRegistro()">' + svg('user-plus','ic ic-sm') + ' Nuevo registro</button><button class="btn btn-outline" onclick="showPage(\'lista\', document.querySelector(\'.sidebar .tab[data-page=\\\'lista\\\']\'))">' + svg('list','ic ic-sm') + ' Ver lista</button></div></div>';
+  }
+  window.rgNuevoRegistro = function(){ $('statusBanner').innerHTML = ''; $('workerCardWrap').innerHTML = ''; const d = $('dniSearch'); d.value = ''; d.focus(); pintarResumen(false); };
+
+  // ── Barra sticky en móvil ──
+  function mostrarStickyMovil() {
+    const st = $('rgSticky'); if(!st) return;
+    const visible = $('formCard') && $('formCard').style.display !== 'none' && $('page-buscar').classList.contains('active');
+    st.style.display = visible ? '' : 'none';
+    document.body.classList.toggle('rg-has-sticky', !!visible);
+  }
+  const _showPage_v42 = showPage;
+  showPage = function(p, btn){ _showPage_v42(p, btn); mostrarStickyMovil(); if(p === 'buscar') { pintarSesion(); pintarResumen(false); } };
+  window.addEventListener('resize', mostrarStickyMovil);
+
+  // ── Icono del botón de guardar (el texto lo controla la lógica existente) ──
+  const save = document.querySelector('.rg-save'); if(save) save.insertAdjacentHTML('afterbegin', svg('check','ic ic-sm'));
+  pintarSesion(); pintarResumen(false); pintarEstados();
 })();
 
 </script>

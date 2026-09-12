@@ -1,5 +1,5 @@
 {
-  "version": "4.1.0",
+  "version": "4.2.0",
   "fecha": "2026-09-12",
-  "notas": "Estadisticas renovadas: filtros globales (periodo, grupo, tipo, usuario, ruta), KPIs con comparacion contra el periodo anterior, grafico de registros por dia (7/14/30), distribucion por tipo, alerta de registros sin grupo, top grupos/usuarios/rutas y tabla de detalle con buscador y paginacion. Carga mas rapida gracias a cache local."
+  "notas": "Registro de Personal con flujo guiado: buscador protagonista, estados de busqueda claros, tarjeta del trabajador con empresa/grupo/ruta/codigo y estado, stepper con secciones completas/pendientes, progreso con campos faltantes, paso de Confirmacion con resumen, barra final profesional, panel de exito con acciones y barra Registrar fija en celular. Misma logica y mismo Apps Script."
 }
