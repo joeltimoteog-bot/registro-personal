@@ -1940,12 +1940,26 @@ function _registrarExportacion() {
   } catch(e) { /* silencioso */ }
 }
 
+// v3.7.4: el token del servidor dura 24 h. Si la sesión tiene más de 20 h, avisar ANTES de que
+// el usuario llene el formulario (al volver a la app o al presionar Guardar), no después.
+const SESION_MAX_HORAS = 20;
+function _sesionVencidaPorJornada() {
+  if(!sesion || !sesion.guardadaEn) return false;
+  return (Date.now() - sesion.guardadaEn) / 3600000 > SESION_MAX_HORAS;
+}
+let _avisoVencidaMostrado = false;
+function _avisarSesionVencida() {
+  if(_avisoVencidaMostrado) return;   // evitar modales duplicados
+  _avisoVencidaMostrado = true;
+  _sesionExpirada({ok:false, msg:'Sesión expirada'});
+}
+
 // Helper: detecta si la respuesta del Apps Script indica sesión expirada
 function _sesionExpirada(data) {
   if(data && data.ok === false && data.msg && data.msg.indexOf('Sesión expirada') !== -1) {
     confirmarPersonalizado({
       titulo: '🔒 Sesión expirada',
-      mensaje: 'Tu sesión ha caducado por seguridad (8 horas). Por favor vuelve a iniciar sesión para continuar.',
+      mensaje: 'Tu sesión ha caducado por seguridad (24 horas desde tu ingreso). Vuelve a iniciar sesión para continuar; lo que ya escribiste en el formulario se conserva.',
       btnConfirmar: 'Volver a iniciar sesión',
       btnCancelar: '✖ Cerrar',
       tipo: 'warning'
@@ -2030,7 +2044,7 @@ function incrementarContadorFirebase() {
 // ════════════════════════════════
 //  CONTROL DE VERSIÓN / ACTUALIZACIÓN AUTOMÁTICA
 // ════════════════════════════════
-const VERSION_ACTUAL = '3.7.3'; // ⚠️ Este número debe coincidir con version.json
+const VERSION_ACTUAL = '3.7.4'; // ⚠️ Este número debe coincidir con version.json
 
 // Mostrar la versión real en todos los lugares de la interfaz (footer, Acerca, etc.)
 document.addEventListener('DOMContentLoaded', () => {
@@ -2324,13 +2338,16 @@ function mostrarBannerBienvenida(mensaje, rol) {
 
 function _setSesion(data) {
   sesion = data;
+  // v3.7.4: hora real de ingreso (se conserva al restaurar; no se reinicia en cada recarga)
+  if(!sesion.guardadaEn) sesion.guardadaEn = Date.now();
+  _avisoVencidaMostrado = false;
   // Guardar sesión en el navegador para que sobreviva recargas de página
   // (en celulares, cambiar de app o usar la cámara recarga la página)
   try {
     localStorage.setItem('sesion_activa', JSON.stringify({
       usuario: data.usuario, cargo: data.cargo, estado: data.estado,
       nombre: data.nombre||'', sexo: data.sexo||'', // v3.6.0
-      token: data.token, guardadaEn: Date.now()
+      token: data.token, guardadaEn: sesion.guardadaEn // v3.7.4
     }));
   } catch(e){}
   document.getElementById('loginScreen').style.display = 'none';
@@ -2640,6 +2657,7 @@ function iniciarAutoContador() {
 
 // Al volver a la app (cambio de app en el celular), sincronizar el contador de inmediato
 document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'visible' && sesion && _sesionVencidaPorJornada()) { _avisarSesionVencida(); return; } // v3.7.4
   if(document.visibilityState === 'visible' && sesionActiva) sincronizarContadorGrupo();
 });
 
@@ -3430,6 +3448,9 @@ async function guardarRegistro() {
   if(!sesionActiva && !modoEditar) { showToast('⚠️ Primero inicia un registro con el botón "Nuevo registro"','error'); abrirSesionModal(); return; }
 
   // v3.5.0: No intentar guardar sin conexión (los datos del formulario quedan intactos)
+  // v3.7.4: sesión de más de 20 h → pedir re-login antes de enviar (el formulario se conserva)
+  if(_sesionVencidaPorJornada()) { _avisarSesionVencida(); return; }
+
   if(!navigator.onLine) {
     showToast('📡 Sin conexión a internet. Tus datos NO se perdieron: recupera la señal y vuelve a presionar Guardar.','error');
     return;
