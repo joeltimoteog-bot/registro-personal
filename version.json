@@ -1,5 +1,5 @@
 {
-  "version": "3.7.6",
+  "version": "4.0.0",
   "fecha": "2026-09-12",
-  "notas": "La carga de usuarios y el guardado de modulos reintentan automaticamente (3 intentos) cuando Google responde un error pasajero, en vez de mostrar 'Error al cargar'. Incluye el panel de modulos por usuario (3.7.5) y la correccion de sesion (3.7.4). Requiere Apps Script v3.4."
+  "notas": "Nueva interfaz del sistema: menu lateral, barra superior, pagina de Inicio con tu resumen del dia, registro con pasos y panel de sesion. Todo funciona igual que antes (mismos usuarios, contrasenas y modulos). Si algo no se ve bien, cierra y vuelve a abrir la app."
 }
