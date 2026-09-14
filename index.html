@@ -2006,7 +2006,7 @@ function incrementarContadorFirebase() {
 // ════════════════════════════════
 //  CONTROL DE VERSIÓN / ACTUALIZACIÓN AUTOMÁTICA
 // ════════════════════════════════
-const VERSION_ACTUAL = '4.3.0'; // ⚠️ Este número debe coincidir con version.json
+const VERSION_ACTUAL = '4.3.1'; // ⚠️ Este número debe coincidir con version.json
 
 // Mostrar la versión real en todos los lugares de la interfaz (footer, Acerca, etc.)
 document.addEventListener('DOMContentLoaded', () => {
@@ -5179,12 +5179,21 @@ document.addEventListener('keypress', function(e) {
     const autorizado = await _confirmarConfidencialidad();
     if(!autorizado) return;
     const soloTardios = $('exp-solo-tardios') && $('exp-solo-tardios').checked;
-    showToast('⏳ Descargando registros...', 'info');
+    // La exportación completa puede tardar 20–60 s en el Apps Script: sin timeout corto y con aviso persistente
+    let _segs = 0; const _aviso = setInterval(() => { _segs += 2; showToast('⏳ Descargando registros… ' + _segs + ' s (no cierres la página)', 'info'); }, 2000);
+    showToast('⏳ Descargando registros…', 'info');
     try {
       let url = gsConfig.webhookUrl + '?accion=exportarBBRegistro&token=' + encodeURIComponent(_token());
       if(desde && hasta) url += '&desde=' + encodeURIComponent(desde) + '&hasta=' + encodeURIComponent(hasta);
       if(soloTardios) url += '&soloTardios=1';
-      const data = await _fetchJsonReintento(url, 2, 1500);
+      const controller = new AbortController(); const tid = setTimeout(() => controller.abort(), 180000);
+      let resp;
+      try { resp = await fetch(url, { signal: controller.signal }); } finally { clearTimeout(tid); }
+      if(!resp.ok) throw new Error('HTTP ' + resp.status);
+      const txt = await resp.text();
+      const mm = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
+      const data = JSON.parse(mm ? mm[1] : txt);
+      clearInterval(_aviso);
       if(_sesionExpirada(data)) return;
       let filas = data.filas || [];
       if(!filas.length) { showToast(data.msg || 'No hay registros en BB.REGISTRO', 'error'); return; }
@@ -5208,7 +5217,8 @@ document.addEventListener('keypress', function(e) {
       XLSX.writeFile(wb, 'BB-REGISTRO_' + sufijo + '.xlsx');
       _registrarExportacion();
       showToast('✅ ' + (filas.length - 1) + ' registros exportados', 'success');
-    } catch(e) { showToast('Error al exportar: ' + e.message, 'error'); }
+    } catch(e) { clearInterval(_aviso); showToast('Error al exportar: ' + (e.name === 'AbortError' ? 'el servidor tardó más de 3 minutos' : e.message), 'error'); }
+    finally { clearInterval(_aviso); }
   };
 
   // ── 4) Panel de diagnóstico (solo el creador, en Acerca) ──
