@@ -1,5 +1,5 @@
 {
-  "version": "4.2.0",
+  "version": "4.0.0-beta.1",
   "fecha": "2026-09-12",
-  "notas": "Registro de Personal con flujo guiado: buscador protagonista, estados de busqueda claros, tarjeta del trabajador con empresa/grupo/ruta/codigo y estado, stepper con secciones completas/pendientes, progreso con campos faltantes, paso de Confirmacion con resumen, barra final profesional, panel de exito con acciones y barra Registrar fija en celular. Misma logica y mismo Apps Script."
+  "notas": "Rediseño v4 (beta, carpeta /v4/): login a pantalla completa, app shell con sidebar y topbar, página de Inicio con KPIs y actividad, registro con stepper y panel lateral de sesión. Misma lógica y mismo Apps Script v3.4 que la 3.7.6."
 }
