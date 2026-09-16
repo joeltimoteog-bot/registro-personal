@@ -1067,8 +1067,8 @@ body.hay-banner-servidor .sidebar { top: 68px; }
     <div class="page-actions"><button class="btn btn-primary btn-lg" onclick="nuevoRegistroDesdeInicio()"><svg class="ic ic-sm"><use href="#i-user-plus"></use></svg> Nuevo registro</button></div>
   </div>
   <div class="kpi-grid">
-    <div class="kpi-card"><div class="kpi-top"><div class="kpi-label">Registros de hoy</div><div class="kpi-icon blue"><svg class="ic"><use href="#i-user-plus"></use></svg></div></div><div class="kpi-value" id="kpiHoy">0</div><div class="kpi-sub">Realizados por ti</div></div>
-    <div class="kpi-card"><div class="kpi-top"><div class="kpi-label">Personal tardío</div><div class="kpi-icon amber"><svg class="ic"><use href="#i-clock"></use></svg></div></div><div class="kpi-value" id="kpiTardio">0</div><div class="kpi-sub">Registrados hoy como tardíos</div></div>
+    <div class="kpi-card"><div class="kpi-top"><div class="kpi-label">Registros de hoy</div><div class="kpi-icon blue"><svg class="ic"><use href="#i-user-plus"></use></svg></div></div><div class="kpi-value" id="kpiHoy">0</div><div class="kpi-sub" id="kpiHoySub">Realizados por ti</div></div>
+    <div class="kpi-card"><div class="kpi-top"><div class="kpi-label">Personal tardío</div><div class="kpi-icon amber"><svg class="ic"><use href="#i-clock"></use></svg></div></div><div class="kpi-value" id="kpiTardio">0</div><div class="kpi-sub" id="kpiTardioSub">Registrados hoy como tardíos</div></div>
     <div class="kpi-card"><div class="kpi-top"><div class="kpi-label">Último registro</div><div class="kpi-icon green"><svg class="ic"><use href="#i-activity"></use></svg></div></div><div class="kpi-value" id="kpiUltimo">—</div><div class="kpi-sub" id="kpiUltimoSub">Sin registros hoy</div></div>
     <div class="kpi-card"><div class="kpi-top"><div class="kpi-label">Sesión activa</div><div class="kpi-icon sky"><svg class="ic"><use href="#i-bus"></use></svg></div></div><div class="kpi-value" id="kpiSesion" style="font-size:20px;">Sin registro</div><div class="kpi-sub" id="kpiSesionSub">Inicia un registro para comenzar</div></div>
   </div>
@@ -2029,7 +2029,7 @@ function incrementarContadorFirebase() {
 // ════════════════════════════════
 //  CONTROL DE VERSIÓN / ACTUALIZACIÓN AUTOMÁTICA
 // ════════════════════════════════
-const VERSION_ACTUAL = '4.3.2'; // ⚠️ Este número debe coincidir con version.json
+const VERSION_ACTUAL = '4.4.0'; // ⚠️ Este número debe coincidir con version.json
 
 // Mostrar la versión real en todos los lugares de la interfaz (footer, Acerca, etc.)
 document.addEventListener('DOMContentLoaded', () => {
@@ -5610,6 +5610,135 @@ document.addEventListener('keypress', function(e) {
   const _setSesion_v432 = _setSesion;
   _setSesion = function(data){ _setSesion_v432(data); setTimeout(comprobarServidor, 1200); };
   setInterval(() => { if(!apiSana && typeof sesion !== 'undefined' && sesion) comprobarServidor(); }, 60000);
+})();
+
+// ═══════════════════════════════════════════════════════════
+//  v4.4.0 — RESUMEN DEL DÍA COMPARTIDO
+//  Antes: "Registros de hoy" y "Actividad reciente" se contaban en el
+//  navegador de CADA equipo (localStorage), así que la laptop no veía lo
+//  registrado desde el celular y los números nunca coincidían.
+//  Ahora: se piden al servidor (accion=resumenHoy, v3.6) y son los mismos
+//  en todos los dispositivos.
+//  Aditivo y con red de seguridad: primero se pinta lo local (respuesta
+//  instantánea, sirve sin conexión) y encima se corrige con lo del servidor.
+//  Si el Apps Script todavía es v3.5 o no responde, todo sigue como antes.
+// ═══════════════════════════════════════════════════════════
+(function(){
+  const $ = (id) => document.getElementById(id);
+  const esc = (t) => (typeof _escaparHTML === 'function' ? _escaparHTML(t) : String(t == null ? '' : t));
+  const FRESCO_MS = 30000;
+  let _res = null, _ts = 0, _pidiendo = null, _sinSoporte = false;
+
+  function _listo(){
+    return !!(typeof gsConfig !== 'undefined' && gsConfig && gsConfig.habilitado && gsConfig.webhookUrl
+              && typeof sesion !== 'undefined' && sesion);
+  }
+
+  // ── 1) Pedir el resumen al servidor (una sola petición, compartida) ──
+  function pedirResumen(forzar){
+    if(!_listo() || _sinSoporte) return Promise.resolve(null);
+    if(!forzar && _res && (Date.now() - _ts) < FRESCO_MS) return Promise.resolve(_res);
+    if(_pidiendo) return _pidiendo;
+    _pidiendo = (async function(){
+      try {
+        const c = new AbortController();
+        const t = setTimeout(() => c.abort(), 20000);
+        const r = await fetch(gsConfig.webhookUrl + '?accion=resumenHoy&token=' +
+                              encodeURIComponent(_token()) + '&_=' + Date.now(), { signal: c.signal });
+        clearTimeout(t);
+        const j = await r.json();
+        if(j && j.ok === true && typeof j.total === 'number') { _res = j; _ts = Date.now(); }
+        else if(j && j.error) { _sinSoporte = true; }   // Apps Script anterior a v3.6 → seguimos en modo local
+      } catch(e) { /* sin conexión: se queda lo local, no se rompe nada */ }
+      _pidiendo = null;
+      return _res;
+    })();
+    return _pidiendo;
+  }
+  window._resumenHoy = () => _res;
+
+  // ── 2) Horas: el servidor no guarda hora, pero este equipo sí las tiene ──
+  function horasLocales(){
+    const m = {};
+    try {
+      const l = JSON.parse(localStorage.getItem(_resumenDiaKey()) || '[]');
+      l.forEach(r => { if(r && r.dni && !m[r.dni]) m[r.dni] = r.hora; });
+    } catch(e) {}
+    return m;
+  }
+
+  // ── 3) Repintar el Inicio con los datos reales del servidor ──
+  function pintarInicio(j){
+    if(!j || !$('kpiHoy')) return;
+    const hrs = horasLocales();
+
+    $('kpiHoy').textContent = j.mios;
+    if($('kpiHoySub')) $('kpiHoySub').textContent = 'Tú · ' + j.total + ' en todo el sistema hoy';
+
+    $('kpiTardio').textContent = j.tardios;
+    if($('kpiTardioSub')) $('kpiTardioSub').textContent = 'En todo el sistema hoy';
+
+    const ult = (j.ultimos || []);
+    if(ult.length) {
+      // La hoja no guarda hora: si el registro se hizo en OTRO equipo, se muestra "Hoy".
+      $('kpiUltimo').textContent = hrs[ult[0].dni] || 'Hoy';
+      $('kpiUltimoSub').textContent = ult[0].nombre;
+    } else {
+      $('kpiUltimo').textContent = '—';
+      $('kpiUltimoSub').textContent = 'Sin registros hoy';
+    }
+
+    const act = $('inicioActividad');
+    if(!act) return;
+    if(!ult.length) {
+      act.innerHTML = '<div class="empty-state"><h3>Sin actividad todavía</h3><p>Los registros de hoy aparecerán aquí.</p></div>';
+      return;
+    }
+    const inic = (n) => { const p = String(n||'').trim().split(/\s+/); return ((p[0]||'')[0]||'') + ((p[1]||'')[0]||''); };
+    act.innerHTML = '<div class="activity-row activity-head"><div>Trabajador</div><div>Acción</div><div class="act-user">Usuario</div><div>Hora</div></div>' +
+      ult.slice(0,5).map(r =>
+        '<div class="activity-row"><div class="activity-name"><div class="avatar-sm">' + esc(inic(r.nombre)) + '</div><span>' + esc(r.nombre) + '</span></div>' +
+        '<div><span class="pill ' + (r.tardio ? 'amber' : 'green') + '">' + (r.tardio ? 'Tardío' : 'Registrado') + '</span></div>' +
+        '<div class="act-user" style="color:var(--text-secondary);">' + esc(r.por || '—') + '</div>' +
+        '<div style="color:var(--text-secondary);">' + esc(hrs[r.dni] || '—') + '</div></div>'
+      ).join('');
+  }
+
+  // ── 4) Inicio: se pinta lo local al instante y se corrige con el servidor ──
+  if(typeof window.renderInicio === 'function') {
+    const _renderInicio_v44 = window.renderInicio;
+    window.renderInicio = function(){
+      _renderInicio_v44();
+      pedirResumen().then(pintarInicio);
+    };
+  }
+
+  // ── 5) Página de registro: el "HOY POR TI" también sale del servidor ──
+  if(typeof window._renderResumenDia === 'function') {
+    const _renderResumenDia_v44 = window._renderResumenDia;
+    window._renderResumenDia = function(){
+      _renderResumenDia_v44();
+      pedirResumen().then(j => {
+        if(!j) return;
+        const n = document.querySelector('#resumenDia .resumen-dia-num');
+        if(n) n.textContent = j.mios;
+      });
+    };
+  }
+
+  // ── 6) Tras registrar, el número se actualiza de inmediato ──
+  if(typeof window._onRegistroExitosoV34 === 'function') {
+    const _onExito_v44 = window._onRegistroExitosoV34;
+    window._onRegistroExitosoV34 = function(){
+      _onExito_v44();
+      pedirResumen(true).then(j => {
+        if(!j) return;
+        const n = document.querySelector('#resumenDia .resumen-dia-num');
+        if(n) n.textContent = j.mios;
+        if(document.getElementById('page-inicio') && document.getElementById('page-inicio').classList.contains('active')) pintarInicio(j);
+      });
+    };
+  }
 })();
 
 </script>
