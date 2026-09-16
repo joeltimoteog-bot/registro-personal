@@ -2033,7 +2033,7 @@ function incrementarContadorFirebase() {
 // ════════════════════════════════
 //  CONTROL DE VERSIÓN / ACTUALIZACIÓN AUTOMÁTICA
 // ════════════════════════════════
-const VERSION_ACTUAL = '4.3.3'; // ⚠️ Este número debe coincidir con version.json
+const VERSION_ACTUAL = '4.3.4'; // ⚠️ Este número debe coincidir con version.json
 
 // Mostrar la versión real en todos los lugares de la interfaz (footer, Acerca, etc.)
 document.addEventListener('DOMContentLoaded', () => {
@@ -5182,7 +5182,10 @@ document.addEventListener('keypress', function(e) {
       const data = JSON.parse(m ? m[1] : txt);
       if(data && data.error) { soportaBuscarTrabajador = false; return _buscarDNI_v43(); }   // Apps Script anterior
       if(_sesionExpirada(data)) return;
-      if(!data || !data.ok) return _buscarDNI_v43();
+      if(!data || !data.ok) {   // v4.3.4: no se reintenta por el camino largo
+        mostrarStatus('error', 'El servidor no devolvió un resultado válido. Vuelve a presionar Buscar.');
+        return;
+      }
       soportaBuscarTrabajador = true;
       bbCache[dni] = { data: data.bb ? data.bb : { encontrado: false }, ts: Date.now() };
       if($('dniSearch').value.trim() !== dni) return;   // el usuario ya escribió otro DNI
@@ -5196,7 +5199,15 @@ document.addEventListener('keypress', function(e) {
       } else {
         _procesarResultado({ encontrado: false }, dni);
       }
-    }).catch(() => { clearTimeout(tid); _buscarDNI_v43(); });
+    }).catch(err => {
+      clearTimeout(tid);
+      // v4.3.4: si el servidor está lento o no contestó, NO se lanza el camino de respaldo
+      // (serían 2 peticiones más por cada búsqueda fallida, justo cuando el servidor ya no da abasto).
+      const corte = err && err.name === 'AbortError';
+      mostrarStatus('error', corte
+        ? 'El servidor está tardando más de lo normal. Vuelve a presionar Buscar en unos segundos: no se perdió nada.'
+        : 'No se pudo consultar al servidor. Vuelve a intentar en unos segundos.');
+    });
   };
 
   // ── 3) Descarga de BB.REGISTRO con filtros en el servidor (si el Apps Script es v3.5; si no, filtra aquí igual que antes) ──
@@ -5561,7 +5572,7 @@ document.addEventListener('keypress', function(e) {
     if(cambio && !avisado) { avisado = true; try { showToast('⚠️ Sin conexión con el servidor del sistema', 'error'); } catch(e){} }
   }
   function marcarOk() {
-    fallosSeguidos = 0;
+    fallosSeguidos = 0; ultimaRespuestaOk = Date.now();
     if(!apiSana) { apiSana = true; avisado = false; motivoFallo = ''; pintarBanner(); try { showToast('✅ Conexión con el servidor restablecida', 'success'); } catch(e){} }
     apiSana = true;
   }
@@ -5596,8 +5607,12 @@ document.addEventListener('keypress', function(e) {
     });
   };
 
+  let ultimaRespuestaOk = 0;
   async function comprobarServidor() {
     if(!gsConfig.habilitado || !gsConfig.webhookUrl) return;
+    // v4.3.4: si el trabajo real ya recibió respuesta hace menos de 30 s, el servidor está vivo:
+    // no se gasta una petición extra (16 equipos haciendo pings suman carga justo en hora punta).
+    if(Date.now() - ultimaRespuestaOk < 30000) return;
     try {
       const c = new AbortController(); const t = setTimeout(() => c.abort(), 45000);   // v4.3.3: lento no es caído
       const r = await fetch(gsConfig.webhookUrl + '?accion=buscar&empresa=Rapel&dni=00000000', { signal: c.signal });
@@ -5635,7 +5650,7 @@ document.addEventListener('keypress', function(e) {
   // ── 6) Aviso temprano: se comprueba el servidor al entrar, no al perder 15 minutos ──
   const _setSesion_v432 = _setSesion;
   _setSesion = function(data){ _setSesion_v432(data); setTimeout(comprobarServidor, 1200); };
-  setInterval(() => { if((!apiSana || fallosSeguidos > 0) && typeof sesion !== 'undefined' && sesion) comprobarServidor(); }, 20000);
+  setInterval(() => { if((!apiSana || fallosSeguidos > 0) && typeof sesion !== 'undefined' && sesion) comprobarServidor(); }, 30000);
 })();
 
 </script>
