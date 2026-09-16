@@ -1,5 +1,5 @@
 {
-  "version": "4.3.1",
-  "fecha": "2026-09-14",
-  "notas": "Descarga por rango de fechas corregida (ya no se corta a los 20 s; muestra el avance). Mas rapido: la busqueda de DNI consulta BB.REGISTRO y Rapel/Verfrut en un solo viaje, al registrar ya no se repite la consulta del DNI que acabas de buscar, la descarga de Excel trae solo las fechas que pides y las estadisticas viajan mas ligeras. Con Apps Script v3.5 se aprovecha todo; con el anterior el sistema sigue funcionando igual."
+  "version": "4.3.2",
+  "fecha": "2026-09-16",
+  "notas": "Proteccion ante caidas del servidor: si Google Apps Script no responde, el sistema avisa de inmediato con un aviso rojo, NO abre el formulario como si el trabajador fuera nuevo y no deja guardar a ciegas, para que nadie pierda el trabajo de llenar los datos. Ademas la direccion del servidor viaja en el sistema, asi que si cambia, todos los celulares la toman solos al recargar."
 }

@@ -702,6 +702,29 @@ tbody tr:hover td { background: #FCFCFD; }
   .stepper { padding: 10px 12px; } .step { padding: 8px 10px; font-size: 12px; }
 }
 
+/* ══════════ v4.3.2 · BANNER DE SERVIDOR NO DISPONIBLE ══════════ */
+.banner-servidor {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 9998;
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 18px; background: #B42318; color: #fff;
+  box-shadow: 0 4px 16px rgba(16,24,40,.25); font-size: 13.5px;
+}
+.banner-servidor .ic { flex-shrink: 0; }
+.banner-servidor > div { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.banner-servidor strong { font-size: 14px; }
+.banner-servidor span { font-size: 12.5px; opacity: .92; line-height: 1.45; }
+.banner-servidor .btn { background: #fff; border-color: #fff; color: #B42318; flex-shrink: 0; }
+.banner-servidor .btn:hover { background: #FEF3F2; color: #912018; }
+body.hay-banner-servidor .topbar { top: 68px; }
+body.hay-banner-servidor .app-layout { padding-top: 68px; }
+body.hay-banner-servidor .sidebar { top: 68px; }
+@media (max-width: 767px) {
+  .banner-servidor { flex-wrap: wrap; padding: 10px 14px; gap: 8px; }
+  .banner-servidor .btn { width: 100%; }
+  body.hay-banner-servidor .topbar, body.hay-banner-servidor .sidebar { top: 104px; }
+  body.hay-banner-servidor .app-layout { padding-top: 104px; }
+}
+
 </style>
 </head>
 <body>
@@ -2006,7 +2029,7 @@ function incrementarContadorFirebase() {
 // ════════════════════════════════
 //  CONTROL DE VERSIÓN / ACTUALIZACIÓN AUTOMÁTICA
 // ════════════════════════════════
-const VERSION_ACTUAL = '4.3.1'; // ⚠️ Este número debe coincidir con version.json
+const VERSION_ACTUAL = '4.3.2'; // ⚠️ Este número debe coincidir con version.json
 
 // Mostrar la versión real en todos los lugares de la interfaz (footer, Acerca, etc.)
 document.addEventListener('DOMContentLoaded', () => {
@@ -5464,6 +5487,129 @@ document.addEventListener('keypress', function(e) {
   // ── Icono del botón de guardar (el texto lo controla la lógica existente) ──
   const save = document.querySelector('.rg-save'); if(save) save.insertAdjacentHTML('afterbegin', svg('check','ic ic-sm'));
   pintarSesion(); pintarResumen(false); pintarEstados();
+})();
+
+// ═══════════════════════════════════════════════════════════
+//  v4.3.2 — SALUD DEL SERVIDOR (protección del trabajo del registrador)
+//  Si el Apps Script no responde o devuelve una página de error:
+//   1. Se avisa de inmediato (no se deja al usuario esperando).
+//   2. NO se abre el formulario como si el trabajador fuera "nuevo".
+//   3. No se permite guardar a ciegas: los datos escritos se conservan.
+//  Además: la URL oficial del sistema viaja en el código, así que si
+//  cambia, los 16 dispositivos la toman solos al recargar.
+//  Aditivo: no cambia acciones, parámetros ni respuestas del backend.
+// ═══════════════════════════════════════════════════════════
+(function(){
+  const $ = (id) => document.getElementById(id);
+  const svg = (n, cls) => '<svg class="' + (cls || 'ic') + '"><use href="#i-' + n + '"></use></svg>';
+  let apiSana = true, motivoFallo = '', avisado = false;
+
+  // ── 1) URL oficial: la del código manda sobre la guardada en el dispositivo ──
+  // (cuando Joel publique una URL nueva, nadie tiene que tocar Config en su celular)
+  const URL_OFICIAL = 'https://script.google.com/macros/s/AKfycbzLXByoch3vA4SG4p9h2gkHlV5khEfnB-U9SrAH5gcwG2agVWCtfvOnG3zsuXXUr-TH/exec';
+  try {
+    if(localStorage.getItem('gs_url_oficial') !== URL_OFICIAL) {
+      gsConfig.webhookUrl = URL_OFICIAL; gsConfig.habilitado = true;
+      localStorage.setItem('gs_config', JSON.stringify(gsConfig));
+      localStorage.setItem('gs_url_oficial', URL_OFICIAL);
+    }
+  } catch(e) {}
+  const _guardarConfigGS_v432 = typeof guardarConfigGS === 'function' ? guardarConfigGS : null;
+  if(_guardarConfigGS_v432) guardarConfigGS = function(){ _guardarConfigGS_v432(); try { localStorage.setItem('gs_url_oficial', gsConfig.webhookUrl); } catch(e){} };
+
+  // ── 2) Banner de servidor no disponible ──
+  function pintarBanner() {
+    let b = $('bannerServidor');
+    if(apiSana) { if(b) b.remove(); document.body.classList.remove('hay-banner-servidor'); return; }
+    if(!b) {
+      b = document.createElement('div');
+      b.id = 'bannerServidor'; b.className = 'banner-servidor'; b.setAttribute('role', 'alert');
+      document.body.appendChild(b);
+      document.body.classList.add('hay-banner-servidor');
+    }
+    b.innerHTML = svg('info') + '<div><strong>El servidor del sistema no está disponible</strong>' +
+      '<span>No registres datos por ahora: no se guardarían. Avisa a Joel Timoteo (Relaciones Laborales). ' + (motivoFallo ? 'Detalle: ' + motivoFallo + '.' : '') + '</span></div>' +
+      '<button class="btn btn-sm btn-outline" onclick="reintentarConexion()">Reintentar</button>';
+  }
+  window._apiCaida = () => !apiSana;
+  function marcarCaida(motivo) {
+    const cambio = apiSana; apiSana = false; motivoFallo = motivo || '';
+    pintarBanner();
+    if(cambio && !avisado) { avisado = true; try { showToast('⚠️ Sin conexión con el servidor del sistema', 'error'); } catch(e){} }
+  }
+  function marcarOk() {
+    if(!apiSana) { apiSana = true; avisado = false; motivoFallo = ''; pintarBanner(); try { showToast('✅ Conexión con el servidor restablecida', 'success'); } catch(e){} }
+    apiSana = true;
+  }
+  window.reintentarConexion = async function(){
+    try { showToast('Comprobando servidor…', 'info'); } catch(e){}
+    await comprobarServidor();
+    if(apiSana) { try { showToast('✅ El servidor respondió. Ya puedes continuar.', 'success'); } catch(e){} }
+    else { try { showToast('El servidor sigue sin responder.', 'error'); } catch(e){} }
+  };
+
+  // ── 3) Vigilancia de cada llamada al Apps Script ──
+  const _fetchBase = window.fetch.bind(window);
+  window.fetch = function(input, init) {
+    const url = typeof input === 'string' ? input : (input && input.url) || '';
+    if(!(gsConfig && gsConfig.webhookUrl && url.indexOf(gsConfig.webhookUrl) === 0)) return _fetchBase(input, init);
+    return _fetchBase(input, init).then(resp => {
+      if(!resp.ok) { marcarCaida('el servidor respondió ' + resp.status); return resp; }
+      // Una página HTML en vez de JSON = implementación caída o sin permiso
+      resp.clone().text().then(t => {
+        const s = String(t || '').trim();
+        if(!s) marcarCaida('respuesta vacía');
+        else if(s.charAt(0) === '<') marcarCaida('el servidor devolvió una página de error');
+        else marcarOk();
+      }).catch(() => {});
+      return resp;
+    }, err => {
+      if(err && err.name === 'AbortError') marcarCaida('el servidor no respondió a tiempo');
+      else marcarCaida('no hubo respuesta del servidor');
+      throw err;
+    });
+  };
+
+  async function comprobarServidor() {
+    if(!gsConfig.habilitado || !gsConfig.webhookUrl) return;
+    try {
+      const c = new AbortController(); const t = setTimeout(() => c.abort(), 15000);
+      const r = await fetch(gsConfig.webhookUrl + '?accion=buscar&empresa=Rapel&dni=00000000', { signal: c.signal });
+      clearTimeout(t); await r.text();
+    } catch(e) {}
+  }
+
+  // ── 4) Protección clave: un "no encontrado" falso NO abre el formulario ──
+  const _procesarResultado_v432 = _procesarResultado;
+  _procesarResultado = function(res, dni){
+    if((!res || !res.encontrado) && !apiSana) {
+      $('formCard').style.display = 'none';
+      $('workerCardWrap').innerHTML = '';
+      mostrarStatus('error', 'No se pudo consultar al servidor. NO llenes el formulario todavía: el registro no se guardaría. Presiona Reintentar cuando se restablezca.');
+      pintarBanner();
+      return;
+    }
+    _procesarResultado_v432(res, dni);
+  };
+
+  // ── 5) No guardar a ciegas: los datos escritos se conservan ──
+  const _guardarRegistro_v432 = guardarRegistro;
+  guardarRegistro = async function(){
+    if(!apiSana) {
+      try { const d = obtenerDatosFormulario(); localStorage.setItem('_borrador_ultimo', JSON.stringify(d)); } catch(e){}
+      try { showToast('⚠️ El servidor no está disponible. Tus datos NO se perdieron: quedan en el formulario.', 'error'); } catch(e){}
+      mostrarStatus('error', 'El servidor del sistema no está disponible. Tus datos siguen en pantalla; espera a que se restablezca y presiona Registrar de nuevo.');
+      await comprobarServidor();
+      if(apiSana) { try { showToast('✅ Servidor restablecido, puedes registrar.', 'success'); } catch(e){} }
+      return;
+    }
+    return _guardarRegistro_v432();
+  };
+
+  // ── 6) Aviso temprano: se comprueba el servidor al entrar, no al perder 15 minutos ──
+  const _setSesion_v432 = _setSesion;
+  _setSesion = function(data){ _setSesion_v432(data); setTimeout(comprobarServidor, 1200); };
+  setInterval(() => { if(!apiSana && typeof sesion !== 'undefined' && sesion) comprobarServidor(); }, 60000);
 })();
 
 </script>
