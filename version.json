@@ -1,5 +1,5 @@
 {
-  "version": "4.3.3",
+  "version": "4.3.4",
   "fecha": "2026-09-16",
-  "notas": "Lento ya no significa caido. En hora punta el servidor tarda mas y antes el sistema lo daba por caido y mandaba parar el trabajo. Ahora: si responde pero lento, sale un aviso ambar y se puede seguir registrando con normalidad; el aviso rojo de parar solo aparece cuando el servidor realmente falla (pagina de error, error HTTP o respuesta vacia). Las busquedas esperan hasta 45 segundos en vez de 20, asi que una respuesta lenta ya no se descarta."
+  "notas": "Corrige el efecto bola de nieve en hora punta. Antes, si una busqueda tardaba demasiado, el sistema la reintentaba por un camino largo que hacia 2 peticiones mas: justo cuando el servidor ya no daba abasto, cada busqueda lenta le mandaba el triple de trabajo. Ahora una busqueda es siempre UNA peticion y, si el servidor tarda, se avisa y se puede reintentar sin perder nada. Ademas el chequeo de salud ya no gasta peticiones cuando el trabajo real acaba de responder. Incluye 4.3.3: lento ya no se confunde con caido y las busquedas esperan hasta 45 segundos."
 }
