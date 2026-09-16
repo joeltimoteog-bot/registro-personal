@@ -1,5 +1,5 @@
 {
-  "version": "4.3.2",
+  "version": "4.3.3",
   "fecha": "2026-09-16",
-  "notas": "Proteccion ante caidas del servidor: si Google Apps Script no responde, el sistema avisa de inmediato con un aviso rojo, NO abre el formulario como si el trabajador fuera nuevo y no deja guardar a ciegas, para que nadie pierda el trabajo de llenar los datos. Ademas la direccion del servidor viaja en el sistema, asi que si cambia, todos los celulares la toman solos al recargar."
+  "notas": "Lento ya no significa caido. En hora punta el servidor tarda mas y antes el sistema lo daba por caido y mandaba parar el trabajo. Ahora: si responde pero lento, sale un aviso ambar y se puede seguir registrando con normalidad; el aviso rojo de parar solo aparece cuando el servidor realmente falla (pagina de error, error HTTP o respuesta vacia). Las busquedas esperan hasta 45 segundos en vez de 20, asi que una respuesta lenta ya no se descarta."
 }

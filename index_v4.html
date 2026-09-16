@@ -506,6 +506,10 @@ tbody tr:hover td { background: #FCFCFD; }
   .login-btn { height: 52px; font-size: 15px; }
 }
 
+/* v4.3.3: aviso de lentitud (no bloquea el trabajo) */
+.banner-lento { background: #B45309 !important; }
+.banner-lento strong { color: #fff; }
+
 /* ══════════════════════════ ESTADÍSTICAS v4.1 ══════════════════════════ */
 .st-toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; padding: 14px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; margin-bottom: 16px; }
 .st-toolbar .input-group { flex: 1 1 150px; min-width: 140px; }
@@ -1067,8 +1071,8 @@ body.hay-banner-servidor .sidebar { top: 68px; }
     <div class="page-actions"><button class="btn btn-primary btn-lg" onclick="nuevoRegistroDesdeInicio()"><svg class="ic ic-sm"><use href="#i-user-plus"></use></svg> Nuevo registro</button></div>
   </div>
   <div class="kpi-grid">
-    <div class="kpi-card"><div class="kpi-top"><div class="kpi-label">Registros de hoy</div><div class="kpi-icon blue"><svg class="ic"><use href="#i-user-plus"></use></svg></div></div><div class="kpi-value" id="kpiHoy">0</div><div class="kpi-sub">Realizados por ti</div></div>
-    <div class="kpi-card"><div class="kpi-top"><div class="kpi-label">Personal tardío</div><div class="kpi-icon amber"><svg class="ic"><use href="#i-clock"></use></svg></div></div><div class="kpi-value" id="kpiTardio">0</div><div class="kpi-sub">Registrados hoy como tardíos</div></div>
+    <div class="kpi-card"><div class="kpi-top"><div class="kpi-label">Registros de hoy</div><div class="kpi-icon blue"><svg class="ic"><use href="#i-user-plus"></use></svg></div></div><div class="kpi-value" id="kpiHoy">0</div><div class="kpi-sub" id="kpiHoySub">Realizados por ti</div></div>
+    <div class="kpi-card"><div class="kpi-top"><div class="kpi-label">Personal tardío</div><div class="kpi-icon amber"><svg class="ic"><use href="#i-clock"></use></svg></div></div><div class="kpi-value" id="kpiTardio">0</div><div class="kpi-sub" id="kpiTardioSub">Registrados hoy como tardíos</div></div>
     <div class="kpi-card"><div class="kpi-top"><div class="kpi-label">Último registro</div><div class="kpi-icon green"><svg class="ic"><use href="#i-activity"></use></svg></div></div><div class="kpi-value" id="kpiUltimo">—</div><div class="kpi-sub" id="kpiUltimoSub">Sin registros hoy</div></div>
     <div class="kpi-card"><div class="kpi-top"><div class="kpi-label">Sesión activa</div><div class="kpi-icon sky"><svg class="ic"><use href="#i-bus"></use></svg></div></div><div class="kpi-value" id="kpiSesion" style="font-size:20px;">Sin registro</div><div class="kpi-sub" id="kpiSesionSub">Inicia un registro para comenzar</div></div>
   </div>
@@ -2029,7 +2033,7 @@ function incrementarContadorFirebase() {
 // ════════════════════════════════
 //  CONTROL DE VERSIÓN / ACTUALIZACIÓN AUTOMÁTICA
 // ════════════════════════════════
-const VERSION_ACTUAL = '4.3.2'; // ⚠️ Este número debe coincidir con version.json
+const VERSION_ACTUAL = '4.3.3'; // ⚠️ Este número debe coincidir con version.json
 
 // Mostrar la versión real en todos los lugares de la interfaz (footer, Acerca, etc.)
 document.addEventListener('DOMContentLoaded', () => {
@@ -5171,7 +5175,7 @@ document.addEventListener('keypress', function(e) {
     $('workerCardWrap').innerHTML = '';
     mostrarStatus('searching', '<span class="searching-dots">🔍 Buscando</span>');
     const url = gsConfig.webhookUrl + '?accion=buscarTrabajador&dni=' + encodeURIComponent(dni) + '&token=' + encodeURIComponent(_token());
-    const controller = new AbortController(); const tid = setTimeout(() => controller.abort(), 20000);
+    const controller = new AbortController(); const tid = setTimeout(() => controller.abort(), 45000);   // v4.3.3: en hora punta el Apps Script tarda
     fetch(url, { signal: controller.signal }).then(r => r.text()).then(txt => {
       clearTimeout(tid);
       const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
@@ -5503,6 +5507,11 @@ document.addEventListener('keypress', function(e) {
   const $ = (id) => document.getElementById(id);
   const svg = (n, cls) => '<svg class="' + (cls || 'ic') + '"><use href="#i-' + n + '"></use></svg>';
   let apiSana = true, motivoFallo = '', avisado = false;
+  // v4.3.3: un solo tropiezo NO es una caída. El servidor se declara caído
+  // solo tras 2 fallos seguidos; si responde pero tarda, se avisa de LENTITUD
+  // (aviso ámbar), que no manda parar el trabajo.
+  let fallosSeguidos = 0, lento = false;
+  const UMBRAL_LENTO_MS = 8000;
 
   // ── 1) URL oficial: la del código manda sobre la guardada en el dispositivo ──
   // (cuando Joel publique una URL nueva, nadie tiene que tocar Config en su celular)
@@ -5532,12 +5541,27 @@ document.addEventListener('keypress', function(e) {
       '<button class="btn btn-sm btn-outline" onclick="reintentarConexion()">Reintentar</button>';
   }
   window._apiCaida = () => !apiSana;
-  function marcarCaida(motivo) {
+  window._apiLenta = () => lento;
+  function marcarLento(v) {
+    if(lento === v) return;
+    lento = v;
+    let l = $('bannerLento');
+    if(!lento || !apiSana) { if(l) l.remove(); return; }
+    if(!l) { l = document.createElement('div'); l.id = 'bannerLento'; l.className = 'banner-servidor banner-lento'; document.body.appendChild(l); }
+    l.innerHTML = svg('info') + '<div><strong>El servidor está respondiendo lento</strong>' +
+      '<span>Puedes seguir registrando con normalidad: las búsquedas pueden tardar unos segundos más de lo normal.</span></div>';
+  }
+  // duro = fallo inequívoco (página de error, código HTTP, respuesta vacía) → aviso rojo YA.
+  // blando = solo tardó demasiado → puede ser hora punta: se exige una segunda falla.
+  function marcarCaida(motivo, duro) {
+    fallosSeguidos++;
+    if(!duro && fallosSeguidos < 2) { marcarLento(true); return; }
     const cambio = apiSana; apiSana = false; motivoFallo = motivo || '';
     pintarBanner();
     if(cambio && !avisado) { avisado = true; try { showToast('⚠️ Sin conexión con el servidor del sistema', 'error'); } catch(e){} }
   }
   function marcarOk() {
+    fallosSeguidos = 0;
     if(!apiSana) { apiSana = true; avisado = false; motivoFallo = ''; pintarBanner(); try { showToast('✅ Conexión con el servidor restablecida', 'success'); } catch(e){} }
     apiSana = true;
   }
@@ -5553,19 +5577,21 @@ document.addEventListener('keypress', function(e) {
   window.fetch = function(input, init) {
     const url = typeof input === 'string' ? input : (input && input.url) || '';
     if(!(gsConfig && gsConfig.webhookUrl && url.indexOf(gsConfig.webhookUrl) === 0)) return _fetchBase(input, init);
+    const _t0 = Date.now();
     return _fetchBase(input, init).then(resp => {
-      if(!resp.ok) { marcarCaida('el servidor respondió ' + resp.status); return resp; }
+      if(!resp.ok) { marcarCaida('el servidor respondió ' + resp.status, true); return resp; }
+      marcarLento(Date.now() - _t0 > UMBRAL_LENTO_MS);
       // Una página HTML en vez de JSON = implementación caída o sin permiso
       resp.clone().text().then(t => {
         const s = String(t || '').trim();
-        if(!s) marcarCaida('respuesta vacía');
-        else if(s.charAt(0) === '<') marcarCaida('el servidor devolvió una página de error');
+        if(!s) marcarCaida('respuesta vacía', true);
+        else if(s.charAt(0) === '<') marcarCaida('el servidor devolvió una página de error', true);
         else marcarOk();
       }).catch(() => {});
       return resp;
     }, err => {
-      if(err && err.name === 'AbortError') marcarCaida('el servidor no respondió a tiempo');
-      else marcarCaida('no hubo respuesta del servidor');
+      if(err && err.name === 'AbortError') marcarCaida('el servidor no respondió a tiempo', false);
+      else marcarCaida('no hubo respuesta del servidor', false);
       throw err;
     });
   };
@@ -5573,7 +5599,7 @@ document.addEventListener('keypress', function(e) {
   async function comprobarServidor() {
     if(!gsConfig.habilitado || !gsConfig.webhookUrl) return;
     try {
-      const c = new AbortController(); const t = setTimeout(() => c.abort(), 15000);
+      const c = new AbortController(); const t = setTimeout(() => c.abort(), 45000);   // v4.3.3: lento no es caído
       const r = await fetch(gsConfig.webhookUrl + '?accion=buscar&empresa=Rapel&dni=00000000', { signal: c.signal });
       clearTimeout(t); await r.text();
     } catch(e) {}
@@ -5609,7 +5635,7 @@ document.addEventListener('keypress', function(e) {
   // ── 6) Aviso temprano: se comprueba el servidor al entrar, no al perder 15 minutos ──
   const _setSesion_v432 = _setSesion;
   _setSesion = function(data){ _setSesion_v432(data); setTimeout(comprobarServidor, 1200); };
-  setInterval(() => { if(!apiSana && typeof sesion !== 'undefined' && sesion) comprobarServidor(); }, 60000);
+  setInterval(() => { if((!apiSana || fallosSeguidos > 0) && typeof sesion !== 'undefined' && sesion) comprobarServidor(); }, 20000);
 })();
 
 </script>
