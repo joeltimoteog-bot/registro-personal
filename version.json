@@ -1,5 +1,5 @@
 {
-  "version": "4.4.0",
+  "version": "4.3.2",
   "fecha": "2026-09-16",
-  "notas": "Resumen del dia compartido: los contadores de Inicio (Registros de hoy, Personal tardio, Ultimo registro y Actividad reciente) y el HOY POR TI de la pagina de registro ahora se piden al servidor, asi que muestran lo mismo en todos los dispositivos. Antes cada equipo contaba solo lo que se habia registrado en el. Si el servidor no responde, se sigue mostrando el conteo local y nada deja de funcionar. Requiere Apps Script v3.6."
+  "notas": "Proteccion ante caidas del servidor: si Google Apps Script no responde, el sistema avisa de inmediato con un aviso rojo, NO abre el formulario como si el trabajador fuera nuevo y no deja guardar a ciegas, para que nadie pierda el trabajo de llenar los datos. Ademas la direccion del servidor viaja en el sistema, asi que si cambia, todos los celulares la toman solos al recargar."
 }
