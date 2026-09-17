@@ -2033,7 +2033,7 @@ function incrementarContadorFirebase() {
 // ════════════════════════════════
 //  CONTROL DE VERSIÓN / ACTUALIZACIÓN AUTOMÁTICA
 // ════════════════════════════════
-const VERSION_ACTUAL = '4.3.5'; // ⚠️ Este número debe coincidir con version.json
+const VERSION_ACTUAL = '4.3.6'; // ⚠️ Este número debe coincidir con version.json
 
 // Mostrar la versión real en todos los lugares de la interfaz (footer, Acerca, etc.)
 document.addEventListener('DOMContentLoaded', () => {
@@ -5189,6 +5189,17 @@ document.addEventListener('keypress', function(e) {
 
   // ── 2) Búsqueda en UN viaje (buscarTrabajador). Si el Apps Script no la tiene, camino anterior. ──
   const _buscarDNI_v43 = buscarDNI;
+  // v4.3.6: Google a veces responde 404 o una página de error aunque el sistema esté bien (cola de ejecución).
+  // Una búsqueda es solo lectura: ante ESE caso se reintenta UNA vez tras 1,5 s. Si solo tarda, no se reintenta.
+  function pedirBusqueda_v436(url, signal) {
+    return fetch(url, { signal }).then(r => r.text().then(t => ({ ok: r.ok, t: String(t || '') })))
+      .then(x => {
+        const s0 = x.t.trim();
+        if(x.ok && s0 && s0.charAt(0) !== '<') return x.t;
+        mostrarStatus('searching', '<span class="searching-dots">🔍 Reintentando</span>');
+        return new Promise(res => setTimeout(res, 1500)).then(() => fetch(url, { signal })).then(r => r.text());
+      });
+  }
   buscarDNI = function(){
     const dni = $('dniSearch').value.trim();
     if(!/^\d{8}$/.test(dni) || !gsConfig.habilitado || !gsConfig.webhookUrl || soportaBuscarTrabajador === false) return _buscarDNI_v43();
@@ -5197,7 +5208,7 @@ document.addEventListener('keypress', function(e) {
     mostrarStatus('searching', '<span class="searching-dots">🔍 Buscando</span>');
     const url = gsConfig.webhookUrl + '?accion=buscarTrabajador&dni=' + encodeURIComponent(dni) + '&token=' + encodeURIComponent(_token());
     const controller = new AbortController(); const tid = setTimeout(() => controller.abort(), 45000);   // v4.3.3: en hora punta el Apps Script tarda
-    fetch(url, { signal: controller.signal }).then(r => r.text()).then(txt => {
+    pedirBusqueda_v436(url, controller.signal).then(txt => {
       clearTimeout(tid);
       const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
       const data = JSON.parse(m ? m[1] : txt);
@@ -5614,13 +5625,13 @@ document.addEventListener('keypress', function(e) {
     if(/[?&]accion=(listarBBRegistro|exportarBBRegistro)(&|$)/.test(url)) return _fetchBase(input, init);
     const _t0 = Date.now();
     return _fetchBase(input, init).then(resp => {
-      if(!resp.ok) { marcarCaida('el servidor respondió ' + resp.status, true); return resp; }
+      if(!resp.ok) { marcarCaida('el servidor respondió ' + resp.status, false); return resp; }   // v4.3.6: 404 pasajero de Google ≠ caída
       marcarLento(Date.now() - _t0 > UMBRAL_LENTO_MS);
       // Una página HTML en vez de JSON = implementación caída o sin permiso
       resp.clone().text().then(t => {
         const s = String(t || '').trim();
-        if(!s) marcarCaida('respuesta vacía', true);
-        else if(s.charAt(0) === '<') marcarCaida('el servidor devolvió una página de error', true);
+        if(!s) marcarCaida('respuesta vacía', false);
+        else if(s.charAt(0) === '<') marcarCaida('el servidor devolvió una página de error', false);   // v4.3.6: se confirma con una segunda falla
         else marcarOk();
       }).catch(() => {});
       return resp;
