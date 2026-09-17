@@ -1,5 +1,5 @@
 {
-  "version": "4.3.7",
+  "version": "4.3.8",
   "fecha": "2026-09-17",
-  "notas": "Registro a prueba de lentitud: el sistema espera hasta 60 segundos y, si la respuesta no llega, confirma con el servidor si el registro quedo guardado antes de volver a enviarlo. El mensaje final siempre dice la verdad: guardado o no guardado. Con el Apps Script v3.8 la busqueda de DNI y el ingreso son mas rapidos."
+  "notas": "Busqueda instantanea: con el Apps Script v3.9 configurado, buscar un DNI y verificar duplicados se responde desde Firestore en menos de 1 segundo (y funciona aunque la senal sea debil). Si Firestore no esta listo, el sistema sigue funcionando como antes."
 }

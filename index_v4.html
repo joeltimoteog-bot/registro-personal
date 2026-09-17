@@ -15,6 +15,8 @@
 <!-- Firebase: contador de grupo en tiempo real (los registros siguen en Google Sheets) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -2033,7 +2035,7 @@ function incrementarContadorFirebase() {
 // ════════════════════════════════
 //  CONTROL DE VERSIÓN / ACTUALIZACIÓN AUTOMÁTICA
 // ════════════════════════════════
-const VERSION_ACTUAL = '4.3.7'; // ⚠️ Este número debe coincidir con version.json
+const VERSION_ACTUAL = '4.3.8'; // ⚠️ Este número debe coincidir con version.json
 
 // Mostrar la versión real en todos los lugares de la interfaz (footer, Acerca, etc.)
 document.addEventListener('DOMContentLoaded', () => {
@@ -5699,6 +5701,135 @@ document.addEventListener('keypress', function(e) {
   const _setSesion_v432 = _setSesion;
   _setSesion = function(data){ _setSesion_v432(data); setTimeout(comprobarServidor, 1200); };
   setInterval(() => { if((!apiSana || fallosSeguidos > 0) && typeof sesion !== 'undefined' && sesion) comprobarServidor(); }, 30000);
+})();
+
+
+// ═══════════════════════════════════════════════════════════
+//  v4.3.8 — BÚSQUEDA INSTANTÁNEA CON FIRESTORE (requiere Apps Script v3.9 configurado)
+//  - Buscar DNI y la verificación de duplicado se responden desde Firestore (1 lectura, < 1 s,
+//    también sin señal si el bloque ya estaba en el celular).
+//  - Si Firestore no está listo, no responde a tiempo o sus datos no están al día (> 20 min),
+//    se usa el Apps Script exactamente como antes. Nada más cambia.
+//  - Tras registrar, el celular publica el registro en su bloque para que los demás lo vean al instante.
+// ═══════════════════════════════════════════════════════════
+(function(){
+  if(typeof firebase === 'undefined' || !firebase.firestore || !firebase.auth || !firebase.apps.length) return;
+  let fs, auth;
+  try {
+    fs = firebase.firestore();
+    fs.enablePersistence({ synchronizeTabs: true }).catch(() => {});
+    auth = firebase.auth();
+  } catch(e) { return; }
+  const COL = 'base_trabajadores', FRESCO_MS = 20 * 60000, META_TTL = 60000, TIEMPO_MS = 5000;
+  let usuarioFb = null, authListo = false, meta = null, metaLeida = 0;
+  const esperaAuth = new Promise(res => { auth.onAuthStateChanged(u => { usuarioFb = u; if(!authListo) { authListo = true; res(); } }); });
+
+  const kDni = (v) => { let x = String(v == null ? '' : v).trim(); if(/^\d+$/.test(x)) { x = String(parseInt(x, 10)); while(x.length < 8) x = '0' + x; return x; } return x.toUpperCase(); };
+  const conTiempo = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('tiempo')), ms))]);
+  const respuesta = (o) => new Response(JSON.stringify(o), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  const COLS_BASE = ['dni','ap','am','nombres','nac','ec','dir','dep','prov','dist','tel1','tel2','hijos','nhijos','edu','inst','carrera','egreso','incap','cem','celcem'];
+  function objBase(v, empresa) { const o = { encontrado: true, _empresa: empresa }; COLS_BASE.forEach((c, i) => { o[c] = v[i]; }); return o; }
+  function objBB(fila, v) {
+    return { encontrado: true, fila: fila, dni: v[0], ap: v[1], am: v[2], nombres: v[3], mismadir: v[4],
+      dir: v[5], dep: v[6], prov: v[7], dist: v[8], tel1: v[9], hijos: v[10], edu: v[11], inst: v[12],
+      carrera: v[13], egreso: v[14], incap: v[15], parentesco: v[16], cem: v[17], celcem: v[18],
+      fecha: v[19], empresaOrigen: v[20], ruta: v[21], codigo: v[22], sector: v[23], tipo: v[24],
+      registradoPor: v[25], tardio: v[26] };
+  }
+  const listo = () => !!(usuarioFb && typeof sesion !== 'undefined' && sesion && usuarioFb.uid === String(sesion.usuario || '').trim().toLowerCase());
+
+  // ── Credencial: al iniciar sesión (login la trae) o al restaurar una sesión (se pide al Apps Script) ──
+  async function asegurarCredencial(data) {
+    try {
+      await esperaAuth;
+      const uid = String((data && data.usuario) || '').trim().toLowerCase();
+      if(usuarioFb && usuarioFb.uid === uid) return;
+      if(usuarioFb) await auth.signOut();
+      let tok = data && data.fbToken;
+      if(!tok && gsConfig.webhookUrl && data && data.token) {
+        const r = await conTiempo(fetch(gsConfig.webhookUrl + '?accion=fbToken&token=' + encodeURIComponent(data.token)).then(x => x.json()), 45000);
+        tok = r && r.fbToken;
+      }
+      if(tok) await auth.signInWithCustomToken(tok);
+    } catch(e) { /* sin Firestore: el sistema sigue por el Apps Script */ }
+  }
+  if(typeof _setSesion === 'function') {
+    const _setSesion_v438 = _setSesion;
+    _setSesion = function(data){ _setSesion_v438(data); asegurarCredencial(data); };
+  }
+  if(typeof cerrarSesion === 'function') {
+    const _cerrarSesion_v438 = cerrarSesion;
+    cerrarSesion = async function(){ await _cerrarSesion_v438.apply(this, arguments); if(typeof sesion === 'undefined' || !sesion) { try { await auth.signOut(); } catch(e){} } };
+  }
+  if(typeof sesion !== 'undefined' && sesion) asegurarCredencial(sesion);   // sesión ya abierta al cargar
+
+  async function leerMeta() {
+    if(meta && Date.now() - metaLeida < META_TTL) return meta;
+    const snap = await conTiempo(fs.doc('base_meta/estado').get(), TIEMPO_MS);
+    meta = snap.exists ? snap.data() : null; metaLeida = Date.now();
+    return meta;
+  }
+  // Devuelve la respuesta que daría el Apps Script, o null si Firestore no puede asegurarla
+  async function responder(accion, dni) {
+    const m = await leerMeta(); if(!m || !m.ts) return null;
+    const fresco = Date.now() - Number(m.ts) < FRESCO_MS;
+    const k = kDni(dni);
+    const snap = await conTiempo(fs.collection(COL).doc(k.slice(-3)).get(), TIEMPO_MS);
+    if(!snap.exists) return null;
+    const d = snap.data() || {};
+    const bRaw = d.b && d.b[k];
+    const bb = bRaw ? (() => { const a = JSON.parse(bRaw); return objBB(a[0], a[1]); })() : null;
+    if(accion === 'buscarBBRegistro') return bb ? bb : (fresco ? { encontrado: false } : null);
+    if(bb) return { ok: true, bb: bb, base: null };
+    if(!fresco) return null;
+    const r = d.r ? JSON.parse(d.r) : {}, v = d.v ? JSON.parse(d.v) : {};
+    const base = r[k] ? objBase(r[k], 'Rapel') : (v[k] ? objBase(v[k], 'Verfrut') : null);
+    return { ok: true, bb: null, base: base };
+  }
+  // Tras registrar: publicar el primer registro del DNI en su bloque (si aún no estaba)
+  async function publicarRegistro(dni, fila, bbFila) {
+    try {
+      if(!listo()) return;
+      const k = kDni(dni), ref = fs.collection(COL).doc(k.slice(-3));
+      await fs.runTransaction(async t => {
+        const s0 = await t.get(ref);
+        if(!s0.exists || ((s0.data() || {}).b || {})[k]) return;
+        t.update(ref, new firebase.firestore.FieldPath('b', k), JSON.stringify([fila, bbFila]));
+      });
+    } catch(e) {}
+  }
+  window._firestoreEstado = () => ({ credencial: listo(), meta: meta, usuario: usuarioFb && usuarioFb.uid });
+
+  const _fetchPrev_v438 = window.fetch;
+  window.fetch = function(input, init) {
+    const url = typeof input === 'string' ? input : (input && input.url) || '';
+    if(!(gsConfig && gsConfig.webhookUrl && url.indexOf(gsConfig.webhookUrl) === 0)) return _fetchPrev_v438(input, init);
+    let accion = '', dni = '', data = null;
+    try {
+      const u = new URL(url);
+      accion = u.searchParams.get('accion') || '';
+      dni = u.searchParams.get('dni') || '';
+      if(!accion && u.searchParams.get('data')) { data = JSON.parse(u.searchParams.get('data')); accion = (data && data.accion) || ''; }
+    } catch(e) {}
+    if((accion === 'buscarTrabajador' || accion === 'buscarBBRegistro') && /^\d{8}$/.test(dni) && listo()) {
+      const t0 = performance.now();
+      return responder(accion, dni).then(o => {
+        if(!o) return _fetchPrev_v438(input, init);
+        try { const l = JSON.parse(localStorage.getItem('perf_log_v4') || '[]'); l.unshift({ a: accion + ' (Firestore)', ms: Math.round(performance.now() - t0), ok: 1, t: Date.now() }); if(l.length > 60) l.length = 60; localStorage.setItem('perf_log_v4', JSON.stringify(l)); } catch(e){}
+        return respuesta(o);
+      }, () => _fetchPrev_v438(input, init));
+    }
+    if(accion === 'registrar' && data) {
+      return _fetchPrev_v438(input, init).then(resp => {
+        resp.clone().text().then(txt => {
+          try { const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s); const r = JSON.parse(m ? m[1] : txt);
+            if(r && r.ok && !r.duplicado && r.fila && Array.isArray(r.bbFila)) publicarRegistro(data.dni, r.fila, r.bbFila); } catch(e) {}
+        }).catch(() => {});
+        return resp;
+      });
+    }
+    return _fetchPrev_v438(input, init);
+  };
 })();
 
 </script>
