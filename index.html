@@ -2033,7 +2033,7 @@ function incrementarContadorFirebase() {
 // ════════════════════════════════
 //  CONTROL DE VERSIÓN / ACTUALIZACIÓN AUTOMÁTICA
 // ════════════════════════════════
-const VERSION_ACTUAL = '4.3.4'; // ⚠️ Este número debe coincidir con version.json
+const VERSION_ACTUAL = '4.3.5'; // ⚠️ Este número debe coincidir con version.json
 
 // Mostrar la versión real en todos los lugares de la interfaz (footer, Acerca, etc.)
 document.addEventListener('DOMContentLoaded', () => {
@@ -2822,14 +2822,9 @@ async function cargarMetricasAcerca() {
     }
     // Usar cache si está disponible, sino consultar
     let datos = datosStatsCache;
-    if(!datos) {
-      const url = gsConfig.webhookUrl + '?accion=listarBBRegistro&token=' + encodeURIComponent(_token());
-      const resp = await fetch(url);
-      const txt = await resp.text();
-      const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
-      const data = JSON.parse(m ? m[1] : txt);
-      datos = data.registros || [];
-      datosStatsCache = datos;
+    if(!datos) {   // v4.3.5: usa la misma carga (incremental y en caché) del panel de Estadísticas
+      await renderEstadisticas();
+      datos = datosStatsCache || [];
     }
 
     document.getElementById('acerca-total').textContent = datos.length;
@@ -4865,7 +4860,8 @@ document.addEventListener('keypress', function(e) {
   const fmt = (n) => Number(n || 0).toLocaleString('es-PE');
   const pct = (a, b) => b ? (a / b * 100) : 0;
   const CACHE_KEY = 'stats_cache_v4';
-  const CACHE_MIN = 10;              // minutos de vigencia del caché local
+  const CACHE_MIN = 3;               // minutos de vigencia del caché local (v4.3.5: refrescar ya es barato)
+  const COMPLETA_MAX_MIN = 180;      // v4.3.5: cada 3 h (o al cambiar de día) se descarga todo de nuevo
   const AZUL = '#12335B', AZUL2 = '#2456A6', ROJO = '#C8102E', GRIS = '#98A2B3', GRIS2 = '#CFD8E6';
 
   // ── Estado ──
@@ -4908,7 +4904,20 @@ document.addEventListener('keypress', function(e) {
 
   // ── Caché local (acelera la carga; el servidor no cambia) ──
   function leerCache() { try { const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null'); return c && Array.isArray(c.registros) ? c : null; } catch(e) { return null; } }
-  function guardarCache(regs) { try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), registros: regs })); } catch(e) { /* sin espacio: seguimos sin caché */ } }
+  // v4.3.5: META = { hasta, rev, dia, tsCompleta } → permite pedir al servidor solo las filas nuevas
+  let META = null;
+  function guardarCache(regs) { try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), registros: regs, meta: META })); } catch(e) { /* sin espacio: seguimos sin caché */ } }
+  // Descarga pesada: UN solo intento y espera larga (antes: corte a 20 s + reintento = el servidor trabajaba doble en hora punta)
+  async function fetchLargo(url) {
+    const c = new AbortController(); const t = setTimeout(() => c.abort(), 90000);
+    try {
+      const resp = await fetch(url, { signal: c.signal });
+      if(!resp.ok) throw new Error('HTTP ' + resp.status);
+      const txt = await resp.text();
+      const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
+      return JSON.parse(m ? m[1] : txt);
+    } finally { clearTimeout(t); }
+  }
 
   // ── Carga (envuelve la función original: misma acción listarBBRegistro) ──
   let cargando = false;
@@ -4917,18 +4926,30 @@ document.addEventListener('keypress', function(e) {
     if(!$('statsDash')) return _renderEstadisticas_orig();
     const cache = leerCache();
     const fresco = cache && (Date.now() - cache.ts) < CACHE_MIN * 60000;
-    if(cache && !datosStatsCache) { datosStatsCache = cache.registros; REGS = normalizar(datosStatsCache); ultimaCarga = new Date(cache.ts); }
+    if(cache && !datosStatsCache) { datosStatsCache = cache.registros; META = cache.meta || null; REGS = normalizar(datosStatsCache); ultimaCarga = new Date(cache.ts); }
     if(REGS.length) { poblarFiltros(); pintarTodo(); }
     if(fresco && !forzar && REGS.length) { estadoCarga('ok'); return; }
     if(cargando) return; cargando = true;
     estadoCarga('cargando');
     try {
       if(gsConfig.habilitado && gsConfig.webhookUrl) {
-        const url = gsConfig.webhookUrl + '?accion=listarBBRegistro&formato=compacto&token=' + encodeURIComponent(_token());
-        const data = await _fetchJsonReintento(url, 2, 1500);
+        // v4.3.5: si ya hay datos de hoy, se piden SOLO las filas nuevas (Apps Script v3.7)
+        const dia = claveDia(hoy0());
+        const incremental = !!(META && META.hasta && META.rev && META.dia === dia && Array.isArray(datosStatsCache) &&
+          (Date.now() - (META.tsCompleta || 0)) < COMPLETA_MAX_MIN * 60000);
+        let url = gsConfig.webhookUrl + '?accion=listarBBRegistro&formato=compacto&token=' + encodeURIComponent(_token());
+        if(incremental) url += '&desde=' + encodeURIComponent(META.hasta) + '&rev=' + encodeURIComponent(META.rev);
+        const data = await fetchLargo(url);
         if(_sesionExpirada(data)) { cargando = false; return; }
         // v4.3: formato compacto {cols, filas} del Apps Script v3.5; el anterior devuelve {registros}
-        datosStatsCache = (data.cols && data.filas) ? data.filas.map(f => { const o = {}; data.cols.forEach((c, i) => { o[c] = f[i]; }); return o; }) : (data.registros || []);
+        const recibidos = (data.cols && data.filas) ? data.filas.map(f => { const o = {}; data.cols.forEach((c, i) => { o[c] = f[i]; }); return o; }) : (data.registros || []);
+        if(incremental && data.incremental === true) {
+          datosStatsCache = datosStatsCache.concat(recibidos);
+          META = { hasta: data.hasta, rev: String(data.rev), dia: dia, tsCompleta: META.tsCompleta };
+        } else {
+          datosStatsCache = recibidos;
+          META = data.hasta ? { hasta: data.hasta, rev: String(data.rev || ''), dia: dia, tsCompleta: Date.now() } : null;   // backend anterior: sin incremental
+        }
         guardarCache(datosStatsCache);
       } else { datosStatsCache = trabajadores; }
       ultimaCarga = new Date();
@@ -5588,6 +5609,9 @@ document.addEventListener('keypress', function(e) {
   window.fetch = function(input, init) {
     const url = typeof input === 'string' ? input : (input && input.url) || '';
     if(!(gsConfig && gsConfig.webhookUrl && url.indexOf(gsConfig.webhookUrl) === 0)) return _fetchBase(input, init);
+    // v4.3.5: las descargas masivas (estadísticas, exportación) tardan por su tamaño, no por el servidor:
+    // no activan el aviso de lentitud ni el de caída (antes, abrir Estadísticas encendía el aviso ámbar).
+    if(/[?&]accion=(listarBBRegistro|exportarBBRegistro)(&|$)/.test(url)) return _fetchBase(input, init);
     const _t0 = Date.now();
     return _fetchBase(input, init).then(resp => {
       if(!resp.ok) { marcarCaida('el servidor respondió ' + resp.status, true); return resp; }

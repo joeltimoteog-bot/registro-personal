@@ -1,5 +1,5 @@
 {
-  "version": "4.3.4",
-  "fecha": "2026-09-16",
-  "notas": "Corrige el efecto bola de nieve en hora punta. Antes, si una busqueda tardaba demasiado, el sistema la reintentaba por un camino largo que hacia 2 peticiones mas: justo cuando el servidor ya no daba abasto, cada busqueda lenta le mandaba el triple de trabajo. Ahora una busqueda es siempre UNA peticion y, si el servidor tarda, se avisa y se puede reintentar sin perder nada. Ademas el chequeo de salud ya no gasta peticiones cuando el trabajo real acaba de responder. Incluye 4.3.3: lento ya no se confunde con caido y las busquedas esperan hasta 45 segundos."
+  "version": "4.3.5",
+  "fecha": "2026-09-17",
+  "notas": "Estadisticas sin sobrecargar el servidor: ahora solo se descargan los registros nuevos (antes, cada apertura bajaba todo el historial, 1,3 MB en 16 segundos, y si tardaba mas de 20 s se pedia otra vez). Abrir Estadisticas o Acerca ya no enciende el aviso de servidor lento. Requiere Apps Script v3.7 para la carga incremental; con el anterior funciona como antes."
 }
