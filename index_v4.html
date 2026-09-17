@@ -2035,7 +2035,7 @@ function incrementarContadorFirebase() {
 // ════════════════════════════════
 //  CONTROL DE VERSIÓN / ACTUALIZACIÓN AUTOMÁTICA
 // ════════════════════════════════
-const VERSION_ACTUAL = '4.3.8'; // ⚠️ Este número debe coincidir con version.json
+const VERSION_ACTUAL = '4.3.9'; // ⚠️ Este número debe coincidir con version.json
 
 // Mostrar la versión real en todos los lugares de la interfaz (footer, Acerca, etc.)
 document.addEventListener('DOMContentLoaded', () => {
@@ -3440,7 +3440,7 @@ async function guardarRegistro() {
   // v3.7.4: sesión de más de 20 h → pedir re-login antes de enviar (el formulario se conserva)
   if(_sesionVencidaPorJornada()) { _avisarSesionVencida(); return; }
 
-  if(!navigator.onLine) {
+  if(!navigator.onLine && !(window._fsPuedeGuardarSinSenal && window._fsPuedeGuardarSinSenal() && !modoEditar)) {   // v4.3.9
     showToast('📡 Sin conexión a internet. Tus datos NO se perdieron: recupera la señal y vuelve a presionar Guardar.','error');
     return;
   }
@@ -5673,7 +5673,7 @@ document.addEventListener('keypress', function(e) {
   // ── 4) Protección clave: un "no encontrado" falso NO abre el formulario ──
   const _procesarResultado_v432 = _procesarResultado;
   _procesarResultado = function(res, dni){
-    if((!res || !res.encontrado) && !apiSana) {
+    if((!res || !res.encontrado) && !apiSana && !(window._fsRespondio && window._fsRespondio(dni))) {   // v4.3.9: si respondió Firestore, el dato es confiable
       $('formCard').style.display = 'none';
       $('workerCardWrap').innerHTML = '';
       mostrarStatus('error', 'No se pudo consultar al servidor. NO llenes el formulario todavía: el registro no se guardaría. Presiona Reintentar cuando se restablezca.');
@@ -5686,7 +5686,7 @@ document.addEventListener('keypress', function(e) {
   // ── 5) No guardar a ciegas: los datos escritos se conservan ──
   const _guardarRegistro_v432 = guardarRegistro;
   guardarRegistro = async function(){
-    if(!apiSana) {
+    if(!apiSana && !(window._fsListo && window._fsListo())) {   // v4.3.9: con Firestore listo se guarda en su cola
       try { const d = obtenerDatosFormulario(); localStorage.setItem('_borrador_ultimo', JSON.stringify(d)); } catch(e){}
       try { showToast('⚠️ El servidor no está disponible. Tus datos NO se perdieron: quedan en el formulario.', 'error'); } catch(e){}
       mostrarStatus('error', 'El servidor del sistema no está disponible. Tus datos siguen en pantalla; espera a que se restablezca y presiona Registrar de nuevo.');
@@ -5714,10 +5714,10 @@ document.addEventListener('keypress', function(e) {
 // ═══════════════════════════════════════════════════════════
 (function(){
   if(typeof firebase === 'undefined' || !firebase.firestore || !firebase.auth || !firebase.apps.length) return;
-  let fs, auth;
+  let fs, auth, persistencia = false;
   try {
     fs = firebase.firestore();
-    fs.enablePersistence({ synchronizeTabs: true }).catch(() => {});
+    fs.enablePersistence({ synchronizeTabs: true }).then(() => { persistencia = true; }).catch(() => { persistencia = false; });
     auth = firebase.auth();
   } catch(e) { return; }
   const COL = 'base_trabajadores', FRESCO_MS = 20 * 60000, META_TTL = 60000, TIEMPO_MS = 5000;
@@ -5798,7 +5798,60 @@ document.addEventListener('keypress', function(e) {
       });
     } catch(e) {}
   }
-  window._firestoreEstado = () => ({ credencial: listo(), meta: meta, usuario: usuarioFb && usuarioFb.uid });
+  window._firestoreEstado = () => ({ credencial: listo(), meta: meta, usuario: usuarioFb && usuarioFb.uid, persistencia: persistencia });
+
+  // ── v4.3.9: GUARDADO INSTANTÁNEO ──
+  // El registro se escribe en Firestore (cola registros_pendientes) y el Apps Script lo pasa a BB.REGISTRO en ~1 minuto.
+  // Sin señal: queda guardado en el celular (persistencia de Firestore) y se envía solo al volver la conexión.
+  window._fsPuedeGuardarSinSenal = () => listo() && persistencia;
+  window._fsListo = () => listo();
+  let ultimaFs = { dni: '', ts: 0 };
+  window._fsRespondio = (dni) => ultimaFs.dni === kDni(dni) && Date.now() - ultimaFs.ts < 15000;
+  const filaDesdeDatos = (d) => {
+    const pf = (d.parentesco === 'Otros' && d.parentescoOtro) ? d.parentescoOtro : (d.parentesco || '');
+    return [d.dni, d.ap, d.am, d.nombres, d.mismadir || '', d.dir || '-', d.dep || '-', d.prov || '-', d.dist || '-', d.tel1 || '-',
+      d.hijos || '', d.edu || '', d.inst || '-', d.carrera || '-', d.egreso || '-', d.incap || '', pf, d.cem || '-', d.celcem || '-',
+      d.fecha, d.empresaOrigen || '', d.ruta || '', d.codigo || '', d.sector || '', d.tipo || '', d.registradoPor || '', d.tardio ? 'SI' : 'NO'];
+  };
+  async function guardarEnCola(datos) {
+    const id = String(datos._regId || (datos.dni + '_' + Date.now())).replace(/[\/]/g, '-').substring(0, 140);
+    const limpio = JSON.parse(JSON.stringify(datos));
+    delete limpio.token;
+    const escritura = fs.collection('registros_pendientes').doc(id).set({
+      uid: usuarioFb.uid, d: JSON.stringify(limpio), creado: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    // El bloque del DNI muestra el registro a todos al instante (solo si ese DNI no tenía registro previo)
+    (async () => {
+      try {
+        const k = kDni(datos.dni), ref = fs.collection(COL).doc(k.slice(-3));
+        await conTiempo(fs.runTransaction(async t => {
+          const s0 = await t.get(ref);
+          if(!s0.exists || ((s0.data() || {}).b || {})[k]) return;
+          t.update(ref, new firebase.firestore.FieldPath('b', k), JSON.stringify([0, filaDesdeDatos(datos)]));
+        }), 8000);
+      } catch(e) {}
+    })();
+    try { await conTiempo(escritura, (navigator.onLine === false && persistencia) ? 300 : 6000); return 'servidor'; }
+    catch(e) {
+      if(e && e.message !== 'tiempo') throw e;                       // rechazo real (permisos): se usa el camino anterior
+      if(persistencia) return 'celular';                             // queda en la cola del celular y se envía sola
+      await conTiempo(escritura, 30000); return 'servidor';          // sin persistencia: esperar confirmación
+    }
+  }
+  if(typeof registrarEnBBRegistro === 'function') {
+    const _registrarEnBBRegistro_v439 = registrarEnBBRegistro;
+    registrarEnBBRegistro = async function(datos) {
+      if(!listo() || !datos || !datos._regId) return _registrarEnBBRegistro_v439(datos);
+      try {
+        const donde = await guardarEnCola(datos);
+        if(donde === 'celular') showToast('📶 Guardado en el celular: se enviará solo al recuperar la señal', 'success');
+        else showToast('☁️ Registro guardado', 'success');
+        return true;
+      } catch(e) {
+        return _registrarEnBBRegistro_v439(datos);                  // Firestore no aceptó: Apps Script como antes
+      }
+    };
+  }
 
   const _fetchPrev_v438 = window.fetch;
   window.fetch = function(input, init) {
@@ -5815,6 +5868,7 @@ document.addEventListener('keypress', function(e) {
       const t0 = performance.now();
       return responder(accion, dni).then(o => {
         if(!o) return _fetchPrev_v438(input, init);
+        ultimaFs = { dni: kDni(dni), ts: Date.now() };
         try { const l = JSON.parse(localStorage.getItem('perf_log_v4') || '[]'); l.unshift({ a: accion + ' (Firestore)', ms: Math.round(performance.now() - t0), ok: 1, t: Date.now() }); if(l.length > 60) l.length = 60; localStorage.setItem('perf_log_v4', JSON.stringify(l)); } catch(e){}
         return respuesta(o);
       }, () => _fetchPrev_v438(input, init));

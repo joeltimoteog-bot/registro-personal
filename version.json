@@ -1,5 +1,5 @@
 {
-  "version": "4.3.8",
+  "version": "4.3.9",
   "fecha": "2026-09-17",
-  "notas": "Busqueda instantanea: con el Apps Script v3.9 configurado, buscar un DNI y verificar duplicados se responde desde Firestore en menos de 1 segundo (y funciona aunque la senal sea debil). Si Firestore no esta listo, el sistema sigue funcionando como antes."
+  "notas": "Guardado instantaneo: el registro se guarda al momento (incluso sin senal) y pasa a BB.REGISTRO en aproximadamente 1 minuto. Requiere Apps Script v3.10."
 }
