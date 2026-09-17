@@ -1,5 +1,5 @@
 {
-  "version": "4.3.6",
+  "version": "4.3.7",
   "fecha": "2026-09-17",
-  "notas": "Tolerancia a los tropiezos de Google: un 404 o una pagina de error aislada ya no enciende el aviso rojo de servidor caido y la busqueda de DNI se reintenta una sola vez. Incluye 4.3.5: estadisticas incrementales."
+  "notas": "Registro a prueba de lentitud: el sistema espera hasta 60 segundos y, si la respuesta no llega, confirma con el servidor si el registro quedo guardado antes de volver a enviarlo. El mensaje final siempre dice la verdad: guardado o no guardado. Con el Apps Script v3.8 la busqueda de DNI y el ingreso son mas rapidos."
 }
