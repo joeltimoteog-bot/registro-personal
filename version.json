@@ -1,5 +1,5 @@
 {
-  "version": "4.3.9",
-  "fecha": "2026-09-17",
-  "notas": "Guardado instantaneo: el registro se guarda al momento (incluso sin senal) y pasa a BB.REGISTRO en aproximadamente 1 minuto. Requiere Apps Script v3.10."
+  "version": "4.5.0",
+  "fecha": "2026-09-22",
+  "notas": "Panel de Control: los administradores ven en vivo quien esta registrando, cuantos lleva cada uno, cuantos tardios, desde que hora entro y con que dispositivo, los ultimos registros y los accesos del sistema. Desde ahi se puede observar un registro con problemas: se escribe que esta mal y el registrador lo ve al entrar, con un boton para marcarlo como corregido. No cambia el flujo de registro ni el guardado instantaneo. Requiere Panel.gs en el Apps Script."
 }

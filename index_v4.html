@@ -1026,6 +1026,7 @@ body.hay-banner-servidor .sidebar { top: 68px; }
     <button class="tab" onclick="showPage('excel',this)" data-page="excel"><svg class="ic"><use href="#i-sheet"></use></svg><span class="nav-label">Exportaciones</span></button>
     <div class="nav-section admin-section">ADMINISTRACIÓN</div>
     <button class="tab admin-tab" onclick="showPage('usuarios',this)" data-page="usuarios"><svg class="ic"><use href="#i-users"></use></svg><span class="nav-label">Usuarios</span></button>
+    <button class="tab admin-tab" onclick="showPage('panel',this)" data-page="panel" data-modulo="monitor"><svg class="ic"><use href="#i-activity"></use></svg><span class="nav-label">Panel de Control</span></button>
     <button class="tab admin-tab" onclick="showPage('config',this)" data-page="config"><svg class="ic"><use href="#i-settings"></use></svg><span class="nav-label">Configuración</span></button>
     <div class="nav-section">SISTEMA</div>
     <button class="tab" onclick="showPage('acerca',this)" data-page="acerca"><svg class="ic"><use href="#i-info"></use></svg><span class="nav-label">Acerca de</span></button>
@@ -1490,6 +1491,8 @@ body.hay-banner-servidor .sidebar { top: 68px; }
 </div>
 
 <!-- ═══ CONFIG (solo Admin) ═══ -->
+<div id="page-panel" class="page"></div>
+
 <div id="page-config" class="page">
   <div style="margin-top:14px;">
     <!-- Mensaje para admin que no es el creador -->
@@ -2035,7 +2038,7 @@ function incrementarContadorFirebase() {
 // ════════════════════════════════
 //  CONTROL DE VERSIÓN / ACTUALIZACIÓN AUTOMÁTICA
 // ════════════════════════════════
-const VERSION_ACTUAL = '4.3.9'; // ⚠️ Este número debe coincidir con version.json
+const VERSION_ACTUAL = '4.5.0'; // ⚠️ Este número debe coincidir con version.json
 
 // Mostrar la versión real en todos los lugares de la interfaz (footer, Acerca, etc.)
 document.addEventListener('DOMContentLoaded', () => {
@@ -4391,7 +4394,23 @@ function confirmarPersonalizado(opciones) {
         .cp-btn:hover { transform: translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,0.15); }
         .cp-btn-confirm { background:${c.btn}; color:white; }
         .cp-btn-cancel  { background:#f3f4f6; color:#6b7280; border:1px solid #e5e7eb; }
-      </style>
+      
+/* ═══ v4.5.0 · Panel de Control ═══ */
+.page-head { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:18px; }
+.page-sub { margin:4px 0 0; color:var(--text-secondary,#5A6B85); font-size:14px; }
+.tabla-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+.tabla { width:100%; border-collapse:collapse; font-size:14px; }
+.tabla th { text-align:left; font-size:11px; letter-spacing:.04em; text-transform:uppercase; color:var(--text-secondary,#5A6B85); font-weight:700; padding:8px 10px; border-bottom:1px solid var(--border,#E3E9F2); white-space:nowrap; }
+.tabla td { padding:10px; border-bottom:1px solid var(--border,#E3E9F2); vertical-align:top; }
+.tabla tbody tr:last-child td { border-bottom:0; }
+.modal-box { background:var(--surface,#fff); border-radius:14px; max-width:520px; width:calc(100% - 32px); margin:auto; box-shadow:0 18px 50px rgba(18,51,91,.25); overflow:hidden; }
+.modal-head { padding:16px 18px; border-bottom:1px solid var(--border,#E3E9F2); font-size:16px; }
+.modal-foot { padding:14px 18px; border-top:1px solid var(--border,#E3E9F2); display:flex; gap:10px; justify-content:flex-end; }
+.lbl { display:block; font-size:13px; font-weight:600; margin-bottom:6px; }
+.inp { width:100%; padding:10px 12px; border:1px solid var(--border,#E3E9F2); border-radius:10px; font:inherit; font-size:14px; box-sizing:border-box; resize:vertical; }
+.inp:focus { outline:2px solid var(--primary,#12335B); outline-offset:1px; }
+@media (max-width:640px) { .page-head { flex-direction:column; } }
+</style>
       <div class="cp-box">
         <div class="cp-header">${o.titulo}</div>
         <div class="cp-body">${o.mensaje}</div>
@@ -5884,6 +5903,324 @@ document.addEventListener('keypress', function(e) {
     }
     return _fetchPrev_v438(input, init);
   };
+})();
+
+
+// ═══════════════════════════════════════════════════════════
+//  v4.5.0 — PANEL DE CONTROL (tráfico de registros + observaciones)
+//  Aditivo: no cambia el flujo de registro, el guardado instantáneo,
+//  ni ninguna función existente. Si el Apps Script todavía no tiene
+//  Panel.gs, la página avisa y el resto del sistema sigue igual.
+//  Requiere Apps Script con Panel.gs (acciones panelTrafico,
+//  panelObsCrear, panelObsListar, panelObsResolver).
+// ═══════════════════════════════════════════════════════════
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const esc = (t) => (typeof _escaparHTML === 'function' ? _escaparHTML(t) : String(t == null ? '' : t));
+  const svg = (n, c) => '<svg class="' + (c || 'ic') + '"><use href="#i-' + n + '"></use></svg>';
+
+  let datos = null, cargando = false, temporizador = null, misObs = [];
+
+  // ── Registrar el módulo nuevo para el panel 🧩 de Usuarios ──
+  try {
+    if (typeof MODULOS_DEF !== 'undefined' && !MODULOS_DEF.some(m => m.k === 'monitor')) {
+      MODULOS_DEF.push({ k: 'monitor', n: '🛰️ Panel de Control' });
+    }
+    if (typeof PAGINA_MODULO !== 'undefined') PAGINA_MODULO.panel = 'monitor';
+  } catch (e) {}
+
+  function puedeVerPanel() {
+    if (typeof sesion === 'undefined' || !sesion) return false;
+    const u = String(sesion.usuario || '').toLowerCase();
+    if (u === 'jtimoteo') return true;
+    return String(sesion.estado || '').toLowerCase() === 'administrador';
+  }
+
+  // ── Llamada al backend, tolerante a lentitud ──
+  async function pedir(accion, extra) {
+    if (!gsConfig || !gsConfig.habilitado || !gsConfig.webhookUrl) throw new Error('sin-config');
+    const c = new AbortController();
+    const t = setTimeout(() => c.abort(), 45000);
+    try {
+      const url = gsConfig.webhookUrl + '?accion=' + accion + '&token=' + encodeURIComponent(_token()) +
+                  (extra || '') + '&cb=' + Date.now();
+      const r = await fetch(url, { signal: c.signal });
+      const txt = await r.text();
+      const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
+      return JSON.parse(m ? m[1] : txt);
+    } finally { clearTimeout(t); }
+  }
+
+  // ═══════════ PÁGINA: PANEL DE CONTROL ═══════════
+  window.renderPanelControl = async function (forzar) {
+    const cont = $('page-panel');
+    if (!cont) return;
+    if (!puedeVerPanel()) {
+      cont.innerHTML = '<div class="empty-state"><h3>Sin acceso</h3><p>El Panel de Control está reservado a administradores.</p></div>';
+      return;
+    }
+    if (cargando) return;
+    if (!datos || forzar) {
+      cont.innerHTML = cabecera('') + '<div class="card"><div class="card-body"><p style="color:var(--text-secondary);">Consultando el servidor…</p></div></div>';
+      cargando = true;
+      try {
+        const j = await pedir('panelTrafico');
+        cargando = false;
+        if (!j || j.ok !== true) {
+          cont.innerHTML = cabecera('') +
+            '<div class="card"><div class="card-body"><p><strong>No se pudo cargar el tráfico.</strong></p><p style="color:var(--text-secondary);">' +
+            esc((j && j.msg) || 'El servidor no reconoce la acción panelTrafico. Falta desplegar Panel.gs en el Apps Script.') +
+            '</p></div></div>';
+          return;
+        }
+        datos = j;
+      } catch (e) {
+        cargando = false;
+        cont.innerHTML = cabecera('') + '<div class="card"><div class="card-body"><p><strong>El servidor no respondió.</strong></p><p style="color:var(--text-secondary);">Vuelve a intentar en unos segundos.</p></div></div>';
+        return;
+      }
+    }
+    pintar(cont, datos);
+  };
+
+  function cabecera(sub) {
+    return '<div class="page-head"><div><h1 class="page-title">Panel de Control</h1>' +
+      '<p class="page-sub">Tráfico de registros de hoy' + (sub ? ' · ' + esc(sub) : '') + '</p></div>' +
+      '<button class="btn btn-outline" onclick="renderPanelControl(true)">' + svg('activity') + ' Actualizar</button></div>';
+  }
+
+  function pintar(cont, j) {
+    const us = j.usuarios || [], con = j.conectados || [], ult = j.ultimos || [], acc = j.accesos || [];
+
+    let h = cabecera(j.fecha);
+
+    h += '<div class="kpi-grid">' +
+      kpi('Registros de hoy', j.totalHoy, 'En todo el sistema', 'user-plus', 'blue') +
+      kpi('Personal tardío', j.tardiosHoy, 'Registrados como tardíos', 'clock', 'amber') +
+      kpi('Usuarios activos', us.length, 'Han registrado hoy', 'users', 'green') +
+      kpi('Conectados hoy', con.length, 'Iniciaron sesión', 'wifi', 'blue') +
+      '</div>';
+
+    // Tabla por usuario
+    h += '<div class="card"><div class="card-header"><div class="card-icon">' + svg('users') + '</div>' +
+      '<div><div class="card-title">Actividad por usuario</div><div class="card-sub">Quién está registrando y desde cuándo</div></div></div>' +
+      '<div class="card-body">';
+    if (!us.length && !con.length) {
+      h += '<p style="color:var(--text-secondary);">Todavía nadie ha registrado hoy.</p>';
+    } else {
+      const vistos = {};
+      h += '<div class="tabla-wrap"><table class="tabla"><thead><tr><th>Usuario</th><th>Registros</th><th>Tardíos</th><th>Desde</th><th>Dispositivo</th></tr></thead><tbody>';
+      us.forEach(u => {
+        vistos[u.usuario] = 1;
+        h += '<tr><td><strong>' + esc(u.usuario) + '</strong></td><td>' + u.total + '</td><td>' +
+          (u.tardios ? '<span class="pill amber">' + u.tardios + '</span>' : '0') + '</td><td>' +
+          esc(u.conectadoDesde || '—') + '</td><td style="color:var(--text-secondary);">' + esc(u.dispositivo || '—') + '</td></tr>';
+      });
+      con.forEach(c => {
+        if (vistos[c.usuario]) return;
+        h += '<tr><td>' + esc(c.usuario) + '</td><td><span class="pill amber">0</span></td><td>0</td><td>' +
+          esc(c.desde || '—') + '</td><td style="color:var(--text-secondary);">' + esc(c.dispositivo || '—') + '</td></tr>';
+      });
+      h += '</tbody></table></div>';
+      const sinRegistrar = con.filter(c => !vistos[c.usuario]).length;
+      if (sinRegistrar) h += '<p style="margin-top:10px;color:var(--text-secondary);">' + sinRegistrar +
+        ' usuario(s) entraron al sistema pero todavía no registran a nadie.</p>';
+    }
+    h += '</div></div>';
+
+    // Últimos registros, con botón para observar
+    h += '<div class="card"><div class="card-header"><div class="card-icon">' + svg('list') + '</div>' +
+      '<div><div class="card-title">Últimos registros</div><div class="card-sub">Revisa y observa si algo está mal</div></div></div>' +
+      '<div class="card-body">';
+    if (!ult.length) h += '<p style="color:var(--text-secondary);">Sin registros hoy.</p>';
+    else {
+      h += '<div class="tabla-wrap"><table class="tabla"><thead><tr><th>Trabajador</th><th>Grupo · Ruta</th><th>Usuario</th><th></th></tr></thead><tbody>';
+      ult.forEach(r => {
+        h += '<tr><td><div><strong>' + esc(r.nombre || '—') + '</strong></div><div style="color:var(--text-secondary);font-size:12px;">' + esc(r.dni) +
+          (r.tardio ? ' · <span class="pill amber">Tardío</span>' : '') + '</div></td>' +
+          '<td>' + esc(r.grupo || '—') + (r.ruta ? ' · ' + esc(r.ruta) : '') + '</td>' +
+          '<td>' + esc(r.por) + '</td>' +
+          '<td><button class="btn btn-sm btn-outline" onclick="abrirObservacion(\'' + esc(r.dni) + '\',\'' + esc(r.por) + '\',\'' + esc((r.nombre || '').replace(/'/g, '')) + '\',\'' + esc(r.fila || '') + '\')">' +
+          svg('pencil', 'ic ic-sm') + ' Observar</button></td></tr>';
+      });
+      h += '</tbody></table></div>';
+    }
+    h += '</div></div>';
+
+    // Observaciones abiertas
+    h += '<div class="card"><div class="card-header"><div class="card-icon">' + svg('bell') + '</div>' +
+      '<div><div class="card-title">Observaciones</div><div class="card-sub">Avisos enviados a los registradores</div></div></div>' +
+      '<div class="card-body" id="panelObsLista"><p style="color:var(--text-secondary);">Cargando…</p></div></div>';
+
+    // Accesos recientes
+    h += '<div class="card"><div class="card-header"><div class="card-icon">' + svg('shield') + '</div>' +
+      '<div><div class="card-title">Accesos recientes</div><div class="card-sub">Entradas y eventos del sistema</div></div></div>' +
+      '<div class="card-body">';
+    if (!acc.length) h += '<p style="color:var(--text-secondary);">Sin accesos registrados.</p>';
+    else {
+      h += '<div class="tabla-wrap"><table class="tabla"><thead><tr><th>Fecha</th><th>Usuario</th><th>Evento</th><th>Detalle</th></tr></thead><tbody>';
+      acc.forEach(a => {
+        h += '<tr><td style="white-space:nowrap;">' + esc(a.fecha) + '</td><td>' + esc(a.usuario) + '</td><td>' +
+          esc(a.evento) + '</td><td style="color:var(--text-secondary);">' + esc(a.detalle) + '</td></tr>';
+      });
+      h += '</tbody></table></div>';
+    }
+    h += '</div></div>';
+
+    cont.innerHTML = h;
+    cargarObsAdmin();
+  }
+
+  function kpi(t, v, s, ic, col) {
+    return '<div class="kpi-card"><div class="kpi-top"><div class="kpi-label">' + t + '</div>' +
+      '<div class="kpi-icon ' + col + '">' + svg(ic) + '</div></div>' +
+      '<div class="kpi-value">' + v + '</div><div class="kpi-sub">' + s + '</div></div>';
+  }
+
+  async function cargarObsAdmin() {
+    const c = $('panelObsLista');
+    if (!c) return;
+    try {
+      const j = await pedir('panelObsListar', '&todas=1');
+      if (!j || j.ok !== true) { c.innerHTML = '<p style="color:var(--text-secondary);">No disponible.</p>'; return; }
+      const o = j.observaciones || [];
+      if (!o.length) { c.innerHTML = '<p style="color:var(--text-secondary);">No hay observaciones registradas.</p>'; return; }
+      c.innerHTML = '<div class="tabla-wrap"><table class="tabla"><thead><tr><th>Fecha</th><th>Para</th><th>DNI</th><th>Observación</th><th>Estado</th></tr></thead><tbody>' +
+        o.slice(0, 30).map(x =>
+          '<tr><td style="white-space:nowrap;">' + esc(x.fecha) + '</td><td>' + esc(x.para) + '</td><td>' + esc(x.dni || '—') + '</td>' +
+          '<td>' + esc(x.texto) + (x.respuesta ? '<div style="color:var(--text-secondary);font-size:12px;">Respuesta: ' + esc(x.respuesta) + '</div>' : '') + '</td>' +
+          '<td>' + (x.estado === 'CORREGIDO' ? '<span class="pill green">Corregido</span>' : '<span class="pill amber">Pendiente</span>') + '</td></tr>'
+        ).join('') + '</tbody></table></div>';
+    } catch (e) { c.innerHTML = '<p style="color:var(--text-secondary);">No se pudo cargar.</p>'; }
+  }
+
+  // ═══════════ CREAR OBSERVACIÓN ═══════════
+  window.abrirObservacion = function (dni, para, nombre, fila) {
+    const o = document.createElement('div');
+    o.className = 'modal-overlay';
+    o.id = 'obsOverlay';
+    o.innerHTML =
+      '<div class="modal-box"><div class="modal-head"><strong>Observar registro</strong></div>' +
+      '<div class="modal-body">' +
+      '<p style="margin:0 0 4px;"><strong>' + esc(nombre || dni) + '</strong></p>' +
+      '<p style="margin:0 0 14px;color:var(--text-secondary);font-size:13px;">DNI ' + esc(dni) + ' · registrado por <strong>' + esc(para) + '</strong></p>' +
+      '<label class="lbl">¿Qué está mal en este registro?</label>' +
+      '<textarea id="obsTexto" rows="4" class="inp" placeholder="Ej: falta el número de celular; el grupo no corresponde a la ruta…"></textarea>' +
+      '<p style="margin:10px 0 0;color:var(--text-secondary);font-size:12px;">' + esc(para) + ' verá este aviso al entrar al sistema y podrá marcarlo como corregido.</p>' +
+      '</div><div class="modal-foot">' +
+      '<button class="btn btn-outline" onclick="cerrarObservacion()">Cancelar</button>' +
+      '<button class="btn btn-primary" id="obsEnviar" onclick="enviarObservacion(\'' + esc(dni) + '\',\'' + esc(para) + '\',\'' + esc(fila || '') + '\')">Enviar observación</button>' +
+      '</div></div>';
+    document.body.appendChild(o);
+    setTimeout(() => { const t = $('obsTexto'); if (t) t.focus(); }, 80);
+  };
+  window.cerrarObservacion = function () { const o = $('obsOverlay'); if (o) o.remove(); };
+
+  window.enviarObservacion = async function (dni, para, fila) {
+    const t = $('obsTexto'); if (!t) return;
+    const texto = t.value.trim();
+    if (!texto) { try { showToast('Escribe qué está mal', 'error'); } catch (e) {} return; }
+    const b = $('obsEnviar'); if (b) { b.disabled = true; b.textContent = 'Enviando…'; }
+    try {
+      const j = await pedir('panelObsCrear', '&dni=' + encodeURIComponent(dni) +
+        '&paraUsuario=' + encodeURIComponent(para) + '&fila=' + encodeURIComponent(fila) +
+        '&texto=' + encodeURIComponent(texto));
+      if (j && j.ok) {
+        cerrarObservacion();
+        try { showToast('✅ Observación enviada a ' + para, 'success'); } catch (e) {}
+        cargarObsAdmin();
+      } else {
+        try { showToast((j && j.msg) || 'No se pudo enviar', 'error'); } catch (e) {}
+        if (b) { b.disabled = false; b.textContent = 'Enviar observación'; }
+      }
+    } catch (e) {
+      try { showToast('El servidor no respondió', 'error'); } catch (e2) {}
+      if (b) { b.disabled = false; b.textContent = 'Enviar observación'; }
+    }
+  };
+
+  // ═══════════ BANDEJA DEL REGISTRADOR ═══════════
+  async function revisarMisObservaciones(avisar) {
+    if (typeof sesion === 'undefined' || !sesion) return;
+    try {
+      const j = await pedir('panelObsListar', '&pendientes=1');
+      if (!j || j.ok !== true) return;
+      misObs = j.observaciones || [];
+      pintarCampana();
+      if (avisar && misObs.length) abrirMisObservaciones();
+    } catch (e) {}
+  }
+
+  function pintarCampana() {
+    const dot = $('notifDot');
+    const b = dot ? dot.parentElement : null;   // el botón de la campana del topbar
+    let badge = $('obsBadge');
+    if (!misObs.length) { if (badge) badge.remove(); return; }
+    if (!b) return;
+    b.style.position = 'relative';
+    // Conserva su función original cuando no hay observaciones pendientes
+    b.onclick = function () { if (misObs.length) abrirMisObservaciones(); else showPage('acerca'); };
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.id = 'obsBadge';
+      badge.style.cssText = 'position:absolute;top:2px;right:2px;min-width:16px;height:16px;padding:0 4px;border-radius:9px;background:var(--accent,#C8102E);color:#fff;font-size:10px;font-weight:700;line-height:16px;text-align:center;';
+      b.appendChild(badge);
+    }
+    badge.textContent = misObs.length;
+  }
+
+  window.abrirMisObservaciones = function () {
+    if (!misObs.length) { try { showToast('No tienes observaciones pendientes', 'info'); } catch (e) {} return; }
+    const o = document.createElement('div');
+    o.className = 'modal-overlay';
+    o.id = 'misObsOverlay';
+    o.innerHTML = '<div class="modal-box"><div class="modal-head"><strong>Observaciones sobre tus registros</strong></div>' +
+      '<div class="modal-body">' +
+      misObs.map(x =>
+        '<div style="border:1px solid var(--border,#E3E9F2);border-radius:10px;padding:12px;margin-bottom:10px;">' +
+        '<div style="color:var(--text-secondary);font-size:12px;">' + esc(x.fecha) + ' · de <strong>' + esc(x.de) + '</strong>' + (x.dni ? ' · DNI ' + esc(x.dni) : '') + '</div>' +
+        '<p style="margin:6px 0 10px;">' + esc(x.texto) + '</p>' +
+        '<button class="btn btn-sm btn-primary" onclick="marcarCorregida(\'' + esc(x.id) + '\',this)">Ya lo corregí</button>' +
+        '</div>').join('') +
+      '</div><div class="modal-foot"><button class="btn btn-outline" onclick="cerrarMisObservaciones()">Cerrar</button></div></div>';
+    document.body.appendChild(o);
+  };
+  window.cerrarMisObservaciones = function () { const o = $('misObsOverlay'); if (o) o.remove(); };
+
+  window.marcarCorregida = async function (id, btn) {
+    if (btn) { btn.disabled = true; btn.textContent = 'Guardando…'; }
+    try {
+      const j = await pedir('panelObsResolver', '&id=' + encodeURIComponent(id));
+      if (j && j.ok) {
+        misObs = misObs.filter(x => x.id !== id);
+        pintarCampana();
+        if (btn) { btn.textContent = '✅ Corregido'; btn.className = 'btn btn-sm btn-outline'; }
+        if (!misObs.length) setTimeout(cerrarMisObservaciones, 700);
+      } else if (btn) { btn.disabled = false; btn.textContent = 'Ya lo corregí'; }
+    } catch (e) { if (btn) { btn.disabled = false; btn.textContent = 'Ya lo corregí'; } }
+  };
+
+  // ═══════════ ENGANCHES ═══════════
+  if (typeof window.showPage === 'function') {
+    const _showPage_v450 = window.showPage;
+    window.showPage = function (p, btn) {
+      _showPage_v450(p, btn);
+      if (temporizador) { clearInterval(temporizador); temporizador = null; }
+      if (p === 'panel') {
+        renderPanelControl(false);
+        temporizador = setInterval(() => { if (document.getElementById('page-panel').classList.contains('active')) renderPanelControl(true); }, 90000);
+      }
+    };
+  }
+
+  if (typeof window._setSesion === 'function') {
+    const _setSesion_v450 = window._setSesion;
+    window._setSesion = function (data) {
+      _setSesion_v450(data);
+      datos = null;
+      setTimeout(() => revisarMisObservaciones(true), 2500);
+    };
+  }
 })();
 
 </script>
