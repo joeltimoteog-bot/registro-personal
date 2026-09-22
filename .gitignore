@@ -6,3 +6,9 @@ Guia_Capacitacion_Suplente.pdf
 Codigo_AppsScript*.js
 Acta_*.pdf
 *.bak
+
+# Credenciales - NUNCA al repo publico
+DocumentosClaves/
+*firebase-adminsdk*.json
+*-adminsdk-*.json
+serviceAccount*.json
